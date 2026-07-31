@@ -18,6 +18,11 @@ Technical deep dive:
 - See `technical_overview.md` for architecture, lifecycle edge cases,
   and why some fixes exist (dynamic keys, PostFrameCallback, etc.).
 
+Agents & integrators:
+- See [`docs/AGENTS.md`](docs/AGENTS.md) for pattern choice (sublist vs main list),
+  async pitfalls, and `initialSelectedIds` behavior.
+- Changelog: [`CHANGELOG.md`](CHANGELOG.md)
+
 ## Features
 
 - `SearchAnchorPicker<T>`: drop-in picker built on Flutter Material 3
@@ -37,18 +42,25 @@ Technical deep dive:
 
 ## Installation
 
-Add the package to your `pubspec.yaml`:
+**pub.dev** (after first publish):
 
 ```yaml
 dependencies:
-  generic_search_selector:  # soon
-  
+  generic_search_selector: ^0.0.3
+```
+
+**Git** (pin a semver tag — prefer `v0.0.x`, not bare `v15`):
+
+```yaml
 dependencies:
   generic_search_selector:
     git:
       url: https://github.com/Alexqwesa/generic_search_selector.git
-      ref: main
+      ref: v0.0.3
 ```
+
+Publishing: push a tag that matches `pubspec.yaml` `version` (e.g. `0.0.3` → `v0.0.3`). See `.github/workflows/publish.yml`.
+
 
 ## Quick example
 
@@ -59,8 +71,7 @@ Use `triggerBuilder` for opening the picker so the trigger can react to picker v
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:generic_search_selector/picker_config.dart';
-import 'package:generic_search_selector/search_anchor_picker.dart';
+import 'package:generic_search_selector/generic_search_selector.dart';
 
 class Person {
   Person(this.id, this.name);
@@ -226,19 +237,6 @@ Use `pendingClearLoaded()` / `pendingSelectLoaded()` for the current loaded resu
 
 Use explicit delta helpers when a header button is meant to behave like add/remove intent: `clearLoadedAsDelta()`, `selectLoadedAsDelta()`, `clearFilteredAsDelta()`, `selectFilteredAsDelta()`, or `toggleIdAsDelta(id, next)`. Use `onFinishReplaceAll(finalIds)` when you want to save the whole selection as-is. Bulk helpers do not run row-level `unselectBehavior`; add your own confirmation in the header if bulk removal needs warnings.
 
-## TODO: 
-headerBuilder: (context, actions) => allUnitsHeader(context, actions, allJsas, ref),
-footerBuilder: 
-customActions?
-- enum PopupThemes{glass , classic}
-- don't use external listen - it only needed while popup is open, use additional list as listenable provided by picker (if needed to update listenable.value=[...old])
-- editItem callback 
-- check MediaQuery.of(context).size - if there is enogh space - use some offset for sublist popup (slightly below trigger)  
-- is window size very small  - use fullscreen popups   like my   SmartAlertDialog(fullscreenBreakpoint: 600, ...
-- UX problem: users didn't understand that there is search field in popup - add some hint or icon
-- make it more like material 3 SearchAnchor - pass through parameters to SearchAnchor
-- allow more small customizations - like icon, trailingIcons of items in list without full itemBuilder
-- allow: selectedStyle (bold default)? better selectedWidget?
- 
+Ideas backlog: [`docs/TODO.md`](docs/TODO.md)
 
 ## MIT License
