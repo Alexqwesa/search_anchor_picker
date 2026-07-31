@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_relative_lib_imports
+
 import '../example/example_of_generic_search_selector/lib/main_radio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

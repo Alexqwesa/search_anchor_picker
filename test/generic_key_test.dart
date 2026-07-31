@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_relative_lib_imports
+
 import '../example/example_of_generic_search_selector/lib/main.dart'; // for DemoItem
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +13,8 @@ void main() {
       const DemoItem(id: 3, label: 'Item 3', group: 'A'),
     ];
 
-    final log = <List<String>>[];
+    final selected = <String>{'2'};
+    var finishCount = 0;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -25,8 +28,11 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinishReplaceAll: (ids) async {
-                log.add(ids);
+              onFinish: ({required added, required removed}) async {
+                finishCount++;
+                selected
+                  ..addAll(added)
+                  ..removeAll(removed);
               },
             ),
           ),
@@ -60,11 +66,11 @@ void main() {
     expect(cb1.value, isTrue);
 
     // Close
-    await tester.tapAt(const Offset(1, 1)); // Tap outside
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    expect(log.length, 1);
-    expect(log.last, unorderedEquals(<String>['2', '1']));
+    expect(finishCount, 1);
+    expect(selected, <String>{'2', '1'});
   });
 
   testWidgets('Generic Selection: Record IDs (int, int)', (tester) async {
@@ -74,7 +80,8 @@ void main() {
       const DemoItem(id: 3, label: 'Item 3', group: 'A'),
     ];
 
-    final log = <List<(int, int)>>[];
+    final selected = <(int, int)>{(1, 100), (3, 300)};
+    var finishCount = 0;
 
     await tester.pumpWidget(
       MaterialApp(
@@ -89,8 +96,11 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinishReplaceAll: (ids) async {
-                log.add(ids);
+              onFinish: ({required added, required removed}) async {
+                finishCount++;
+                selected
+                  ..addAll(added)
+                  ..removeAll(removed);
               },
             ),
           ),
@@ -127,11 +137,10 @@ void main() {
     await tester.pump();
 
     // Close
-    await tester.tapAt(const Offset(1, 1));
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    expect(log.length, 1);
-    // Should contain (3, 300) and (2, 200). (1, 100) was removed.
-    expect(log.last, unorderedEquals(<(int, int)>[(3, 300), (2, 200)]));
+    expect(finishCount, 1);
+    expect(selected, <(int, int)>{(3, 300), (2, 200)});
   });
 }

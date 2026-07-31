@@ -85,9 +85,12 @@ void main() {
                 config: config,
                 initialSelectedIds: selectedIds,
                 mode: PickerMode.multi,
-                onFinishReplaceAll: (all) async {
+                onFinish: ({required added, required removed}) async {
                   setState(() {
-                    selectedIds = all;
+                    selectedIds = {
+                      ...selectedIds,
+                      ...added,
+                    }.difference(removed.toSet()).toList();
                   });
                 },
               ),

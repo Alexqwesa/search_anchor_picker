@@ -2,7 +2,7 @@ name: generic_search_selector
 description: >-
   Generic searchable picker (multi-select / radio) with stable in-overlay
   selection, nested sub-pickers, and optional async toggle gating.
-version: 0.0.3
+version: 0.0.4
 homepage: https://github.com/Alexqwesa/generic_search_selector
 repository: https://github.com/Alexqwesa/generic_search_selector
 issue_tracker: https://github.com/Alexqwesa/generic_search_selector/issues

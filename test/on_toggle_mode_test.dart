@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_underscores
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -23,10 +25,8 @@ void main() {
             initialSelectedIds: const [],
             onToggleMode: OnToggleMode.optimistic,
             onToggle: (_, __) => gate.future,
-            triggerBuilder: (_, open, __) => ElevatedButton(
-              onPressed: open,
-              child: const Text('open'),
-            ),
+            triggerBuilder: (_, open, __) =>
+                ElevatedButton(onPressed: open, child: const Text('open')),
           ),
         ),
       ),
@@ -69,10 +69,8 @@ void main() {
             ),
             initialSelectedIds: const [],
             onToggle: (_, __) => gate.future,
-            triggerBuilder: (_, open, __) => ElevatedButton(
-              onPressed: open,
-              child: const Text('open'),
-            ),
+            triggerBuilder: (_, open, __) =>
+                ElevatedButton(onPressed: open, child: const Text('open')),
           ),
         ),
       ),
@@ -96,5 +94,74 @@ void main() {
       find.byType(CheckboxListTile).first,
     );
     expect(checkbox.value, true);
+  });
+
+  testWidgets('awaitGate rejection leaves selection and deltas unchanged', (
+    tester,
+  ) async {
+    List<int> addedIds = [];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: PickerConfig(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [],
+            onToggle: (_, _) async => false,
+            onFinish: ({required added, required removed}) async {
+              addedIds = added;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      false,
+    );
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(addedIds, isEmpty);
+  });
+
+  testWidgets('optimistic success remains selected and reports delta', (
+    tester,
+  ) async {
+    List<int> addedIds = [];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: PickerConfig(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [],
+            onToggleMode: OnToggleMode.optimistic,
+            onToggle: (_, _) async => true,
+            onFinish: ({required added, required removed}) async {
+              addedIds = added;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(addedIds, [1]);
   });
 }

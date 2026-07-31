@@ -1,12 +1,24 @@
+// ignore_for_file: unnecessary_underscores
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:generic_search_selector/generic_search_selector.dart';
+
+Widget _pendingIds(GenericPickerActions<int, int> actions) {
+  return ValueListenableBuilder<Set<int>>(
+    valueListenable: actions.pendingN,
+    builder: (context, pending, _) {
+      final sorted = pending.toList()..sort();
+      return Text('Pending: ${sorted.join(',')}');
+    },
+  );
+}
 
 void main() {
   testWidgets(
     'partial results preserve unseen selections and report only explicit unselects',
     (tester) async {
-      List<int> finalIds = [];
+      final finalIds = <int>{1, 2, 3};
       List<int> addedIds = [];
       List<int> removedIds = [];
 
@@ -26,9 +38,9 @@ void main() {
               onFinish: ({required added, required removed}) async {
                 addedIds = added;
                 removedIds = removed;
-              },
-              onFinishReplaceAll: (ids) async {
-                finalIds = ids;
+                finalIds
+                  ..addAll(added)
+                  ..removeAll(removed);
               },
             ),
           ),
@@ -43,14 +55,14 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      expect(finalIds.toSet(), {1, 3});
+      expect(finalIds, {1, 3});
       expect(addedIds, isEmpty);
       expect(removedIds, [2]);
     },
   );
 
   testWidgets('user row checks are reported as added', (tester) async {
-    List<int> finalIds = [];
+    final finalIds = <int>{1, 2, 3};
     List<int> addedIds = [];
     List<int> removedIds = [];
 
@@ -70,9 +82,9 @@ void main() {
             onFinish: ({required added, required removed}) async {
               addedIds = added;
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
+              finalIds
+                ..addAll(added)
+                ..removeAll(removed);
             },
           ),
         ),
@@ -87,7 +99,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 2, 3, 4});
+    expect(finalIds, {1, 2, 3, 4});
     expect(addedIds, [4]);
     expect(removedIds, isEmpty);
   });
@@ -95,7 +107,7 @@ void main() {
   testWidgets(
     'closing partial results without toggles preserves all selected ids',
     (tester) async {
-      List<int> finalIds = [];
+      final finalIds = <int>{1, 2, 3};
       List<int> removedIds = [];
 
       await tester.pumpWidget(
@@ -113,9 +125,9 @@ void main() {
                   ElevatedButton(onPressed: open, child: const Text('Open')),
               onFinish: ({required added, required removed}) async {
                 removedIds = removed;
-              },
-              onFinishReplaceAll: (ids) async {
-                finalIds = ids;
+                finalIds
+                  ..addAll(added)
+                  ..removeAll(removed);
               },
             ),
           ),
@@ -127,7 +139,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      expect(finalIds.toSet(), {1, 2, 3});
+      expect(finalIds, {1, 2, 3});
       expect(removedIds, isEmpty);
     },
   );
@@ -137,7 +149,7 @@ void main() {
     (tester) async {
       final refreshN = ValueNotifier<int>(0);
       var items = [1];
-      List<int> finalIds = [];
+      final finalIds = <int>{1, 2};
       List<int> removedIds = [];
 
       await tester.pumpWidget(
@@ -156,9 +168,9 @@ void main() {
                   ElevatedButton(onPressed: open, child: const Text('Open')),
               onFinish: ({required added, required removed}) async {
                 removedIds = removed;
-              },
-              onFinishReplaceAll: (ids) async {
-                finalIds = ids;
+                finalIds
+                  ..addAll(added)
+                  ..removeAll(removed);
               },
             ),
           ),
@@ -174,7 +186,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      expect(finalIds.toSet(), {1, 2});
+      expect(finalIds, {1, 2});
       expect(removedIds, isEmpty);
     },
   );
@@ -183,7 +195,6 @@ void main() {
     'parent changing initialSelectedIds while open explicitly reseeds pending',
     (tester) async {
       final selectedN = ValueNotifier<List<int>>(const [1, 2, 3]);
-      List<int> finalIds = [];
       List<int> removedIds = [];
 
       await tester.pumpWidget(
@@ -206,9 +217,6 @@ void main() {
                   ),
                   onFinish: ({required added, required removed}) async {
                     removedIds = removed;
-                  },
-                  onFinishReplaceAll: (ids) async {
-                    finalIds = ids;
                   },
                 );
               },
@@ -222,10 +230,32 @@ void main() {
 
       selectedN.value = const [1];
       await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.ancestor(
+                of: find.text('Item 1'),
+                matching: find.byType(CheckboxListTile),
+              ),
+            )
+            .value,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.ancestor(
+                of: find.text('Item 2'),
+                matching: find.byType(CheckboxListTile),
+              ),
+            )
+            .value,
+        isFalse,
+      );
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      expect(finalIds, [1]);
       expect(removedIds, isEmpty);
     },
   );
@@ -234,7 +264,6 @@ void main() {
     'temporary empty initialSelectedIds while open does not report removals',
     (tester) async {
       final selectedN = ValueNotifier<List<int>>(const [1, 2, 3]);
-      var replaceAllCalled = false;
       List<int> removedIds = [];
 
       await tester.pumpWidget(
@@ -257,9 +286,6 @@ void main() {
                   ),
                   onFinish: ({required added, required removed}) async {
                     removedIds = removed;
-                  },
-                  onFinishReplaceAll: (_) async {
-                    replaceAllCalled = true;
                   },
                 );
               },
@@ -276,7 +302,6 @@ void main() {
       await tester.tap(find.byIcon(Icons.arrow_back));
       await tester.pumpAndSettle();
 
-      expect(replaceAllCalled, isFalse);
       expect(removedIds, isEmpty);
     },
   );
@@ -284,7 +309,6 @@ void main() {
   testWidgets('PickerActions changes final ids but do not report removed ids', (
     tester,
   ) async {
-    List<int> finalIds = [];
     List<int> removedIds = [];
 
     await tester.pumpWidget(
@@ -304,15 +328,13 @@ void main() {
                   onPressed: actions.pendingClearLoaded,
                   child: const Text('Clear from header'),
                 ),
+                _pendingIds(actions),
               ];
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
             },
           ),
         ),
@@ -323,17 +345,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear from header'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Save empty'));
+    expect(find.text('Pending: '), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds, isEmpty);
     expect(removedIds, isEmpty);
   });
 
   testWidgets('pendingClearLoaded preserves ids outside current loaded list', (
     tester,
   ) async {
-    List<int> finalIds = [];
     List<int> removedIds = [];
 
     await tester.pumpWidget(
@@ -353,15 +374,13 @@ void main() {
                   onPressed: actions.pendingClearLoaded,
                   child: const Text('Clear current list'),
                 ),
+                _pendingIds(actions),
               ];
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
             },
           ),
         ),
@@ -372,17 +391,16 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear current list'));
     await tester.pumpAndSettle();
+    expect(find.text('Pending: 1,3'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 3});
     expect(removedIds, isEmpty);
   });
 
   testWidgets('pendingClearLoaded changes final ids without deltas', (
     tester,
   ) async {
-    List<int> finalIds = [];
     List<int> removedIds = [];
 
     await tester.pumpWidget(
@@ -402,15 +420,13 @@ void main() {
                   onPressed: actions.pendingClearLoaded,
                   child: const Text('Clear loaded'),
                 ),
+                _pendingIds(actions),
               ];
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
             },
           ),
         ),
@@ -421,17 +437,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear loaded'));
     await tester.pumpAndSettle();
+    expect(find.text('Pending: 1,3'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 3});
     expect(removedIds, isEmpty);
   });
 
   testWidgets('clearLoadedAsDelta reports loaded selected ids as removed', (
     tester,
   ) async {
-    List<int> finalIds = [];
+    final finalIds = <int>{1, 2, 3};
     List<int> removedIds = [];
 
     await tester.pumpWidget(
@@ -457,9 +473,9 @@ void main() {
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
+              finalIds
+                ..addAll(added)
+                ..removeAll(removed);
             },
           ),
         ),
@@ -473,14 +489,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 3});
+    expect(finalIds, {1, 3});
     expect(removedIds, [2]);
   });
 
   testWidgets('selectLoadedAsDelta reports loaded unselected ids as added', (
     tester,
   ) async {
-    List<int> finalIds = [];
+    final finalIds = <int>{1, 2, 3};
     List<int> addedIds = [];
 
     await tester.pumpWidget(
@@ -506,9 +522,9 @@ void main() {
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               addedIds = added;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
+              finalIds
+                ..addAll(added)
+                ..removeAll(removed);
             },
           ),
         ),
@@ -522,14 +538,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 2, 3, 4});
+    expect(finalIds, {1, 2, 3, 4});
     expect(addedIds, [4]);
   });
 
   testWidgets('clearFilteredAsDelta reports only filtered selected ids', (
     tester,
   ) async {
-    List<int> finalIds = [];
+    final finalIds = <int>{1, 2, 3};
     List<int> removedIds = [];
 
     await tester.pumpWidget(
@@ -555,9 +571,9 @@ void main() {
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
+              finalIds
+                ..addAll(added)
+                ..removeAll(removed);
             },
           ),
         ),
@@ -573,14 +589,14 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 3});
+    expect(finalIds, {1, 3});
     expect(removedIds, [2]);
   });
 
   testWidgets('selectFilteredAsDelta reports only filtered unselected ids', (
     tester,
   ) async {
-    List<int> finalIds = [];
+    final finalIds = <int>{1};
     List<int> addedIds = [];
 
     await tester.pumpWidget(
@@ -606,9 +622,9 @@ void main() {
                 ElevatedButton(onPressed: open, child: const Text('Open')),
             onFinish: ({required added, required removed}) async {
               addedIds = added;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
+              finalIds
+                ..addAll(added)
+                ..removeAll(removed);
             },
           ),
         ),
@@ -624,14 +640,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {1, 3});
+    expect(finalIds, {1, 3});
     expect(addedIds, [3]);
   });
 
   testWidgets('toggleIdAsDelta reports delta while toggleId does not', (
     tester,
   ) async {
-    List<int> finalIds = [];
     List<int> addedIds = [];
     List<int> removedIds = [];
 
@@ -660,6 +675,7 @@ void main() {
                   onPressed: () => actions.toggleIdAsDelta(1, false),
                   child: const Text('Toggle remove delta'),
                 ),
+                _pendingIds(actions),
               ];
             },
             triggerBuilder: (_, open, __) =>
@@ -667,9 +683,6 @@ void main() {
             onFinish: ({required added, required removed}) async {
               addedIds = added;
               removedIds = removed;
-            },
-            onFinishReplaceAll: (ids) async {
-              finalIds = ids;
             },
           ),
         ),
@@ -684,16 +697,18 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Toggle remove delta'));
     await tester.pumpAndSettle();
+    expect(find.text('Pending: 2,3'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(finalIds.toSet(), {2, 3});
     expect(addedIds, [3]);
     expect(removedIds, [1]);
   });
 
-  testWidgets('empty replace-all can be disabled explicitly', (tester) async {
-    var replaceAllCalled = false;
+  testWidgets('deprecated replace-all requires explicit empty confirmation', (
+    tester,
+  ) async {
+    final events = <String>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -706,11 +721,14 @@ void main() {
               searchTermsOf: (i) => ['Item $i'],
             ),
             initialSelectedIds: const [1],
-            showSaveEmptyButton: false,
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
+            onFinish: ({required added, required removed}) async {
+              events.add('delta:${removed.join(',')}');
+            },
+            // ignore: deprecated_member_use_from_same_package
             onFinishReplaceAll: (_) async {
-              replaceAllCalled = true;
+              events.add('replace-empty');
             },
           ),
         ),
@@ -721,10 +739,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Item 1'));
     await tester.pumpAndSettle();
+    expect(find.text('Save empty'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
+    expect(events, ['delta:1']);
 
-    expect(find.text('Save empty'), findsNothing);
-    expect(replaceAllCalled, isFalse);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save empty'));
+    await tester.pumpAndSettle();
+    expect(events, ['delta:1', 'delta:1', 'replace-empty']);
   });
 }

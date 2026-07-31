@@ -4,20 +4,14 @@ import 'dart:ui' show clampDouble, lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:generic_search_selector/src/picker_debug.dart';
 import 'package:generic_search_selector/src/overlay_body.dart';
+import 'package:generic_search_selector/src/picker_builders.dart';
 import 'package:generic_search_selector/src/picker_config.dart';
+import 'package:generic_search_selector/src/picker_debug.dart';
+import 'package:generic_search_selector/src/selection_session.dart';
+import 'package:generic_search_selector/src/widgets/picker_defaults.dart';
 
-/// Generic SearchAnchor-based picker with stable in-overlay selection.
-///
-/// Key properties:
-/// - **No GlobalKey**
-/// - In-overlay selection stored in [_pendingN] (ValueNotifier)
-/// - External seed ([initialSelectedIds]): while **closed**, parent updates re-seed
-///   the next open; while **open**, changes may still sync into pending (post-frame)
-///   for nested sub-picker membership — see `docs/AGENTS.md`
-/// - Close is always deferred (post-frame) to avoid overlay/build-scope assertions
-/// - Optional [PickerConfig.listenable] allows live updates (e.g. ChangeNotifier repo)
+/// SearchAnchor-like picker with stable selection and nested popup support.
 class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   const GenericSearchAnchorPicker({
     super.key,
@@ -29,82 +23,96 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
     this.onFinish,
     this.onFinishReplaceAll,
     this.showSaveEmptyButton = true,
-    this.saveEmptyLabel = 'Save empty',
+    this.saveEmptyLabel,
     this.searchController,
     this.triggerBuilder,
     this.triggerChild,
-    this.iconWhenEmpty = const Icon(Icons.search),
-    this.iconWhenSelected = const Icon(Icons.search, color: Colors.green),
+    this.iconWhenEmpty,
+    this.iconWhenSelected,
     this.iconSize,
-    this.maxHeight = 520,
-    this.minWidth = 400,
+    this.maxHeight,
+    this.minWidth,
     this.headerBuilder,
     this.headerTiles,
     this.selectedFirst,
     this.closeQueryBehavior = CloseQueryBehavior.keep,
     this.itemBuilder,
+    this.resultsBuilder,
+    this.searchFieldBuilder,
+    this.loadingBuilder,
+    this.emptyBuilder,
+    this.errorBuilder,
+    this.saveEmptyBuilder,
+    this.viewBuilder,
+    this.viewSurfaceBuilder,
     this.menuOffset = Offset.zero,
     this.menuOffsetAnimationDuration = const Duration(milliseconds: 120),
+    this.isFullScreen,
+    this.viewLeading,
+    this.viewTrailing,
+    this.viewHintText,
+    this.viewBackgroundColor,
+    this.viewElevation,
+    this.viewSurfaceTintColor,
+    this.viewSide,
+    this.viewShape,
+    this.viewBarPadding,
+    this.headerHeight,
+    this.headerTextStyle,
+    this.headerHintStyle,
+    this.dividerColor,
+    this.viewConstraints,
+    this.viewPadding,
+    this.shrinkWrap,
+    this.textCapitalization,
+    this.viewOnChanged,
+    this.viewOnSubmitted,
+    this.viewOnClose,
+    this.viewOnOpen,
+    this.textInputAction,
+    this.keyboardType,
+    this.enabled = true,
+    this.smartDashesType,
+    this.smartQuotesType,
   });
 
   final GenericPickerConfig<T, K> config;
-
-  /// External seed selection (see class doc and `docs/AGENTS.md`).
   final List<K> initialSelectedIds;
-
   final PickerMode mode;
-
-  /// Optional gate (e.g. remote ops). Return false to reject UI change.
   final Future<bool> Function(T item, bool nextSelected)? onToggle;
-
-  /// Whether [onToggle] runs before or after in-overlay checkbox updates.
   final OnToggleMode onToggleMode;
-
-  /// Called once when overlay closes with user row-toggle changes.
   final GenericOnFinish<K>? onFinish;
 
-  /// Called once when overlay closes with the full final selection.
-  ///
-  /// If the final selection is empty, this callback runs only after the user
-  /// explicitly presses the save-empty button. Set [showSaveEmptyButton] to
-  /// false to disable empty replace-all saves.
+  @Deprecated(
+    'Unsafe with server-side filtering or pagination. Use onFinish for explicit '
+    'deltas or onToggle for per-item persistence.',
+  )
   final GenericOnFinishReplaceAll<K>? onFinishReplaceAll;
 
   final bool showSaveEmptyButton;
-  final String saveEmptyLabel;
-
+  final String? saveEmptyLabel;
   final SearchController? searchController;
-
-  /// Optional trigger builder (gets open callback + version tick).
-  final Widget Function(BuildContext context, VoidCallback open, int version)?
-  triggerBuilder;
-
+  final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget? triggerChild;
-
-  final Widget iconWhenEmpty;
-  final Widget iconWhenSelected;
+  final Widget? iconWhenEmpty;
+  final Widget? iconWhenSelected;
   final double? iconSize;
 
-  final double maxHeight;
-  final double minWidth;
+  @Deprecated('Use viewConstraints instead.')
+  final double? maxHeight;
 
-  /// Preferred: build header widgets with [PickerActions].
+  @Deprecated('Use viewConstraints instead.')
+  final double? minWidth;
+
   final List<Widget> Function(
     BuildContext context,
     GenericPickerActions<T, K> actions,
     List<T> allItems,
   )?
   headerBuilder;
-
-  /// Legacy static header tiles (used if headerBuilder is null).
   final List<Widget>? headerTiles;
-
-  /// Overrides config.selectedFirst if set.
   final bool? selectedFirst;
-
   final CloseQueryBehavior closeQueryBehavior;
-
-  /// Optional builder for custom item rendering in the list.
   final Widget Function(
     BuildContext context,
     T item,
@@ -112,15 +120,45 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
     VoidCallback toggle,
   )?
   itemBuilder;
+  final PickerResultsBuilder? resultsBuilder;
+  final PickerSearchFieldBuilder? searchFieldBuilder;
+  final PickerLoadingBuilder? loadingBuilder;
+  final PickerEmptyBuilder? emptyBuilder;
+  final PickerErrorBuilder? errorBuilder;
+  final PickerSaveEmptyBuilder? saveEmptyBuilder;
+  final PickerViewBuilder? viewBuilder;
+  final PickerViewSurfaceBuilder? viewSurfaceBuilder;
 
-  /// Offset applied to the popup menu after it opens.
-  ///
-  /// The menu is shown at its default position and then quickly animates to
-  /// this translation, which is useful for nested menus that need slightly
-  /// different coordinates.
   final Offset menuOffset;
-
   final Duration menuOffsetAnimationDuration;
+
+  final bool? isFullScreen;
+  final Widget? viewLeading;
+  final Iterable<Widget>? viewTrailing;
+  final String? viewHintText;
+  final Color? viewBackgroundColor;
+  final double? viewElevation;
+  final Color? viewSurfaceTintColor;
+  final BorderSide? viewSide;
+  final OutlinedBorder? viewShape;
+  final EdgeInsetsGeometry? viewBarPadding;
+  final double? headerHeight;
+  final TextStyle? headerTextStyle;
+  final TextStyle? headerHintStyle;
+  final Color? dividerColor;
+  final BoxConstraints? viewConstraints;
+  final EdgeInsetsGeometry? viewPadding;
+  final bool? shrinkWrap;
+  final TextCapitalization? textCapitalization;
+  final ValueChanged<String>? viewOnChanged;
+  final ValueChanged<String>? viewOnSubmitted;
+  final VoidCallback? viewOnClose;
+  final VoidCallback? viewOnOpen;
+  final TextInputAction? textInputAction;
+  final TextInputType? keyboardType;
+  final bool enabled;
+  final SmartDashesType? smartDashesType;
+  final SmartQuotesType? smartQuotesType;
 
   @override
   State<GenericSearchAnchorPicker<T, K>> createState() =>
@@ -152,348 +190,421 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     super.selectedFirst,
     super.closeQueryBehavior,
     super.itemBuilder,
+    super.resultsBuilder,
+    super.searchFieldBuilder,
+    super.loadingBuilder,
+    super.emptyBuilder,
+    super.errorBuilder,
+    super.saveEmptyBuilder,
+    super.viewBuilder,
+    super.viewSurfaceBuilder,
     super.menuOffset,
     super.menuOffsetAnimationDuration,
+    super.isFullScreen,
+    super.viewLeading,
+    super.viewTrailing,
+    super.viewHintText,
+    super.viewBackgroundColor,
+    super.viewElevation,
+    super.viewSurfaceTintColor,
+    super.viewSide,
+    super.viewShape,
+    super.viewBarPadding,
+    super.headerHeight,
+    super.headerTextStyle,
+    super.headerHintStyle,
+    super.dividerColor,
+    super.viewConstraints,
+    super.viewPadding,
+    super.shrinkWrap,
+    super.textCapitalization,
+    super.viewOnChanged,
+    super.viewOnSubmitted,
+    super.viewOnClose,
+    super.viewOnOpen,
+    super.textInputAction,
+    super.keyboardType,
+    super.enabled,
+    super.smartDashesType,
+    super.smartQuotesType,
   });
 }
 
-const Duration _kOpenViewDuration = Duration(milliseconds: 600);
-const Curve _kOpenViewCurve = Curves.easeInOutCubicEmphasized;
-const Curve _kViewFadeOnInterval = Interval(0.0, 0.5);
+const Duration _openViewDuration = Duration(milliseconds: 600);
+const Curve _openViewCurve = Curves.easeInOutCubicEmphasized;
+const Curve _viewFadeCurve = Interval(0, 0.5);
+
+abstract interface class _PickerBackTarget {
+  void handleSystemBack();
+}
+
+final List<_PickerBackTarget> _openPickerStack = <_PickerBackTarget>[];
 
 class _GenericSearchAnchorPickerState<T, K>
     extends State<GenericSearchAnchorPicker<T, K>>
-    with SingleTickerProviderStateMixin {
-  late final SearchController _owned = SearchController();
-  late final AnimationController _openController;
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver
+    implements _PickerBackTarget {
+  SearchController? _ownedController;
+  AnimationController? _openController;
+  PickerSelectionSession<K>? _selectionSession;
+
+  SearchController get _controller =>
+      widget.searchController ?? (_ownedController ??= SearchController());
+  AnimationController get _animationController =>
+      _openController ??= AnimationController(
+        vsync: this,
+        duration: _openViewDuration,
+      )..addListener(() => _overlayEntry?.markNeedsBuild());
+  PickerSelectionSession<K> get _selection => _selectionSession ??=
+      PickerSelectionSession<K>(widget.initialSelectedIds);
+  ValueNotifier<Set<K>> get _pendingN => _selection.pendingN;
+
   OverlayEntry? _overlayEntry;
   OverlayState? _overlayState;
-  Rect _openedAnchorRect = Rect.zero;
-  Size _openedAnchorSize = Size.zero;
   BuildContext? _triggerContext;
-
-  SearchController get _ctrl => widget.searchController ?? _owned;
-
-  late final ValueNotifier<Set<K>> _pendingN = ValueNotifier<Set<K>>(
-    widget.initialSelectedIds.toSet(),
-  );
-
-  Set<K> _openedSnapshot = <K>{};
-  final Set<K> _explicitlyAdded = <K>{};
-  final Set<K> _explicitlyRemoved = <K>{};
-  bool _allowReplaceAllEmpty = false;
+  Rect _openedAnchorRect = Rect.zero;
   bool _open = false;
-
+  bool _allowReplaceAllEmpty = false;
   int _tick = 0;
-  final ValueNotifier<int> _viewTickN = ValueNotifier(0);
-
-  /// Stable order is derived from items at open time.
-  /// While open, we keep the *relative* order stable but allow new items to appear.
+  ValueNotifier<int>? _viewTickNotifier;
+  ValueNotifier<int> get _viewTickN =>
+      _viewTickNotifier ??= ValueNotifier<int>(0);
+  Map<Object, GlobalKey>? _headerKeys;
   List<K> _stableIds = <K>[];
-
-  VoidCallback? _listenableCb;
+  List<T>? _itemsSnapshot;
+  Object? _loadError;
+  StackTrace? _loadStackTrace;
+  bool _loading = false;
+  int _loadGeneration = 0;
+  VoidCallback? _listenableCallback;
 
   @override
   void initState() {
     super.initState();
-    _openController = AnimationController(
-      vsync: this,
-      duration: _kOpenViewDuration,
-    )..addListener(() => _overlayEntry?.markNeedsBuild());
-    _attachListenable(widget.config.listenable);
     _bindConfigControl();
   }
 
   void _bindConfigControl() {
     widget.config.internalOnOpen = _requestOpen;
-    // Usage of closure protects against tearing off methods if signatures vary slightly,
-    // and allows cleaner unbinding.
     widget.config.internalOnClose = ([reason]) => _close(reason);
   }
 
   void _unbindConfigControl(GenericPickerConfig<T, K> config) {
     if (config.internalOnOpen == _requestOpen) config.internalOnOpen = null;
-    // We can't identify the closure wrapper easily so we blindly clear it
-    // assuming we are the owner.
     config.internalOnClose = null;
   }
 
-  List<T>? _itemsSnapshot;
-
-  // bool _loading = false; // Unused
-  final Map<Object, GlobalKey> _headerKeys = {};
-
-  GlobalKey _getKey(Object id) {
-    return _headerKeys.putIfAbsent(id, () => GlobalKey());
+  void _attachListenable(Listenable? listenable) {
+    if (listenable == null) return;
+    _listenableCallback = _reload;
+    listenable.addListener(_listenableCallback!);
   }
 
-  void _reload() {
-    if (!mounted) return;
-    // _loading = true;
-    // Notify overlay to show loading if needed (optional)
-    widget.config.loadItems(context).then((items) {
-      if (!mounted) return;
-
-      _itemsSnapshot = items;
-      // _loading = false;
-      _viewTickN.value++;
-    });
+  void _detachListenable(Listenable? listenable) {
+    if (listenable == null || _listenableCallback == null) return;
+    listenable.removeListener(_listenableCallback!);
+    _listenableCallback = null;
   }
 
   @override
   void didUpdateWidget(covariant GenericSearchAnchorPicker<T, K> oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     if (oldWidget.config != widget.config) {
       _unbindConfigControl(oldWidget.config);
       _bindConfigControl();
-    }
-
-    if (oldWidget.config.listenable != widget.config.listenable) {
+      if (_open) {
+        _detachListenable(oldWidget.config.listenable);
+        _attachListenable(widget.config.listenable);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _open) _reload();
+        });
+      }
+    } else if (_open &&
+        oldWidget.config.listenable != widget.config.listenable) {
       _detachListenable(oldWidget.config.listenable);
       _attachListenable(widget.config.listenable);
     }
 
-    // Sync external seed into pending (even while open — sub-picker membership).
     if (!_listEquals(oldWidget.initialSelectedIds, widget.initialSelectedIds)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _pendingN.value = widget.initialSelectedIds.toSet();
+        if (mounted && _open) _selection.reseed(widget.initialSelectedIds);
       });
     }
   }
 
   @override
   void dispose() {
+    _loadGeneration++;
+    WidgetsBinding.instance.removeObserver(this);
+    _openPickerStack.remove(this);
     _removeOverlay();
     _unbindConfigControl(widget.config);
     _detachListenable(widget.config.listenable);
-    _pendingN.dispose();
-    _openController.dispose();
-    if (widget.searchController == null) {
-      _owned.dispose();
-    }
-    // if (!_open) _viewTickN.dispose();
-    // Same fix as controller: avoid disposing if view is animating out.
-    // _viewTickN.dispose();
-    // if (widget.searchController == null) {
-    // Prevent crash if disposed while overlay is animating out
-    // if (!_open) _owned.dispose();
-    // }
+    _selectionSession?.dispose();
+    _viewTickNotifier?.dispose();
+    _openController?.dispose();
+    _ownedController?.dispose();
     super.dispose();
   }
 
-  void _attachListenable(Listenable? l) {
-    if (l == null) return;
-    _listenableCb = () {
-      if (!mounted) return;
-      // Triggers reload which eventually updates _viewTickN
-      _reload();
-    };
-    l.addListener(_listenableCb!);
-  }
+  void _reload() {
+    if (!mounted || !_open) return;
+    final generation = ++_loadGeneration;
+    _loading = true;
+    _loadError = null;
+    _loadStackTrace = null;
+    _viewTickN.value++;
 
-  void _detachListenable(Listenable? l) {
-    if (l == null || _listenableCb == null) return;
-    l.removeListener(_listenableCb!);
-    _listenableCb = null;
+    Future<List<T>>.sync(() => widget.config.loadItems(context)).then(
+      (items) {
+        if (!mounted || !_open || generation != _loadGeneration) return;
+        _itemsSnapshot = items;
+        _loading = false;
+        _viewTickN.value++;
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!mounted || !_open || generation != _loadGeneration) return;
+        _loading = false;
+        _loadError = error;
+        _loadStackTrace = stackTrace;
+        _viewTickN.value++;
+      },
+    );
   }
 
   void _onOpen() {
-    _openedSnapshot = widget.initialSelectedIds.toSet();
-    _explicitlyAdded.clear();
-    _explicitlyRemoved.clear();
+    _selection.open(widget.initialSelectedIds);
     _allowReplaceAllEmpty = false;
-    _pendingN.value = {..._openedSnapshot};
-
     _stableIds = <K>[];
-    _open = true;
-
-    // Load items on open
+    _itemsSnapshot = null;
+    _loadError = null;
+    _loadStackTrace = null;
+    setState(() => _open = true);
+    _openPickerStack
+      ..remove(this)
+      ..add(this);
+    _attachListenable(widget.config.listenable);
+    WidgetsBinding.instance
+      ..removeObserver(this)
+      ..addObserver(this);
+    _callLifecycleCallback('viewOnOpen', widget.viewOnOpen);
     _reload();
   }
 
   void _requestOpen() {
+    if (_open || !widget.enabled) return;
     PickerDebug.log('SearchAnchorPicker: Opening picker');
-    if (_open) return;
     _onOpen();
     _showOverlay();
   }
 
-  void _close([String? reasonIgnored, bool skipCloseView = false]) {
-    PickerDebug.log(
-      'SearchAnchorPicker: Closing picker. Reason=$reasonIgnored, skipCloseView=$skipCloseView',
-    );
-    final queryAtClose = _ctrl.text;
+  void _close([String? reason]) {
+    if (!_open) return;
+    PickerDebug.log('SearchAnchorPicker: Closing picker. Reason=$reason');
+    setState(() => _open = false);
+    WidgetsBinding.instance.removeObserver(this);
+    _openPickerStack.remove(this);
+    _loadGeneration++;
+    final queryAtClose = _controller.text;
+    final result = _selection.result();
+    final allowEmpty = _allowReplaceAllEmpty;
+    final onFinish = widget.onFinish;
+    // ignore: deprecated_member_use_from_same_package
+    final onFinishReplaceAll = widget.onFinishReplaceAll;
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
+    _headerKeys = null;
+    _detachListenable(widget.config.listenable);
+    _callLifecycleCallback('viewOnClose', widget.viewOnClose);
 
-    // Apply query behavior on next frame (avoid build-scope issues).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.closeQueryBehavior == CloseQueryBehavior.clear) {
-        _ctrl.text = '';
+        _controller.clear();
       } else {
-        _ctrl.text = queryAtClose;
+        _controller.text = queryAtClose;
       }
+      unawaited(
+        _runCloseCallbacks(result, allowEmpty, onFinish, onFinishReplaceAll),
+      );
     });
+  }
 
-    final before = _openedSnapshot;
-    final after = _pendingN.value;
+  Future<void> _runCloseCallbacks(
+    PickerSelectionResult<K> result,
+    bool allowEmpty,
+    GenericOnFinish<K>? onFinish,
+    GenericOnFinishReplaceAll<K>? onFinishReplaceAll,
+  ) async {
+    try {
+      await onFinish?.call(
+        added: result.added.toList(),
+        removed: result.removed.toList(),
+      );
+    } catch (error, stackTrace) {
+      _reportCallbackError('onFinish', error, stackTrace);
+    }
 
-    final added = _explicitlyAdded
-        .intersection(after.difference(before))
-        .toList();
-    final removed = _explicitlyRemoved
-        .intersection(before.difference(after))
-        .toList();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-
-      // Guard against multiple calls to _close triggering multiple onFinish callbacks
-      if (!_open) return;
-      _open = false;
-
-      // Clear header keys on close to release them
-      _headerKeys.clear();
-
-      if (widget.onFinish != null) {
-        await widget.onFinish!(added: added, removed: removed);
+    try {
+      if (onFinishReplaceAll != null &&
+          (result.finalIds.isNotEmpty || allowEmpty)) {
+        await onFinishReplaceAll(result.finalIds.toList());
       }
+    } catch (error, stackTrace) {
+      _reportCallbackError('onFinishReplaceAll', error, stackTrace);
+    } finally {
+      if (mounted) setState(() => _tick++);
+    }
+  }
 
-      if (widget.onFinishReplaceAll != null &&
-          (after.isNotEmpty || _allowReplaceAllEmpty)) {
-        await widget.onFinishReplaceAll!(after.toList());
-      }
+  void _callLifecycleCallback(String name, VoidCallback? callback) {
+    if (callback == null) return;
+    try {
+      callback();
+    } catch (error, stackTrace) {
+      _reportCallbackError(name, error, stackTrace);
+    }
+  }
 
-      if (!mounted) return;
-      _viewTickN.value++;
-      setState(() => _tick++);
-    });
+  void _reportCallbackError(String callback, Object error, StackTrace stack) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'generic_search_selector',
+        context: ErrorDescription('while running $callback'),
+      ),
+    );
+  }
+
+  @override
+  void handleSystemBack() {
+    if (_openPickerStack.isEmpty || !identical(_openPickerStack.last, this)) {
+      return;
+    }
+    _close('systemBack');
+  }
+
+  @override
+  Future<bool> didPopRoute() async {
+    if (_openPickerStack.isEmpty) return false;
+    _openPickerStack.last.handleSystemBack();
+    return true;
   }
 
   void _showOverlay() {
     final overlay = Overlay.of(context);
-    if (overlay == null) return;
     _overlayState = overlay;
-    _openedAnchorSize = _anchorSize();
     _openedAnchorRect = _currentAnchorRect();
-    _openController.value = 0;
-    _overlayEntry?.remove();
-    _overlayEntry = OverlayEntry(builder: (context) => _buildOverlayEntry());
+    _animationController.value = 0;
+    _overlayEntry = OverlayEntry(builder: (_) => _buildOverlayEntry());
     overlay.insert(_overlayEntry!);
-    unawaited(_openController.forward());
+    unawaited(_animationController.forward());
   }
 
   void _removeOverlay() {
-    FocusManager.instance.primaryFocus?.unfocus();
     _overlayEntry?.remove();
     _overlayEntry = null;
     _overlayState = null;
   }
 
-  Size _anchorSize() {
-    final anchorContext = _triggerContext;
-    if (anchorContext == null) {
-      return Size(widget.minWidth, 0);
-    }
-    final renderBox = anchorContext.findRenderObject() as RenderBox?;
-    return renderBox?.size ?? Size(widget.minWidth, 0);
-  }
-
   Rect _currentAnchorRect() {
-    final anchorContext = _triggerContext;
-    if (anchorContext == null) {
-      return Offset.zero & Size(widget.minWidth, 0);
-    }
-
-    final anchorBox = anchorContext.findRenderObject() as RenderBox?;
+    final anchorBox = _triggerContext?.findRenderObject() as RenderBox?;
     final overlayBox = _overlayState?.context.findRenderObject() as RenderBox?;
-
     if (anchorBox == null || overlayBox == null) {
-      return Offset.zero & Size(widget.minWidth, 0);
+      return Offset.zero & Size(widget.minWidth ?? 360, 0);
     }
-
     final offset = anchorBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     return offset & anchorBox.size;
   }
 
+  GlobalKey _getKey(Object id) =>
+      (_headerKeys ??= <Object, GlobalKey>{}).putIfAbsent(id, GlobalKey.new);
+
   void _computeStableIds(List<T> items) {
     final selectedFirst = widget.selectedFirst ?? widget.config.selectedFirst;
-
-    final ids = items.map(widget.config.idOf).toList();
-
     if (!selectedFirst) {
+      final sorted = [...items];
       if (widget.config.comparator != null) {
-        final sorted = [...items]..sort(widget.config.comparator);
-        _stableIds = sorted.map(widget.config.idOf).toList();
-      } else {
-        _stableIds = ids;
+        sorted.sort(widget.config.comparator);
       }
+      _stableIds = sorted.map(widget.config.idOf).toList();
       return;
     }
-
     final selected = <T>[];
     final others = <T>[];
-
-    for (final it in items) {
-      (_openedSnapshot.contains(widget.config.idOf(it)) ? selected : others)
-          .add(it);
+    for (final item in items) {
+      (_selection.openedIds.contains(widget.config.idOf(item))
+              ? selected
+              : others)
+          .add(item);
     }
-
     if (widget.config.comparator != null) {
       selected.sort(widget.config.comparator);
       others.sort(widget.config.comparator);
     }
-
     _stableIds = [
       ...selected.map(widget.config.idOf),
       ...others.map(widget.config.idOf),
     ];
   }
 
-  /// Keep existing order for known ids; append new ids; drop removed ids.
   void _syncStableIds(List<T> items) {
-    final idsNow = items.map(widget.config.idOf).toSet();
-
-    // Drop ids that no longer exist.
-    _stableIds = _stableIds.where(idsNow.contains).toList();
-
-    // Append new ids.
+    final currentIds = items.map(widget.config.idOf).toSet();
+    _stableIds = _stableIds.where(currentIds.contains).toList();
     final known = _stableIds.toSet();
     final newItems = items
-        .where((it) => !known.contains(widget.config.idOf(it)))
+        .where((item) => !known.contains(widget.config.idOf(item)))
         .toList();
-
-    if (newItems.isNotEmpty) {
-      if (widget.config.comparator != null)
-        newItems.sort(widget.config.comparator);
-      _stableIds.addAll(newItems.map(widget.config.idOf));
+    if (widget.config.comparator != null) {
+      newItems.sort(widget.config.comparator);
     }
-
-    // If stableIds is empty (first build), compute from scratch.
+    _stableIds.addAll(newItems.map(widget.config.idOf));
     if (_stableIds.isEmpty) _computeStableIds(items);
   }
 
-  Widget _buildOverlayView() {
+  Iterable<K> _filteredLoadedIds() {
+    final items = _itemsSnapshot ?? <T>[];
+    final query = _controller.text.trim().toLowerCase();
+    if (query.isEmpty) return items.map(widget.config.idOf);
+    return items
+        .where(
+          (item) => widget.config
+              .searchTermsOf(item)
+              .any((term) => term.toLowerCase().contains(query)),
+        )
+        .map(widget.config.idOf);
+  }
+
+  void _recordUserPendingChange(Set<K> before, Set<K> after) {
+    _selection.recordExplicitChange(before, after);
+  }
+
+  Widget _buildResults(PickerViewStyle style) {
     return ValueListenableBuilder<int>(
       valueListenable: _viewTickN,
-      builder: (context, tick, _) {
-        final items = _itemsSnapshot;
-        if (items == null) {
-          return const SizedBox(
-            height: 140,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
+      builder: (context, _, child) {
+        if (_loading) {
+          return widget.loadingBuilder?.call(context) ??
+              const DefaultPickerLoading();
+        }
+        if (_loadError != null) {
+          return widget.errorBuilder?.call(
+                context,
+                _loadError!,
+                _loadStackTrace ?? StackTrace.empty,
+                _reload,
+              ) ??
+              DefaultPickerError(retry: _reload);
         }
 
+        final items = _itemsSnapshot ?? <T>[];
         if (_stableIds.isEmpty) {
           _computeStableIds(items);
         } else {
           _syncStableIds(items);
         }
-
         final actions = GenericPickerActions<T, K>(
           pendingN: _pendingN,
           idOf: widget.config.idOf,
@@ -501,27 +612,25 @@ class _GenericSearchAnchorPickerState<T, K>
           mode: widget.mode,
           getKey: _getKey,
           refresh: _reload,
-          visibleIds: items.map(widget.config.idOf),
           loadedIds: () => (_itemsSnapshot ?? <T>[]).map(widget.config.idOf),
           filteredIds: _filteredLoadedIds,
           recordDelta: _recordUserPendingChange,
         );
-
-        final header = widget.headerBuilder != null
-            ? widget.headerBuilder!(context, actions, items)
-            : (widget.headerTiles ?? const <Widget>[]);
-
-        final byId = <K, T>{for (final it in items) widget.config.idOf(it): it};
-        final stableOrder = <T>[
+        final header =
+            widget.headerBuilder?.call(context, actions, items) ??
+            widget.headerTiles ??
+            const <Widget>[];
+        final byId = <K, T>{
+          for (final item in items) widget.config.idOf(item): item,
+        };
+        final stableItems = <T>[
           for (final id in _stableIds)
             if (byId.containsKey(id)) byId[id]!,
         ];
-
         return OverlayBody<T, K>(
           header: header,
-          items: items,
-          stableOrder: stableOrder.isEmpty ? items : stableOrder,
-          ctrl: _ctrl,
+          stableOrder: stableItems.isEmpty ? items : stableItems,
+          ctrl: _controller,
           pendingN: _pendingN,
           mode: widget.mode,
           config: widget.config,
@@ -529,200 +638,180 @@ class _GenericSearchAnchorPickerState<T, K>
           onToggleMode: widget.onToggleMode,
           recordUserPendingChange: _recordUserPendingChange,
           close: _close,
+          shrinkWrap: style.shrinkWrap,
           itemBuilder: widget.itemBuilder,
+          resultsBuilder: widget.resultsBuilder,
+          emptyBuilder: widget.emptyBuilder,
         );
       },
     );
   }
 
-  Iterable<K> _filteredLoadedIds() {
-    final items = _itemsSnapshot ?? <T>[];
-    final q = _ctrl.text.trim().toLowerCase();
-    if (q.isEmpty) return items.map(widget.config.idOf);
-
-    return items
-        .where((item) {
-          for (final term in widget.config.searchTermsOf(item)) {
-            if (term.toLowerCase().contains(q)) return true;
-          }
-          return false;
-        })
-        .map(widget.config.idOf);
-  }
-
-  void _recordUserPendingChange(Set<K> before, Set<K> after) {
-    final added = after.difference(before);
-    final removed = before.difference(after);
-    _explicitlyAdded.addAll(added);
-    _explicitlyAdded.removeAll(removed);
-    _explicitlyRemoved.addAll(removed);
-    _explicitlyRemoved.removeAll(added);
-  }
-
-  void _saveEmptyAndClose() {
-    _allowReplaceAllEmpty = true;
-    _close('saveEmpty');
-  }
-
-  Widget _buildSearchField() {
-    return Builder(
-      builder: (context) {
-        final l10n = MaterialLocalizations.of(context);
-
-        return ListenableBuilder(
-          listenable: _ctrl,
-          builder: (context, _) {
-            return SearchBar(
-              controller: _ctrl,
-              autoFocus: true,
-              hintText:
-                  l10n.searchFieldLabel + " - " + (widget.config.title ?? ''),
-              leading: IconButton(
-                tooltip: l10n.backButtonTooltip,
-                icon: const Icon(Icons.arrow_back),
-                onPressed: _close,
-              ),
-              trailing: _ctrl.text.isEmpty
-                  ? null
-                  : [
-                      IconButton(
-                        tooltip: l10n.clearButtonTooltip,
-                        icon: const Icon(Icons.close),
-                        onPressed: () => _ctrl.clear(),
-                      ),
-                    ],
-              elevation: const WidgetStatePropertyAll<double>(0),
-              backgroundColor: const WidgetStatePropertyAll<Color>(
-                Colors.transparent,
-              ),
-              overlayColor: const WidgetStatePropertyAll<Color>(
-                Colors.transparent,
-              ),
-              side: const WidgetStatePropertyAll<BorderSide>(
-                BorderSide(color: Colors.transparent),
-              ),
-            );
-          },
+  Widget _buildSearchField(
+    BuildContext context,
+    PickerViewStyle style,
+    bool fullScreen,
+  ) {
+    return widget.searchFieldBuilder?.call(context, _controller, _close) ??
+        DefaultPickerSearchField(
+          controller: _controller,
+          close: _close,
+          style: style,
+          isFullScreen: fullScreen,
+          leading: widget.viewLeading,
+          trailing: widget.viewTrailing,
+          hintText: widget.viewHintText,
+          headerHeight: widget.headerHeight,
+          textCapitalization: widget.textCapitalization,
+          onChanged: widget.viewOnChanged,
+          onSubmitted: widget.viewOnSubmitted,
+          textInputAction: widget.textInputAction,
+          keyboardType: widget.keyboardType,
+          smartDashesType: widget.smartDashesType,
+          smartQuotesType: widget.smartQuotesType,
         );
-      },
-    );
   }
 
-  Widget _buildPopupSurface({
-    required double width,
-    required double maxHeight,
-  }) {
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      elevation: 6,
-      borderRadius: BorderRadius.circular(12),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: width,
-          maxWidth: width,
-          maxHeight: maxHeight,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSearchField(),
-            const Divider(height: 1),
-            _buildSaveEmptyButton(),
-            Flexible(child: _buildOverlayView()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSaveEmptyButton() {
+  Widget _buildSaveEmptyAction(BuildContext context) {
+    // ignore: deprecated_member_use_from_same_package
     if (widget.onFinishReplaceAll == null || !widget.showSaveEmptyButton) {
       return const SizedBox.shrink();
     }
-
     return ValueListenableBuilder<Set<K>>(
       valueListenable: _pendingN,
       builder: (context, pending, _) {
         if (pending.isNotEmpty) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-          child: FilledButton.tonal(
-            onPressed: _saveEmptyAndClose,
-            child: Text(widget.saveEmptyLabel),
-          ),
-        );
+        void save() {
+          _allowReplaceAllEmpty = true;
+          _close('saveEmpty');
+        }
+
+        return widget.saveEmptyBuilder?.call(context, save) ??
+            DefaultPickerSaveEmptyButton(
+              onPressed: save,
+              label: widget.saveEmptyLabel,
+            );
       },
     );
   }
 
-  Rect _basePopupRect(Size screenSize, TextDirection textDirection) {
-    final anchorRect = _openedAnchorRect;
-    final minWidth = math.min(widget.minWidth, screenSize.width);
-    final viewWidth = clampDouble(anchorRect.width, minWidth, screenSize.width);
-    final minHeight = math.min(240.0, widget.maxHeight);
-    final viewHeight = clampDouble(
-      screenSize.height * 2 / 3,
-      minHeight,
-      widget.maxHeight,
+  Widget _buildView(
+    BuildContext context,
+    PickerViewStyle style,
+    bool fullScreen,
+  ) {
+    final parts = PickerViewParts(
+      searchField: _buildSearchField(context, style, fullScreen),
+      divider: DividerTheme(
+        data: DividerTheme.of(context).copyWith(color: style.dividerColor),
+        child: const Divider(height: 1),
+      ),
+      saveEmptyAction: _buildSaveEmptyAction(context),
+      results: _buildResults(style),
     );
-
-    switch (textDirection) {
-      case TextDirection.ltr:
-        final viewLeftToScreenRight = screenSize.width - anchorRect.left;
-        final viewTopToScreenBottom = screenSize.height - anchorRect.top;
-
-        // Match SearchAnchor's default placement, then let menuOffset animate
-        // from that base rect.
-        var topLeft = anchorRect.topLeft;
-        if (viewLeftToScreenRight < viewWidth) {
-          topLeft = Offset(
-            screenSize.width - math.min(viewWidth, screenSize.width),
-            topLeft.dy,
-          );
-        }
-        if (viewTopToScreenBottom < viewHeight) {
-          topLeft = Offset(
-            topLeft.dx,
-            screenSize.height - math.min(viewHeight, screenSize.height),
-          );
-        }
-        return topLeft & Size(viewWidth, viewHeight);
-      case TextDirection.rtl:
-        final viewRightToScreenLeft = anchorRect.right;
-        final viewTopToScreenBottom = screenSize.height - anchorRect.top;
-
-        var topLeft = Offset(
-          math.max(anchorRect.right - viewWidth, 0.0),
-          anchorRect.top,
+    return widget.viewBuilder?.call(context, parts) ??
+        DefaultPickerView(
+          searchField: parts.searchField,
+          divider: parts.divider,
+          saveEmptyAction: parts.saveEmptyAction,
+          results: parts.results,
+          shrinkWrap: style.shrinkWrap,
         );
-        if (viewRightToScreenLeft < viewWidth) {
-          topLeft = Offset(0.0, topLeft.dy);
-        }
-        if (viewTopToScreenBottom < viewHeight) {
-          topLeft = Offset(
-            topLeft.dx,
-            screenSize.height - math.min(viewHeight, screenSize.height),
-          );
-        }
-        return topLeft & Size(viewWidth, viewHeight);
-    }
   }
 
-  Offset _resolvedMenuOffset({
-    required Rect baseRect,
-    required Size screenSize,
-  }) {
+  Widget _buildSurface(
+    BuildContext context,
+    PickerViewStyle style,
+    bool fullScreen,
+  ) {
+    final child = _buildView(context, style, fullScreen);
+    return widget.viewSurfaceBuilder?.call(context, child, fullScreen) ??
+        DefaultPickerViewSurface(style: style, child: child);
+  }
+
+  bool _isFullScreen(BuildContext context) {
+    return widget.isFullScreen ??
+        switch (Theme.of(context).platform) {
+          TargetPlatform.iOS ||
+          TargetPlatform.android ||
+          TargetPlatform.fuchsia => true,
+          TargetPlatform.macOS ||
+          TargetPlatform.linux ||
+          TargetPlatform.windows => false,
+        };
+  }
+
+  BoxConstraints? _legacyConstraints() {
+    if (widget.viewConstraints != null ||
+        (widget.minWidth == null && widget.maxHeight == null)) {
+      return widget.viewConstraints;
+    }
+    final maxHeight = widget.maxHeight ?? double.infinity;
+    return BoxConstraints(
+      minWidth: widget.minWidth ?? 360,
+      minHeight: math.min(240, maxHeight),
+      maxHeight: maxHeight,
+    );
+  }
+
+  PickerViewStyle _resolveStyle(BuildContext context, bool fullScreen) {
+    return PickerViewStyle.resolve(
+      context,
+      isFullScreen: fullScreen,
+      backgroundColor: widget.viewBackgroundColor,
+      elevation: widget.viewElevation,
+      surfaceTintColor: widget.viewSurfaceTintColor,
+      side: widget.viewSide,
+      shape: widget.viewShape,
+      headerTextStyle: widget.headerTextStyle,
+      headerHintStyle: widget.headerHintStyle,
+      dividerColor: widget.dividerColor,
+      constraints: _legacyConstraints(),
+      viewPadding: widget.viewPadding,
+      barPadding: widget.viewBarPadding,
+      shrinkWrap: widget.shrinkWrap,
+    );
+  }
+
+  Rect _basePopupRect(
+    Size screenSize,
+    TextDirection textDirection,
+    PickerViewStyle style,
+    bool fullScreen,
+  ) {
+    if (fullScreen) return Offset.zero & screenSize;
+    final constraints = style.constraints;
+    final width = clampDouble(
+      constraints.constrainWidth(_openedAnchorRect.width),
+      0,
+      screenSize.width,
+    );
+    final height = clampDouble(
+      constraints.constrainHeight(screenSize.height * 2 / 3),
+      0,
+      screenSize.height,
+    );
+    var left = textDirection == TextDirection.ltr
+        ? _openedAnchorRect.left
+        : _openedAnchorRect.right - width;
+    var top = _openedAnchorRect.top;
+    if (left + width > screenSize.width) left = screenSize.width - width;
+    if (left < 0) left = 0;
+    if (top + height > screenSize.height) top = screenSize.height - height;
+    if (top < 0) top = 0;
+    return Offset(left, top) & Size(width, height);
+  }
+
+  Offset _resolvedMenuOffset(Rect baseRect, Size screenSize, bool fullScreen) {
+    if (fullScreen) return Offset.zero;
     var dx = widget.menuOffset.dx;
     var dy = widget.menuOffset.dy;
-
     if (baseRect.left + dx < 0 || baseRect.right + dx > screenSize.width) {
       dx = 0;
     }
     if (baseRect.top + dy < 0 || baseRect.bottom + dy > screenSize.height) {
       dy = 0;
     }
-
     return Offset(dx, dy);
   }
 
@@ -730,60 +819,71 @@ class _GenericSearchAnchorPickerState<T, K>
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenSize = constraints.biggest;
-        final baseRect = _basePopupRect(screenSize, Directionality.of(context));
+        final fullScreen = _isFullScreen(context);
+        final style = _resolveStyle(context, fullScreen);
+        final baseRect = _basePopupRect(
+          screenSize,
+          Directionality.of(context),
+          style,
+          fullScreen,
+        );
         final resolvedOffset = _resolvedMenuOffset(
-          baseRect: baseRect,
-          screenSize: screenSize,
+          baseRect,
+          screenSize,
+          fullScreen,
         );
         final openAnimation = CurvedAnimation(
-          parent: _openController,
-          curve: _kOpenViewCurve,
+          parent: _animationController,
+          curve: _openViewCurve,
         );
         final fadeAnimation = CurvedAnimation(
-          parent: _openController,
-          curve: _kViewFadeOnInterval,
+          parent: _animationController,
+          curve: _viewFadeCurve,
         );
-        final offsetDuration =
+        final offsetFraction =
             widget.menuOffsetAnimationDuration.inMicroseconds <= 0
-            ? 1.0
+            ? 0.0
             : (widget.menuOffsetAnimationDuration.inMicroseconds /
-                      _kOpenViewDuration.inMicroseconds)
+                      _openViewDuration.inMicroseconds)
                   .clamp(0.0, 1.0);
-        final offsetAnimation = CurvedAnimation(
-          parent: _openController,
-          curve: Interval(0.0, offsetDuration, curve: Curves.easeOutCubic),
-        );
-        final animatedLeft = lerpDouble(
-          _openedAnchorRect.left,
-          baseRect.left,
-          openAnimation.value,
-        )!;
-        final animatedTop = lerpDouble(
-          _openedAnchorRect.top,
-          baseRect.top,
-          openAnimation.value,
-        )!;
-        final animatedOffset =
+        final offsetAnimation = offsetFraction == 0
+            ? const AlwaysStoppedAnimation<double>(1)
+            : CurvedAnimation(
+                parent: _animationController,
+                curve: Interval(0, offsetFraction, curve: Curves.easeOutCubic),
+              );
+        final left = fullScreen
+            ? 0.0
+            : lerpDouble(
+                _openedAnchorRect.left,
+                baseRect.left,
+                openAnimation.value,
+              )!;
+        final top = fullScreen
+            ? 0.0
+            : lerpDouble(
+                _openedAnchorRect.top,
+                baseRect.top,
+                openAnimation.value,
+              )!;
+        final offset =
             Offset.lerp(Offset.zero, resolvedOffset, offsetAnimation.value) ??
             resolvedOffset;
-        final widthScale = (_openedAnchorRect.width / baseRect.width).clamp(
-          0.92,
-          1.0,
-        );
-        final heightScale = (_openedAnchorRect.height / baseRect.height).clamp(
-          0.92,
-          1.0,
-        );
-        final animatedScaleX = lerpDouble(
-          widthScale,
-          1.0,
-          openAnimation.value,
-        )!;
-        final animatedScaleY = lerpDouble(
-          heightScale,
-          1.0,
-          openAnimation.value,
-        )!;
+        final scaleX = fullScreen
+            ? 1.0
+            : lerpDouble(
+                (_openedAnchorRect.width / baseRect.width).clamp(0.92, 1),
+                1,
+                openAnimation.value,
+              )!;
+        final scaleY = fullScreen
+            ? 1.0
+            : lerpDouble(
+                (_openedAnchorRect.height / baseRect.height).clamp(0.92, 1),
+                1,
+                openAnimation.value,
+              )!;
+        final padding = style.viewPadding ?? EdgeInsets.zero;
 
         return FocusScope(
           autofocus: true,
@@ -799,36 +899,28 @@ class _GenericSearchAnchorPickerState<T, K>
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: !(ModalRoute.of(context)?.isCurrent ?? true),
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: _close,
-                    child: const SizedBox.expand(),
-                  ),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => _close('outside'),
                 ),
               ),
-              TweenAnimationBuilder<Offset>(
-                tween: Tween<Offset>(begin: Offset.zero, end: Offset.zero),
-                duration: Duration.zero,
-                builder: (context, _, __) {
-                  return Positioned(
-                    left: animatedLeft + animatedOffset.dx,
-                    top: animatedTop + animatedOffset.dy,
-                    child: Opacity(
-                      opacity: fadeAnimation.value,
-                      child: Transform.scale(
-                        alignment: Alignment.topLeft,
-                        scaleX: animatedScaleX,
-                        scaleY: animatedScaleY,
-                        child: _buildPopupSurface(
-                          width: baseRect.width,
-                          maxHeight: baseRect.height,
-                        ),
-                      ),
+              Positioned(
+                left: left + offset.dx,
+                top: top + offset.dy,
+                width: baseRect.width,
+                height: baseRect.height,
+                child: Opacity(
+                  opacity: fadeAnimation.value,
+                  child: Transform.scale(
+                    alignment: Alignment.topLeft,
+                    scaleX: scaleX,
+                    scaleY: scaleY,
+                    child: Padding(
+                      padding: padding,
+                      child: _buildSurface(context, style, fullScreen),
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ],
           ),
@@ -840,22 +932,32 @@ class _GenericSearchAnchorPickerState<T, K>
   @override
   Widget build(BuildContext context) {
     final hasSelection = widget.initialSelectedIds.isNotEmpty;
-    final trigger = widget.triggerBuilder != null
-        ? widget.triggerBuilder!(context, _requestOpen, _tick)
-        : widget.triggerChild != null
-        ? GestureDetector(onTap: _requestOpen, child: widget.triggerChild)
-        : IconButton(
-            iconSize: widget.iconSize,
-            tooltip: widget.config.title,
-            icon: hasSelection ? widget.iconWhenSelected : widget.iconWhenEmpty,
-            onPressed: _requestOpen,
-          );
+    final trigger =
+        widget.triggerBuilder?.call(context, _requestOpen, _tick) ??
+        (widget.triggerChild != null
+            ? GestureDetector(onTap: _requestOpen, child: widget.triggerChild)
+            : DefaultPickerTrigger(
+                onPressed: _requestOpen,
+                icon: hasSelection
+                    ? widget.iconWhenSelected ?? widget.iconWhenEmpty
+                    : widget.iconWhenEmpty,
+                iconSize: widget.iconSize,
+                tooltip: widget.config.title,
+                enabled: widget.enabled,
+              ));
 
-    return Builder(
-      builder: (triggerContext) {
-        _triggerContext = triggerContext;
-        return trigger;
-      },
+    return IgnorePointer(
+      ignoring: !widget.enabled,
+      child: AnimatedOpacity(
+        opacity: widget.enabled ? 1 : 0.38,
+        duration: const Duration(milliseconds: 100),
+        child: Builder(
+          builder: (triggerContext) {
+            _triggerContext = triggerContext;
+            return trigger;
+          },
+        ),
+      ),
     );
   }
 }
@@ -863,8 +965,8 @@ class _GenericSearchAnchorPickerState<T, K>
 bool _listEquals<T>(List<T> a, List<T> b) {
   if (identical(a, b)) return true;
   if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
+  for (var index = 0; index < a.length; index++) {
+    if (a[index] != b[index]) return false;
   }
   return true;
 }

@@ -12,7 +12,9 @@ class _DemoItem {
 }
 
 void main() {
-  testWidgets('popup list keeps scrolling while item tooltip is visible', (tester) async {
+  testWidgets('popup list keeps scrolling while item tooltip is visible', (
+    tester,
+  ) async {
     final items = List.generate(
       40,
       (index) => _DemoItem(
@@ -53,10 +55,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pump(const Duration(milliseconds: 300));
 
-    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable).last);
+    final scrollable = tester.state<ScrollableState>(
+      find.byType(Scrollable).last,
+    );
     final before = scrollable.position.pixels;
 
-    final itemFinder = find.text('Item 1 with a very long label to overflow the row and show a tooltip');
+    final itemFinder = find.text(
+      'Item 1 with a very long label to overflow the row and show a tooltip',
+    );
     final target = tester.getCenter(itemFinder);
 
     final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
@@ -72,10 +78,7 @@ void main() {
     await tester.pump();
 
     await tester.sendEventToBinding(
-      PointerScrollEvent(
-        position: tooltipCenter,
-        scrollDelta: Offset(0, -160),
-      ),
+      PointerScrollEvent(position: tooltipCenter, scrollDelta: Offset(0, -160)),
     );
     await tester.pump();
 

@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_relative_lib_imports
+
 import '../example/example_of_generic_search_selector/lib/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -117,10 +119,11 @@ void main() {
 
     // Go back
     final checkBtn = find.byIcon(Icons.check);
-    if (checkBtn.evaluate().isNotEmpty)
+    if (checkBtn.evaluate().isNotEmpty) {
       await tester.tap(checkBtn.last);
-    else
+    } else {
       await tester.tap(find.byTooltip('Back').last);
+    }
     await tester.pumpAndSettle();
 
     // Verify chip is present
@@ -147,10 +150,11 @@ void main() {
 
     // Close Sub A1
     final checkBtn = find.byIcon(Icons.check);
-    if (checkBtn.evaluate().isNotEmpty)
+    if (checkBtn.evaluate().isNotEmpty) {
       await tester.tap(checkBtn.last);
-    else
+    } else {
       await tester.tap(find.byTooltip('Back').last);
+    }
     await tester.pumpAndSettle();
 
     // Select Charlie in Main A (making it "in use")

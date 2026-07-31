@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_relative_lib_imports
+
 import '../example/example_of_generic_search_selector/lib/main_async.dart'
     as app_async;
 import 'package:flutter/material.dart';
@@ -9,9 +11,7 @@ void main() {
     WidgetTester tester,
   ) async {
     // 1. Pump async app
-    print('DEBUG: Pumping widget');
     await tester.pumpWidget(const ProviderScope(child: app_async.DemoApp()));
-    print('DEBUG: Initial pump done');
     // Initial load has delay defined in ItemsNotifier (500ms)
     await tester.pump(const Duration(milliseconds: 100));
     expect(
@@ -23,7 +23,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // 2. Open Picker A
-    print('DEBUG: Tapping Open Picker A');
     await tester.tap(find.byTooltip('Open picker A'));
     await tester.pumpAndSettle();
 
@@ -36,7 +35,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Top buttons: Refresh List A
-    print('DEBUG: Tapping Refresh List A');
     await tester.tap(find.byTooltip('Refresh List A'));
     await tester.pump();
 
@@ -50,7 +48,6 @@ void main() {
 
     // 4. Invalidate SubA1
     // Open Picker A -> Open Sub A1 -> Check content
-    print('DEBUG: Tapping Open Picker A (2nd time)');
     await tester.tap(find.byTooltip('Open picker A'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sub A1 (Async)')); // Title used in main_async
@@ -69,7 +66,6 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap Invalidate SubA1
-    print('DEBUG: Tapping Invalidate SubA1');
     await tester.tap(find.byTooltip('Invalidate SubA1'));
     await tester.pump();
 

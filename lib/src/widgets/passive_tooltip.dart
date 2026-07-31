@@ -2,11 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-/// Lightweight tooltip that paints inside the widget subtree instead of a root overlay.
-///
-/// That keeps the tooltip visually separate while still allowing mouse wheel
-/// events to reach the underlying scrollable even when the cursor is over the
-/// tooltip bubble.
+/// Lightweight tooltip that does not intercept pointer or wheel events.
 class PassiveTooltip extends StatefulWidget {
   const PassiveTooltip({
     required this.child,
@@ -52,8 +48,7 @@ class _PassiveTooltipState extends State<PassiveTooltip> {
     if (_visible) return;
     _showTimer?.cancel();
     _showTimer = Timer(widget.waitDuration, () {
-      if (!mounted || _visible) return;
-      setState(() => _visible = true);
+      if (mounted && !_visible) setState(() => _visible = true);
     });
   }
 
@@ -61,40 +56,25 @@ class _PassiveTooltipState extends State<PassiveTooltip> {
     _showTimer?.cancel();
     _hideTimer?.cancel();
     _hideTimer = Timer(widget.exitDuration, () {
-      if (!mounted || !_visible) return;
-      setState(() => _visible = false);
+      if (mounted && _visible) setState(() => _visible = false);
     });
-  }
-
-  Widget _buildBubble(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final decoration =
-        widget.decoration ??
-        BoxDecoration(
-          color: Colors.black87,
-          borderRadius: BorderRadius.circular(4),
-        );
-    final textStyle =
-        widget.textStyle ??
-        textTheme.bodySmall?.copyWith(color: Colors.white);
-
-    return IgnorePointer(
-      ignoring: true,
-      child: Material(
-        color: Colors.transparent,
-        child: DecoratedBox(
-          decoration: decoration,
-          child: Padding(
-            padding: widget.padding,
-            child: Text(widget.message, style: textStyle),
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final decoration =
+        widget.decoration ??
+        BoxDecoration(
+          color: theme.colorScheme.inverseSurface,
+          borderRadius: BorderRadius.circular(4),
+        );
+    final textStyle =
+        widget.textStyle ??
+        theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onInverseSurface,
+        );
+
     return MouseRegion(
       opaque: false,
       onEnter: (_) => _scheduleShow(),
@@ -106,12 +86,20 @@ class _PassiveTooltipState extends State<PassiveTooltip> {
           if (_visible)
             Positioned.fill(
               child: IgnorePointer(
-                ignoring: true,
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Transform.translate(
                     offset: Offset(widget.horizontalGap, -widget.verticalGap),
-                    child: _buildBubble(context),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: DecoratedBox(
+                        decoration: decoration,
+                        child: Padding(
+                          padding: widget.padding,
+                          child: Text(widget.message, style: textStyle),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_underscores
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,15 +12,12 @@ Rect _searchAnchorStyleRect({
   required double maxHeight,
   required TextDirection textDirection,
 }) {
-  final viewWidth =
-      anchorRect.width.clamp(
-            minWidth < screenSize.width ? minWidth : screenSize.width,
-            screenSize.width,
-          )
-          as double;
+  final viewWidth = anchorRect.width.clamp(
+    minWidth < screenSize.width ? minWidth : screenSize.width,
+    screenSize.width,
+  );
   final minHeight = maxHeight < 240 ? maxHeight : 240.0;
-  final viewHeight =
-      (screenSize.height * 2 / 3).clamp(minHeight, maxHeight) as double;
+  final viewHeight = (screenSize.height * 2 / 3).clamp(minHeight, maxHeight);
 
   switch (textDirection) {
     case TextDirection.ltr:
@@ -32,7 +31,7 @@ Rect _searchAnchorStyleRect({
       return topLeft & Size(viewWidth, viewHeight);
     case TextDirection.rtl:
       var topLeft = Offset(
-        (anchorRect.right - viewWidth).clamp(0.0, double.infinity) as double,
+        (anchorRect.right - viewWidth).clamp(0.0, double.infinity),
         anchorRect.top,
       );
       if (anchorRect.right < viewWidth) {
@@ -74,7 +73,6 @@ void main() {
       mode: PickerMode.multi,
       getKey: (_) => GlobalKey(),
       refresh: () {},
-      visibleIds: const [1, 2, 3],
       loadedIds: () => const [1, 2, 3],
       filteredIds: () => const [1, 2, 3],
       recordDelta: (_, _) {},
@@ -241,6 +239,7 @@ void main() {
                 width: 160,
                 child: SubPickerTile<int>(
                   title: 'Sub Picker',
+                  isFullScreen: false,
                   menuOffset: menuOffset,
                   config: PickerConfig(
                     loadItems: (_) async => [1, 2],
@@ -291,6 +290,7 @@ void main() {
         home: Scaffold(
           body: SubPickerTile<int>(
             title: 'Sub Picker',
+            isFullScreen: false,
             menuOffset: const Offset(40, 40),
             config: PickerConfig(
               loadItems: (_) async => [1, 2],
@@ -320,6 +320,7 @@ void main() {
         home: Scaffold(
           body: SubPickerTile<int>(
             title: 'Sub Picker',
+            isFullScreen: false,
             menuOffset: const Offset(24, 12),
             config: PickerConfig(
               loadItems: (_) async => [1, 2],
@@ -403,6 +404,51 @@ void main() {
     expect(find.text('Parent 1'), findsNothing);
   });
 
+  testWidgets('system back closes only the topmost open menu', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: PickerConfig(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => 'Parent $item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [],
+            headerBuilder: (context, actions, items) => [
+              SubPickerTile<int>(
+                title: 'Open Child',
+                config: PickerConfig(
+                  loadItems: (_) async => [10],
+                  idOf: (item) => item,
+                  labelOf: (item) => 'Child $item',
+                  searchTermsOf: (_) => const [],
+                ),
+                initialSelectedIds: const [],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open Child'));
+    await tester.pumpAndSettle();
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Child 10'), findsNothing);
+    expect(find.text('Parent 1'), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Parent 1'), findsNothing);
+    expect(find.byIcon(Icons.search), findsOneWidget);
+  });
+
   testWidgets('popup opening animation stays stable before settle', (
     tester,
   ) async {
@@ -413,6 +459,7 @@ void main() {
             width: 56,
             height: 40,
             child: SearchAnchorPicker<int>(
+              isFullScreen: false,
               minWidth: 320,
               config: PickerConfig(
                 loadItems: (_) async => [1, 2],
@@ -462,6 +509,7 @@ void main() {
                 width: 56,
                 height: 40,
                 child: SearchAnchorPicker<int>(
+                  isFullScreen: false,
                   minWidth: minWidth,
                   maxHeight: maxHeight,
                   menuOffset: menuOffset,
@@ -541,6 +589,7 @@ void main() {
               width: 56,
               height: 40,
               child: SearchAnchorPicker<int>(
+                isFullScreen: false,
                 minWidth: minWidth,
                 maxHeight: maxHeight,
                 menuOffset: menuOffset,

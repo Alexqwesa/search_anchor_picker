@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:generic_search_selector/src/passive_tooltip.dart';
+import 'package:generic_search_selector/src/widgets/passive_tooltip.dart';
 
-/// Text that shows a Tooltip only when it overflows (ellipsis is applied).
+/// Text that shows a tooltip only when it is ellipsized.
 class OverflowTooltipText extends StatelessWidget {
   const OverflowTooltipText(
     this.text, {
@@ -16,25 +16,23 @@ class OverflowTooltipText extends StatelessWidget {
   final TextStyle? style;
   final int maxLines;
   final TextAlign? textAlign;
-
-  /// If provided, this string is used for the tooltip instead of [text].
   final String? tooltip;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final span = TextSpan(text: text, style: style ?? DefaultTextStyle.of(context).style);
-        final tp = TextPainter(
+        final span = TextSpan(
+          text: text,
+          style: style ?? DefaultTextStyle.of(context).style,
+        );
+        final painter = TextPainter(
           text: span,
           maxLines: maxLines,
           textDirection: Directionality.of(context),
           textAlign: textAlign ?? TextAlign.start,
-          ellipsis: '…',
+          ellipsis: '...',
         )..layout(maxWidth: constraints.maxWidth);
-
-        final didOverflow = tp.didExceedMaxLines;
-
         final child = Text(
           text,
           style: style,
@@ -42,13 +40,8 @@ class OverflowTooltipText extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           textAlign: textAlign,
         );
-
-        if (!didOverflow) return child;
-
-        return PassiveTooltip(
-          message: tooltip ?? text,
-          child: child,
-        );
+        if (!painter.didExceedMaxLines) return child;
+        return PassiveTooltip(message: tooltip ?? text, child: child);
       },
     );
   }

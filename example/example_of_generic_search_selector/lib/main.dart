@@ -300,8 +300,10 @@ class _DemoHomeState extends State<DemoHome> {
                       );
                     },
 
-                    maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
-                    minWidth: 520,
+                    viewConstraints: BoxConstraints(
+                      minWidth: 520,
+                      maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
+                    ),
                   ),
                 ),
               ],
@@ -407,8 +409,10 @@ class _DemoHomeState extends State<DemoHome> {
                       );
                     },
 
-                    maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
-                    minWidth: 520,
+                    viewConstraints: BoxConstraints(
+                      minWidth: 520,
+                      maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
+                    ),
                   ),
                 ),
               ],
@@ -496,8 +500,10 @@ class _DemoHomeState extends State<DemoHome> {
                       );
                     },
 
-                    maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
-                    minWidth: 520,
+                    viewConstraints: BoxConstraints(
+                      minWidth: 520,
+                      maxHeight: MediaQuery.sizeOf(context).height * 2 / 3,
+                    ),
                   ),
                 ),
               ],

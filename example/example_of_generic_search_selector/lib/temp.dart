@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:generic_search_selector/src/passive_tooltip.dart';
+import 'package:generic_search_selector/widgets.dart';
+
 void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
@@ -28,7 +29,8 @@ class ReproPage extends StatelessWidget {
             child: PassiveTooltip(
               // enableTapToDismiss: false,
               // ignorePointer: true,
-              message: 'Tooltip for row $index                              .\n\n\n\n\n',
+              message:
+                  'Tooltip for row $index                              .\n\n\n\n\n',
               child: Container(
                 padding: const EdgeInsets.all(12),
                 color: Colors.blue.shade50,

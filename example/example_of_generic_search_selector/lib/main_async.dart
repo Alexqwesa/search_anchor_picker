@@ -422,8 +422,10 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
                         ],
                       );
                     },
-                    maxHeight: 400,
-                    minWidth: 300,
+                    viewConstraints: const BoxConstraints(
+                      minWidth: 300,
+                      maxHeight: 400,
+                    ),
                   ),
                 ),
               ],
@@ -498,8 +500,7 @@ class _SubPickerTile extends StatelessWidget {
       mode: PickerMode.multi,
       triggerChild: ListTile(leading: Icon(icon), title: Text(title)),
       onFinish: onFinish,
-      maxHeight: 400,
-      minWidth: 300,
+      viewConstraints: const BoxConstraints(minWidth: 300, maxHeight: 400),
     );
   }
 }

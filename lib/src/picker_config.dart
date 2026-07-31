@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:generic_search_selector/src/picker_builders.dart';
 
 typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 
@@ -15,12 +16,8 @@ typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 /// **External [initialSelectedIds]:**
 /// - When the popup is **closed**, parent updates re-seed the next open.
 /// - When the popup is **open**, [GenericSearchAnchorPicker] may still sync
-///   `initialSelectedIds` into pending (post-frame) so nested sub-pickers can
-///   reflect membership changes without closing the parent. Do not rely on
-///   “ignore external seed while open” for main pickers — use [GenericPickerActions.pending]
-///   or [GenericSearchAnchorPicker.onToggle] for in-session edits.
-///
-/// See `docs/AGENTS.md` for pattern choice (SubPickerTile vs onToggle).
+///   `initialSelectedIds` into pending so nested sub-pickers can reflect
+///   membership changes. External reseeds never create add/remove deltas.
 class GenericPickerConfig<T, K> {
   GenericPickerConfig({
     required this.loadItems,
@@ -35,6 +32,8 @@ class GenericPickerConfig<T, K> {
     this.listenable,
     this.unselectBehavior = UnselectBehavior.allow,
     this.isItemInUse,
+    this.unselectWarningBuilder,
+    this.unselectConfirmationBuilder,
   });
 
   /// internal callback to open the picker. (Set by SearchAnchorPicker).
@@ -63,7 +62,7 @@ class GenericPickerConfig<T, K> {
     }
   }
 
-  /// Loads the full list of selectable items.
+  /// Loads the current display/search result.
   ///
   /// Called when the picker overlay opens (and may be called again if you choose
   /// to refresh). Keep it fast; cache upstream if needed.
@@ -72,7 +71,7 @@ class GenericPickerConfig<T, K> {
   /// Returns a stable identifier for [T].
   ///
   /// Used for:
-  /// - selection state (Set<K>)
+  /// - selection state (`Set<K>`)
   /// - computing added diffs and explicit removals on close
   /// - equality / matching across reloads
   final K Function(T) idOf;
@@ -134,6 +133,12 @@ class GenericPickerConfig<T, K> {
   /// If true, [unselectBehavior] will be triggered on deselection.
   final bool Function(T)? isItemInUse;
 
+  /// Overrides the default warning content for [UnselectBehavior.showWarning].
+  final GenericUnselectWarningBuilder<T>? unselectWarningBuilder;
+
+  /// Owns confirmation UX for [UnselectBehavior.alert] when provided.
+  final GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder;
+
   GenericPickerConfig<T, K> copyWith({
     LoadItems<T>? loadItems,
     K Function(T)? idOf,
@@ -147,6 +152,8 @@ class GenericPickerConfig<T, K> {
     Listenable? listenable,
     UnselectBehavior? unselectBehavior,
     bool Function(T)? isItemInUse,
+    GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
+    GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder,
   }) {
     return GenericPickerConfig<T, K>(
       loadItems: loadItems ?? this.loadItems,
@@ -161,6 +168,10 @@ class GenericPickerConfig<T, K> {
       listenable: listenable ?? this.listenable,
       unselectBehavior: unselectBehavior ?? this.unselectBehavior,
       isItemInUse: isItemInUse ?? this.isItemInUse,
+      unselectWarningBuilder:
+          unselectWarningBuilder ?? this.unselectWarningBuilder,
+      unselectConfirmationBuilder:
+          unselectConfirmationBuilder ?? this.unselectConfirmationBuilder,
     );
   }
 }
@@ -179,6 +190,8 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
     super.listenable,
     super.unselectBehavior = UnselectBehavior.allow,
     super.isItemInUse,
+    super.unselectWarningBuilder,
+    super.unselectConfirmationBuilder,
   });
 
   @override
@@ -195,6 +208,8 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
     Listenable? listenable,
     UnselectBehavior? unselectBehavior,
     bool Function(T)? isItemInUse,
+    GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
+    GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder,
   }) {
     return PickerConfig<T>(
       loadItems: loadItems ?? this.loadItems,
@@ -209,6 +224,10 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
       listenable: listenable ?? this.listenable,
       unselectBehavior: unselectBehavior ?? this.unselectBehavior,
       isItemInUse: isItemInUse ?? this.isItemInUse,
+      unselectWarningBuilder:
+          unselectWarningBuilder ?? this.unselectWarningBuilder,
+      unselectConfirmationBuilder:
+          unselectConfirmationBuilder ?? this.unselectConfirmationBuilder,
     );
   }
 }
@@ -221,9 +240,16 @@ typedef GenericOnFinish<K> =
 /// This is a replace-all persistence API. If the final selection is empty,
 /// [GenericSearchAnchorPicker] requires explicit empty-save confirmation before
 /// calling this callback.
+@Deprecated(
+  'Unsafe with server-side filtering or pagination. Use onFinish for explicit '
+  'deltas or onToggle for per-item persistence.',
+)
 typedef GenericOnFinishReplaceAll<K> = Future<void> Function(List<K> finalIds);
 
 typedef OnFinish = GenericOnFinish<int>;
+@Deprecated(
+  'Unsafe with server-side filtering or pagination. Use OnFinish or onToggle.',
+)
 typedef OnFinishReplaceAll = GenericOnFinishReplaceAll<int>;
 
 enum PickerMode { multi, radio, radioToggle }
@@ -236,7 +262,7 @@ enum OnToggleMode {
 
   /// Update the checkbox immediately, then run [GenericSearchAnchorPicker.onToggle].
   /// If it returns `false`, the toggle is reverted. Use for async persistence without
-  /// blocking the UI (see `docs/AGENTS.md` and README “Async onToggle”).
+  /// blocking the UI.
   optimistic,
 }
 
@@ -261,13 +287,11 @@ class GenericPickerActions<T, K> {
     required this.mode,
     required this.getKey,
     required VoidCallback refresh,
-    required Iterable<K> visibleIds,
     required Iterable<K> Function() loadedIds,
     required Iterable<K> Function() filteredIds,
     required void Function(Set<K> before, Set<K> after) recordDelta,
   }) : _close = close,
        _refresh = refresh,
-       _visibleIds = visibleIds,
        _loadedIds = loadedIds,
        _filteredIds = filteredIds,
        _recordDelta = recordDelta;
@@ -277,7 +301,6 @@ class GenericPickerActions<T, K> {
   final void Function([String? reason]) _close;
   final GlobalKey Function(Object id) getKey;
   final VoidCallback _refresh;
-  final Iterable<K> _visibleIds;
   final Iterable<K> Function() _loadedIds;
   final Iterable<K> Function() _filteredIds;
   final void Function(Set<K> before, Set<K> after) _recordDelta;
@@ -358,7 +381,6 @@ class PickerActions<T> extends GenericPickerActions<T, int> {
     required super.mode,
     required super.getKey,
     required super.refresh,
-    required super.visibleIds,
     required super.loadedIds,
     required super.filteredIds,
     required super.recordDelta,

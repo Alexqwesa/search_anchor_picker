@@ -1,3 +1,34 @@
+## 0.0.4
+
+SearchAnchor parity / UI:
+
+* Added SearchAnchor-compatible view properties and `SearchViewTheme` fallback.
+* Added mobile full-screen and desktop anchored popup defaults.
+* Added focused builders for search, results, loading, empty, error, save-empty,
+  composed view, and surface regions.
+* Moved optional/default widgets under `lib/src/widgets/` and added `widgets.dart`.
+* Deprecated `minWidth` / `maxHeight` in favor of `viewConstraints`.
+
+Selection / lifecycle:
+
+* Split close persistence into `onFinish({added, removed})` explicit deltas and
+  the now-deprecated `onFinishReplaceAll(finalIds)` compatibility callback.
+* Added pending-only and explicit `*AsDelta()` bulk helpers.
+* Selected IDs missing from the loaded page are preserved.
+* Extracted selection-session bookkeeping and expanded lifecycle coverage.
+* Added loading/error/retry states, stale-load suppression, idempotent close,
+  and safe callback failure cleanup.
+* Empty legacy replace-all saves still require explicit confirmation.
+
+Docs / example:
+
+* Documented server-side search safety, visual builders, theme precedence, and
+  `OnToggleMode.awaitGate` versus `OnToggleMode.optimistic`.
+* Added the example web deployment workflow and online demo link.
+
+Consumers using Git dependencies should pin a semantic version tag matching
+`pubspec.yaml`.
+
 ## 0.0.3
 
 Breaking / API:
@@ -15,12 +46,11 @@ Behavior / docs:
 * Added `docs/AGENTS.md` and consumer skill template for integrator pitfalls.
 * Example web deploy workflow + online demo link.
 
-Consumers on git should bump `ref` to **`v15`**.
-
 ## 0.0.2
 
 * Internal packaging bump (see git tags `v13` / `v14` for prior consumer pins).
 
 ## 0.0.1
 
-* Initial SearchAnchor-based picker with multi/radio modes, nested `SubPickerTile`, and header actions.
+* Initial SearchAnchor-based picker with multi/radio modes, nested
+  `SubPickerTile`, and header actions.
