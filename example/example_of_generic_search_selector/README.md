@@ -10,5 +10,12 @@ Run locally with:
 flutter run -d chrome
 ```
 
+Run the focused header pending-actions demo without changing the test-imported
+`main.dart` entrypoint:
+
+```sh
+flutter run -d chrome -t lib/main_pending_actions.dart
+```
+
 The deployed example is available at
 https://alexqwesa.github.io/generic_search_selector/.
