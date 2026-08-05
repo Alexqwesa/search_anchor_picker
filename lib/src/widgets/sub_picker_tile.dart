@@ -106,9 +106,7 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
       initialSelectedIds: initialSelectedIds,
       onFinish: ({required added, required removed}) async {
         if (parentActions != null) {
-          parentActions!.setPending(
-            {...parentActions!.pending}..removeAll(removed),
-          );
+          parentActions!.syncPending(removed: removed);
         }
         await onFinish?.call(added: added, removed: removed);
       },

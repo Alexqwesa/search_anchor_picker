@@ -6,7 +6,7 @@ import 'package:generic_search_selector/generic_search_selector.dart';
 
 Widget _pendingIds(GenericPickerActions<int, int> actions) {
   return ValueListenableBuilder<Set<int>>(
-    valueListenable: actions.pendingN,
+    valueListenable: actions.pendingIdsListenable,
     builder: (context, pending, _) {
       final sorted = pending.toList()..sort();
       return Text('Pending: ${sorted.join(',')}');
@@ -306,7 +306,7 @@ void main() {
     },
   );
 
-  testWidgets('PickerActions changes final ids but do not report removed ids', (
+  testWidgets('syncPending changes final ids without reporting deltas', (
     tester,
   ) async {
     List<int> removedIds = [];
@@ -325,7 +325,8 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.pendingClearLoaded,
+                  onPressed: () =>
+                      actions.syncPending(removed: actions.pendingIds),
                   child: const Text('Clear from header'),
                 ),
                 _pendingIds(actions),
@@ -352,7 +353,7 @@ void main() {
     expect(removedIds, isEmpty);
   });
 
-  testWidgets('pendingClearLoaded preserves ids outside current loaded list', (
+  testWidgets('syncPending preserves ids outside its explicit changes', (
     tester,
   ) async {
     List<int> removedIds = [];
@@ -371,7 +372,7 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.pendingClearLoaded,
+                  onPressed: () => actions.syncPending(removed: const [2]),
                   child: const Text('Clear current list'),
                 ),
                 _pendingIds(actions),
@@ -398,7 +399,7 @@ void main() {
     expect(removedIds, isEmpty);
   });
 
-  testWidgets('pendingClearLoaded changes final ids without deltas', (
+  testWidgets('syncPending synchronization does not report removals', (
     tester,
   ) async {
     List<int> removedIds = [];
@@ -417,7 +418,7 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.pendingClearLoaded,
+                  onPressed: () => actions.syncPending(removed: const [2]),
                   child: const Text('Clear loaded'),
                 ),
                 _pendingIds(actions),
@@ -444,7 +445,7 @@ void main() {
     expect(removedIds, isEmpty);
   });
 
-  testWidgets('clearLoadedAsDelta reports loaded selected ids as removed', (
+  testWidgets('clearLoaded reports loaded selected ids as removed', (
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
@@ -464,8 +465,8 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.clearLoadedAsDelta,
-                  child: const Text('Clear loaded delta'),
+                  onPressed: actions.clearLoaded,
+                  child: const Text('Clear loaded'),
                 ),
               ];
             },
@@ -484,7 +485,7 @@ void main() {
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Clear loaded delta'));
+    await tester.tap(find.text('Clear loaded'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
@@ -493,7 +494,7 @@ void main() {
     expect(removedIds, [2]);
   });
 
-  testWidgets('selectLoadedAsDelta reports loaded unselected ids as added', (
+  testWidgets('selectLoaded reports loaded unselected ids as added', (
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
@@ -513,8 +514,8 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.selectLoadedAsDelta,
-                  child: const Text('Select loaded delta'),
+                  onPressed: actions.selectLoaded,
+                  child: const Text('Select loaded'),
                 ),
               ];
             },
@@ -533,7 +534,7 @@ void main() {
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Select loaded delta'));
+    await tester.tap(find.text('Select loaded'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
@@ -542,7 +543,7 @@ void main() {
     expect(addedIds, [4]);
   });
 
-  testWidgets('clearFilteredAsDelta reports only filtered selected ids', (
+  testWidgets('clearFiltered reports only filtered selected ids', (
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
@@ -562,8 +563,8 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.clearFilteredAsDelta,
-                  child: const Text('Clear filtered delta'),
+                  onPressed: actions.clearFiltered,
+                  child: const Text('Clear filtered'),
                 ),
               ];
             },
@@ -584,7 +585,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(SearchBar), 'Item 2');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Clear filtered delta'));
+    await tester.tap(find.text('Clear filtered'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
@@ -593,7 +594,7 @@ void main() {
     expect(removedIds, [2]);
   });
 
-  testWidgets('selectFilteredAsDelta reports only filtered unselected ids', (
+  testWidgets('selectFiltered reports only filtered unselected ids', (
     tester,
   ) async {
     final finalIds = <int>{1};
@@ -613,8 +614,8 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: actions.selectFilteredAsDelta,
-                  child: const Text('Select filtered delta'),
+                  onPressed: actions.selectFiltered,
+                  child: const Text('Select filtered'),
                 ),
               ];
             },
@@ -635,7 +636,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(SearchBar), 'Item 3');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Select filtered delta'));
+    await tester.tap(find.text('Select filtered'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
@@ -644,7 +645,7 @@ void main() {
     expect(addedIds, [3]);
   });
 
-  testWidgets('toggleIdAsDelta reports delta while toggleId does not', (
+  testWidgets('setSelected reports deltas while syncPending does not', (
     tester,
   ) async {
     List<int> addedIds = [];
@@ -664,16 +665,16 @@ void main() {
             headerBuilder: (context, actions, _) {
               return [
                 TextButton(
-                  onPressed: () => actions.toggleId(2, true),
-                  child: const Text('Toggle pending'),
+                  onPressed: () => actions.syncPending(added: const [2]),
+                  child: const Text('Sync pending'),
                 ),
                 TextButton(
-                  onPressed: () => actions.toggleIdAsDelta(3, true),
-                  child: const Text('Toggle add delta'),
+                  onPressed: () => actions.setSelected(3, true),
+                  child: const Text('Set selected'),
                 ),
                 TextButton(
-                  onPressed: () => actions.toggleIdAsDelta(1, false),
-                  child: const Text('Toggle remove delta'),
+                  onPressed: () => actions.setSelected(1, false),
+                  child: const Text('Set unselected'),
                 ),
                 _pendingIds(actions),
               ];
@@ -691,11 +692,11 @@ void main() {
 
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Toggle pending'));
+    await tester.tap(find.text('Sync pending'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Toggle add delta'));
+    await tester.tap(find.text('Set selected'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Toggle remove delta'));
+    await tester.tap(find.text('Set unselected'));
     await tester.pumpAndSettle();
     expect(find.text('Pending: 2,3'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.arrow_back));

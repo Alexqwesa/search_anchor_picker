@@ -13,7 +13,9 @@ Selection / lifecycle:
 
 * Split close persistence into `onFinish({added, removed})` explicit deltas and
   the now-deprecated `onFinishReplaceAll(finalIds)` compatibility callback.
-* Added pending-only and explicit `*AsDelta()` bulk helpers.
+* Simplified header actions: `selectLoaded`, `clearLoaded`, and their filtered
+  variants record explicit deltas by default; `syncPending(added:, removed:)` is
+  the sole pending-only synchronization escape hatch.
 * Selected IDs missing from the loaded page are preserved.
 * Extracted selection-session bookkeeping and expanded lifecycle coverage.
 * Added loading/error/retry states, stale-load suppression, idempotent close,

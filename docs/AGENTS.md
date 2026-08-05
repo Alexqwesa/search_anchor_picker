@@ -6,8 +6,8 @@
 | --- | --- |
 | Main-list row assignment | `onToggle` or root `onFinish` |
 | Nested pool/sublist membership | `SubPickerTile` + `onFinish` |
-| Header pending-only UI | `pending*` actions |
-| Header actions representing persistence intent | `*AsDelta()` actions |
+| Header bulk selection | `selectLoaded`, `clearLoaded`, or filtered variants |
+| Mirror already-persisted external changes | `syncPending` |
 
 `onFinishReplaceAll` is deprecated. Do not introduce it in new integrations.
 Use explicit deltas unless the backend truly requires a complete, authoritative
@@ -20,9 +20,10 @@ snapshot that was loaded independently from search/pagination results.
   external change never becomes an `added` or `removed` delta.
 - Missing loaded IDs remain selected. `loadItems` is display data, not deletion
   truth.
-- Row toggles and `*AsDelta()` helpers are the only delta producers.
-- `pendingClearLoaded` and related pending helpers affect current popup state but
-  intentionally do not produce persistence deltas.
+- Row toggles, `setSelected`, and loaded/filtered bulk helpers produce deltas.
+- `syncPending(added:, removed:)` is the only pending-only action. Use it to
+  mirror changes already persisted elsewhere, not for ordinary user controls.
+- Use `initialSelectedIds` for authoritative full-state synchronization.
 - Loaded/filtered helpers never touch hidden server-side IDs.
 
 For save-on-close, apply `added` and `removed` to caller state after persistence.

@@ -29,7 +29,7 @@ class PendingActionsDemoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Pending header actions',
+      title: 'Bulk header actions',
       theme: ThemeData(
         colorSchemeSeed: const Color(0xff006d77),
         useMaterial3: true,
@@ -98,20 +98,20 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Header pending-only UI')),
+      appBar: AppBar(title: const Text('Bulk actions and pending sync')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Text(
-            'Pending actions update checkbox state without creating added or '
-            'removed deltas.',
+            'Bulk actions update checkbox state and report only the IDs they '
+            'changed through added and removed deltas.',
             style: theme.textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
           const Text(
             'Search for "Research" to see the difference between loaded and '
-            'filtered actions. Use Apply pending to parent when the header '
-            'intentionally owns persistence.',
+            'filtered actions. Pending replacement is reserved for mirroring '
+            'external state that was already persisted elsewhere.',
           ),
           const SizedBox(height: 24),
           Wrap(
@@ -131,9 +131,10 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
                   );
                 },
                 headerBuilder: (context, actions, allItems) => [
-                  PendingActionsHeader(
+                  BulkActionsHeader(
                     actions: actions,
                     loadedCount: allItems.length,
+                    externalSelectedIds: _selectedIds,
                     onApplyPending: _applyPending,
                   ),
                 ],
@@ -160,8 +161,8 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
                   Text('removed: ${_formatIds(_lastRemoved)}'),
                   const SizedBox(height: 8),
                   Text(
-                    'The values stay empty after pending* actions. Toggling a '
-                    'result row records a delta normally.',
+                    'Bulk buttons and result rows both record explicit deltas. '
+                    'Replace pending does not.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -174,16 +175,18 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
   }
 }
 
-class PendingActionsHeader extends StatelessWidget {
-  const PendingActionsHeader({
+class BulkActionsHeader extends StatelessWidget {
+  const BulkActionsHeader({
     super.key,
     required this.actions,
     required this.loadedCount,
+    required this.externalSelectedIds,
     required this.onApplyPending,
   });
 
   final GenericPickerActions<PendingActionItem, int> actions;
   final int loadedCount;
+  final Set<int> externalSelectedIds;
   final ValueChanged<Set<int>> onApplyPending;
 
   @override
@@ -193,17 +196,14 @@ class PendingActionsHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: ValueListenableBuilder<Set<int>>(
-        valueListenable: actions.pendingN,
+        valueListenable: actions.pendingIdsListenable,
         builder: (context, pending, child) {
           final pendingIds = pending.toList()..sort();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Header pending-only actions',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Header bulk actions', style: theme.textTheme.titleMedium),
               const SizedBox(height: 4),
               Text(
                 '$loadedCount loaded | pending IDs: '
@@ -216,24 +216,31 @@ class PendingActionsHeader extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   OutlinedButton(
-                    onPressed: actions.pendingSelectLoaded,
+                    onPressed: actions.selectLoaded,
                     child: const Text('Select loaded'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.pendingClearLoaded,
+                    onPressed: actions.clearLoaded,
                     child: const Text('Clear loaded'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.pendingSelectFiltered,
+                    onPressed: actions.selectFiltered,
                     child: const Text('Select filtered'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.pendingClearFiltered,
+                    onPressed: actions.clearFiltered,
                     child: const Text('Clear filtered'),
                   ),
                   FilledButton.tonal(
                     onPressed: () => onApplyPending({...pending}),
                     child: const Text('Apply pending to parent'),
+                  ),
+                  TextButton(
+                    onPressed: () => actions.syncPending(
+                      added: externalSelectedIds.difference(pending),
+                      removed: pending.difference(externalSelectedIds),
+                    ),
+                    child: const Text('Restore pending from parent'),
                   ),
                 ],
               ),

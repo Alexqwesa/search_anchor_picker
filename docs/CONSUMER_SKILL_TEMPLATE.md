@@ -9,8 +9,8 @@ Use this checklist when changing an integration:
   placeholder.
 - Treat `loadItems` as a partial display/search result; absence never means
   deletion.
-- Use `pending*` actions for pending-only UI and `*AsDelta()` actions for explicit
-  bulk persistence intent.
+- Use `selectLoaded`, `clearLoaded`, and their filtered variants for bulk user
+  intent. Reserve `syncPending` for mirroring changes already persisted elsewhere.
 - Do not add new `onFinishReplaceAll` usage; it is deprecated because partial
   server results cannot safely replace authoritative selection state.
 - Use `SearchViewTheme` or SearchAnchor-style view properties before replacing a

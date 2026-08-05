@@ -153,19 +153,19 @@ Sub-picker removals are removed from the parent pending selection when
 `loadItems` is display/search data, not deletion truth. A selected ID that is
 missing from the current result remains selected.
 
-Use pending-only header helpers when changing only the in-popup state:
+Header selection helpers record explicit persistence intent:
 
-- `pendingClearLoaded()` / `pendingSelectLoaded()`
-- `pendingClearFiltered()` / `pendingSelectFiltered()`
-
-Use explicit delta helpers when a bulk action should be persisted as user intent:
-
-- `clearLoadedAsDelta()` / `selectLoadedAsDelta()`
-- `clearFilteredAsDelta()` / `selectFilteredAsDelta()`
-- `toggleIdAsDelta(id, selected)`
+- `clearLoaded()` / `selectLoaded()`
+- `clearFiltered()` / `selectFiltered()`
+- `setSelected(id, selected)`
 
 Bulk helpers affect only the current loaded result. Hidden server-side selections
 are untouched.
+
+Use `syncPending(added:, removed:)` only to mirror changes that were already
+persisted elsewhere, such as a nested picker's result. It preserves all other
+pending IDs and does not create another `onFinish` delta. Authoritative full-state
+changes belong in `initialSelectedIds`.
 
 ## Persistence APIs
 

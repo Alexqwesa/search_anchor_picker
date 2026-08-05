@@ -10,7 +10,7 @@ Run locally with:
 flutter run -d chrome
 ```
 
-Run the focused header pending-actions demo without changing the test-imported
+Run the focused bulk-actions and pending-sync demo without changing the test-imported
 `main.dart` entrypoint:
 
 ```sh

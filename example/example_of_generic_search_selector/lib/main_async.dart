@@ -389,9 +389,7 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
                                 .read(selectedScreenAProvider.notifier)
                                 .set(currentScreen);
 
-                            final nextPending = {...actions.pending}
-                              ..removeAll(removed);
-                            actions.setPending(nextPending);
+                            actions.syncPending(removed: removed);
                           },
                         ),
                       ];

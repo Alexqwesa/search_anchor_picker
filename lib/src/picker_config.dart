@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 import 'package:generic_search_selector/src/picker_builders.dart';
 
@@ -276,12 +277,13 @@ enum UnselectBehavior {
 
 /// Actions exposed to headerBuilder so callers never need InheritedWidget lookups.
 ///
-/// This is intentionally thin:
-/// - It operates on the in-overlay pending selection only.
-/// - It never calls setState; it only updates [pendingN] and closes the picker.
+/// Bulk and single-item selection methods record explicit user intent for
+/// [GenericSearchAnchorPicker.onFinish]. Use [syncPending] only when external code
+/// already owns persistence and the popup must mirror those changes without
+/// producing another `added` or `removed` delta.
 class GenericPickerActions<T, K> {
   GenericPickerActions({
-    required this.pendingN,
+    required ValueNotifier<Set<K>> pendingN,
     required this.idOf,
     required void Function([String? reason]) close,
     required this.mode,
@@ -290,13 +292,14 @@ class GenericPickerActions<T, K> {
     required Iterable<K> Function() loadedIds,
     required Iterable<K> Function() filteredIds,
     required void Function(Set<K> before, Set<K> after) recordDelta,
-  }) : _close = close,
+  }) : _pendingN = pendingN,
+       _close = close,
        _refresh = refresh,
        _loadedIds = loadedIds,
        _filteredIds = filteredIds,
        _recordDelta = recordDelta;
 
-  final ValueNotifier<Set<K>> pendingN;
+  final ValueNotifier<Set<K>> _pendingN;
   final K Function(T) idOf;
   final void Function([String? reason]) _close;
   final GlobalKey Function(Object id) getKey;
@@ -306,57 +309,55 @@ class GenericPickerActions<T, K> {
   final void Function(Set<K> before, Set<K> after) _recordDelta;
   final PickerMode mode;
 
-  Set<K> get pending => pendingN.value;
+  /// Current in-popup selection. The returned set cannot be mutated.
+  Set<K> get pendingIds => Set<K>.unmodifiable(_pendingN.value);
 
-  void setPending(Set<K> ids) {
+  /// Listen to in-popup selection changes from custom header UI.
+  ValueListenable<Set<K>> get pendingIdsListenable => _pendingN;
+
+  /// Applies externally-owned changes without recording persistence intent.
+  ///
+  /// This is intended for synchronization after external state was already
+  /// changed, such as reflecting a nested picker's result in its parent popup.
+  /// IDs present in both collections end unselected.
+  void syncPending({
+    Iterable<K> added = const [],
+    Iterable<K> removed = const [],
+  }) {
+    final additions = added.toSet();
+    final removals = removed.toSet();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      pendingN.value = ids;
+      _pendingN.value = {..._pendingN.value, ...additions}..removeAll(removals);
     });
   }
 
-  void selectAll(Iterable<K> ids) => setPending(ids.toSet());
+  void selectLoaded() => _addIds(_loadedIds());
 
-  void pendingSelectLoaded() => _addIds(_loadedIds());
+  void clearLoaded() => _removeIds(_loadedIds());
 
-  void pendingClearLoaded() => _removeIds(_loadedIds());
+  void selectFiltered() => _addIds(_filteredIds());
 
-  void pendingSelectFiltered() => _addIds(_filteredIds());
+  void clearFiltered() => _removeIds(_filteredIds());
 
-  void pendingClearFiltered() => _removeIds(_filteredIds());
-
-  void selectLoadedAsDelta() => _addIds(_loadedIds(), asDelta: true);
-
-  void clearLoadedAsDelta() => _removeIds(_loadedIds(), asDelta: true);
-
-  void selectFilteredAsDelta() => _addIds(_filteredIds(), asDelta: true);
-
-  void clearFilteredAsDelta() => _removeIds(_filteredIds(), asDelta: true);
-
-  void toggleId(K id, bool next) {
-    final s = {...pending};
-    next ? s.add(id) : s.remove(id);
-    setPending(s);
+  void setSelected(K id, bool selected) {
+    final next = {...pendingIds};
+    selected ? next.add(id) : next.remove(id);
+    _setPendingAsDelta(next);
   }
 
-  void toggleIdAsDelta(K id, bool next) {
-    final s = {...pending};
-    next ? s.add(id) : s.remove(id);
-    _setPending(s, asDelta: true);
+  void _addIds(Iterable<K> ids) {
+    _setPendingAsDelta({...pendingIds, ...ids});
   }
 
-  void _addIds(Iterable<K> ids, {bool asDelta = false}) {
-    _setPending({...pending, ...ids}, asDelta: asDelta);
-  }
-
-  void _removeIds(Iterable<K> ids, {bool asDelta = false}) {
+  void _removeIds(Iterable<K> ids) {
     final remove = ids.toSet();
-    _setPending({...pending}..removeAll(remove), asDelta: asDelta);
+    _setPendingAsDelta({...pendingIds}..removeAll(remove));
   }
 
-  void _setPending(Set<K> ids, {required bool asDelta}) {
+  void _setPendingAsDelta(Set<K> ids) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (asDelta) _recordDelta(pendingN.value, ids);
-      pendingN.value = ids;
+      _recordDelta(_pendingN.value, ids);
+      _pendingN.value = ids;
     });
   }
 

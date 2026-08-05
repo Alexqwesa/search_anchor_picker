@@ -277,7 +277,7 @@ class _DemoHomeState extends State<DemoHome> {
                             setState(() => selectedOnScreenA.clear());
 
                             // 2) clear overlay pending selection NOW (immediate checkbox repaint)
-                            actions.pendingClearLoaded();
+                            actions.syncPending(removed: actions.pendingIds);
                           },
                         ),
                         const Divider(height: 1),
@@ -362,8 +362,7 @@ class _DemoHomeState extends State<DemoHome> {
                             });
                             // For this use case (screen selection), we want to ADD added items to pending too.
                             // But SubPickerTile only removes. So we manually mix in added items.
-                            final next = {...actions.pending, ...added};
-                            actions.setPending(next);
+                            actions.syncPending(added: added);
                           },
                         ),
                         SubPickerTile<DemoItem>(
@@ -379,8 +378,7 @@ class _DemoHomeState extends State<DemoHome> {
                                 ..addAll(added)
                                 ..removeAll(removed);
                             });
-                            final next = {...actions.pending, ...added};
-                            actions.setPending(next);
+                            actions.syncPending(added: added);
                           },
                         ),
                         const Divider(height: 1),
@@ -389,7 +387,7 @@ class _DemoHomeState extends State<DemoHome> {
                           title: const Text('Clear screen selection B'),
                           onTap: () {
                             setState(() => selectedOnScreenB.clear());
-                            actions.pendingClearLoaded();
+                            actions.syncPending(removed: actions.pendingIds);
                           },
                         ),
                         const Divider(height: 1),
