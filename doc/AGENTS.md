@@ -9,9 +9,8 @@
 | Header bulk selection | `selectLoaded`, `clearLoaded`, or filtered variants |
 | Mirror already-persisted external changes | `syncPending` |
 
-`onFinishReplaceAll` is deprecated. Do not introduce it in new integrations.
-Use explicit deltas unless the backend truly requires a complete, authoritative
-snapshot that was loaded independently from search/pagination results.
+There is no replace-all close callback. Apply explicit deltas, or update
+`initialSelectedIds` when the parent owns a complete authoritative snapshot.
 
 ## Selection invariants
 
@@ -33,7 +32,7 @@ UI should move before a remote operation completes.
 ## Nested pickers
 
 Pass the current sublist membership to `SubPickerTile.initialSelectedIds`. When
-`parentActions` is provided, explicit sub-picker removals are removed from parent
+`parentController` is provided, explicit sub-picker removals are removed from parent
 pending selection. Additions remain unselected in the parent.
 
 Desktop submenus may use `menuOffset`. Mobile defaults to full-screen just like
@@ -48,7 +47,7 @@ Use focused builders only for the region that needs custom behavior:
 - trigger/header/item
 - search field/results
 - loading/empty/error
-- save-empty/view/surface
+- view/surface
 
 Default visual widgets and `SubPickerTile` live in `lib/src/widgets/` and are
 exported through `package:search_anchor_picker/widgets.dart`.
@@ -57,7 +56,7 @@ exported through `package:search_anchor_picker/widgets.dart`.
 
 - Keep configs stable where possible; changing a config while open starts a new,
   generation-guarded load.
-- Do not retain popup `BuildContext`, actions, or dynamic keys after close.
+- Do not retain popup `BuildContext`, controller, or dynamic keys after close.
 - Async callbacks may complete after close; core cleanup is already synchronous.
 - Callback failures are reported through `FlutterError`, so integrations should
   still handle persistence errors and provide user feedback.

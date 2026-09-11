@@ -130,9 +130,9 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
                     label: Text('Open picker ($selectedCount selected)'),
                   );
                 },
-                headerBuilder: (context, actions, allItems) => [
+                headerBuilder: (context, controller, allItems) => [
                   BulkActionsHeader(
-                    actions: actions,
+                    controller: controller,
                     loadedCount: allItems.length,
                     externalSelectedIds: _selectedIds,
                     onApplyPending: _applyPending,
@@ -178,13 +178,13 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
 class BulkActionsHeader extends StatelessWidget {
   const BulkActionsHeader({
     super.key,
-    required this.actions,
+    required this.controller,
     required this.loadedCount,
     required this.externalSelectedIds,
     required this.onApplyPending,
   });
 
-  final GenericPickerActions<PendingActionItem, int> actions;
+  final GenericPickerController<PendingActionItem, int> controller;
   final int loadedCount;
   final Set<int> externalSelectedIds;
   final ValueChanged<Set<int>> onApplyPending;
@@ -196,7 +196,7 @@ class BulkActionsHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: ValueListenableBuilder<Set<int>>(
-        valueListenable: actions.pendingIdsListenable,
+        valueListenable: controller.pendingIdsListenable,
         builder: (context, pending, child) {
           final pendingIds = pending.toList()..sort();
 
@@ -216,19 +216,19 @@ class BulkActionsHeader extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   OutlinedButton(
-                    onPressed: actions.selectLoaded,
+                    onPressed: controller.selectLoaded,
                     child: const Text('Select loaded'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.clearLoaded,
+                    onPressed: controller.clearLoaded,
                     child: const Text('Clear loaded'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.selectFiltered,
+                    onPressed: controller.selectFiltered,
                     child: const Text('Select filtered'),
                   ),
                   OutlinedButton(
-                    onPressed: actions.clearFiltered,
+                    onPressed: controller.clearFiltered,
                     child: const Text('Clear filtered'),
                   ),
                   FilledButton.tonal(
@@ -236,7 +236,7 @@ class BulkActionsHeader extends StatelessWidget {
                     child: const Text('Apply pending to parent'),
                   ),
                   TextButton(
-                    onPressed: () => actions.syncPending(
+                    onPressed: () => controller.syncPending(
                       added: externalSelectedIds.difference(pending),
                       removed: pending.difference(externalSelectedIds),
                     ),

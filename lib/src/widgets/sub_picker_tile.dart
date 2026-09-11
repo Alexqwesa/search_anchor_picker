@@ -11,11 +11,8 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
     required this.config,
     required this.initialSelectedIds,
     this.icon,
-    this.parentActions,
+    this.parentController,
     this.onFinish,
-    this.onFinishReplaceAll,
-    this.showSaveEmptyButton = true,
-    this.saveEmptyLabel,
     this.mode = PickerMode.multi,
     this.leading,
     this.subtitle,
@@ -27,7 +24,6 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
     this.loadingBuilder,
     this.emptyBuilder,
     this.errorBuilder,
-    this.saveEmptyBuilder,
     this.viewBuilder,
     this.viewSurfaceBuilder,
     this.menuOffset = const Offset(30, 30),
@@ -54,21 +50,13 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
   final String? title;
   final GenericPickerConfig<T, K> config;
   final List<K> initialSelectedIds;
-  final GenericPickerActions<T, K>? parentActions;
+  final GenericPickerController<T, K>? parentController;
   final IconData? icon;
   final Widget? leading;
   final Widget? subtitle;
   final Widget? trailing;
   final PickerMode mode;
   final GenericOnFinish<K>? onFinish;
-
-  @Deprecated(
-    'Unsafe with server-side filtering or pagination. Use onFinish for deltas.',
-  )
-  final GenericOnFinishReplaceAll<K>? onFinishReplaceAll;
-
-  final bool showSaveEmptyButton;
-  final String? saveEmptyLabel;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget Function(BuildContext, T, bool, VoidCallback)? itemBuilder;
   final PickerResultsBuilder? resultsBuilder;
@@ -76,7 +64,6 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
   final PickerLoadingBuilder? loadingBuilder;
   final PickerEmptyBuilder? emptyBuilder;
   final PickerErrorBuilder? errorBuilder;
-  final PickerSaveEmptyBuilder? saveEmptyBuilder;
   final PickerViewBuilder? viewBuilder;
   final PickerViewSurfaceBuilder? viewSurfaceBuilder;
   final Offset menuOffset;
@@ -105,15 +92,11 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
       config: config,
       initialSelectedIds: initialSelectedIds,
       onFinish: ({required added, required removed}) async {
-        if (parentActions != null) {
-          parentActions!.syncPending(removed: removed);
+        if (parentController != null) {
+          parentController!.syncPending(removed: removed);
         }
         await onFinish?.call(added: added, removed: removed);
       },
-      // ignore: deprecated_member_use_from_same_package
-      onFinishReplaceAll: onFinishReplaceAll,
-      showSaveEmptyButton: showSaveEmptyButton,
-      saveEmptyLabel: saveEmptyLabel,
       mode: mode,
       itemBuilder: itemBuilder,
       resultsBuilder: resultsBuilder,
@@ -121,7 +104,6 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
       loadingBuilder: loadingBuilder,
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
-      saveEmptyBuilder: saveEmptyBuilder,
       viewBuilder: viewBuilder,
       viewSurfaceBuilder: viewSurfaceBuilder,
       menuOffset: menuOffset,
@@ -167,11 +149,8 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     required super.config,
     required super.initialSelectedIds,
     super.icon,
-    super.parentActions,
+    super.parentController,
     super.onFinish,
-    super.onFinishReplaceAll,
-    super.showSaveEmptyButton,
-    super.saveEmptyLabel,
     super.mode,
     super.leading,
     super.subtitle,
@@ -183,7 +162,6 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     super.loadingBuilder,
     super.emptyBuilder,
     super.errorBuilder,
-    super.saveEmptyBuilder,
     super.viewBuilder,
     super.viewSurfaceBuilder,
     super.menuOffset,

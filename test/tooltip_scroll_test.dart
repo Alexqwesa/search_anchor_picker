@@ -42,8 +42,11 @@ void main() {
                 padding: EdgeInsets.all(16),
                 child: Text('open picker'),
               ),
-              maxHeight: 260,
-              minWidth: 320,
+              viewConstraints: const BoxConstraints(
+                minWidth: 320,
+                minHeight: 240,
+                maxHeight: 260,
+              ),
             ),
           ),
         ),

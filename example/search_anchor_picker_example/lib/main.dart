@@ -224,7 +224,7 @@ class _DemoHomeState extends State<DemoHome> {
                     headerBuilder: (ctx, actions, allItems) {
                       return [
                         SubPickerTile<DemoItem>(
-                          parentActions: actions,
+                          parentController: actions,
                           key: actions.getKey('subA1'),
                           title: 'Add/remove from Sub A1',
                           icon: Icons.playlist_add,
@@ -247,7 +247,7 @@ class _DemoHomeState extends State<DemoHome> {
                           },
                         ),
                         SubPickerTile<DemoItem>(
-                          parentActions: actions,
+                          parentController: actions,
                           key: actions.getKey('subA2'),
                           title: 'Add/remove from Sub A2',
                           icon: Icons.playlist_add_check,
@@ -348,7 +348,7 @@ class _DemoHomeState extends State<DemoHome> {
                     headerBuilder: (ctx, actions, allItems) {
                       return [
                         SubPickerTile<DemoItem>(
-                          parentActions: actions,
+                          parentController: actions,
                           key: actions.getKey('subB1'),
                           title: 'Select from Sub B1 (to screen)',
                           icon: Icons.person_add_alt_1,
@@ -366,7 +366,7 @@ class _DemoHomeState extends State<DemoHome> {
                           },
                         ),
                         SubPickerTile<DemoItem>(
-                          parentActions: actions,
+                          parentController: actions,
                           key: actions.getKey('subB2'),
                           title: 'Select from Sub B2 (to screen)',
                           icon: Icons.person_add_alt,

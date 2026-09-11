@@ -65,8 +65,8 @@ Offset _resolvedOffsetForTest({
 void main() {
   testWidgets('SubPickerTile syncs removals but not additions', (tester) async {
     final parentPending = ValueNotifier<Set<int>>({1, 2, 3});
-    // Mock parent actions
-    final parentActions = PickerActions<int>(
+    // Mock parent controller
+    final parentController = PickerController<int>(
       pendingN: parentPending,
       idOf: (i) => i,
       close: ([_]) {},
@@ -97,7 +97,7 @@ void main() {
               1,
               2,
             ], // 1, 2 are selected in sub-picker (present in main)
-            parentActions: parentActions,
+            parentController: parentController,
             onFinish: ({required added, required removed}) async {
               finishCallCount++;
               lastAdded = added;
@@ -519,7 +519,10 @@ void main() {
             height: 40,
             child: SearchAnchorPicker<int>(
               isFullScreen: false,
-              minWidth: 320,
+              viewConstraints: const BoxConstraints(
+                minWidth: 320,
+                minHeight: 240,
+              ),
               config: PickerConfig(
                 loadItems: (_) async => [1, 2],
                 idOf: (i) => i,
@@ -569,8 +572,11 @@ void main() {
                 height: 40,
                 child: SearchAnchorPicker<int>(
                   isFullScreen: false,
-                  minWidth: minWidth,
-                  maxHeight: maxHeight,
+                  viewConstraints: const BoxConstraints(
+                    minWidth: minWidth,
+                    minHeight: 240,
+                    maxHeight: maxHeight,
+                  ),
                   menuOffset: menuOffset,
                   config: PickerConfig(
                     loadItems: (_) async => [1, 2],
@@ -649,8 +655,11 @@ void main() {
               height: 40,
               child: SearchAnchorPicker<int>(
                 isFullScreen: false,
-                minWidth: minWidth,
-                maxHeight: maxHeight,
+                viewConstraints: const BoxConstraints(
+                  minWidth: minWidth,
+                  minHeight: 240,
+                  maxHeight: maxHeight,
+                ),
                 menuOffset: menuOffset,
                 config: PickerConfig(
                   loadItems: (_) async => [1, 2],

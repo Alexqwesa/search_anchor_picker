@@ -21,7 +21,7 @@ radio selection, stable selected-first ordering, and optional nested menus.
 
 ```yaml
 dependencies:
-  search_anchor_picker: ^0.0.4
+  search_anchor_picker: ^0.1.0
 ```
 
 To use the Git repository directly:
@@ -31,7 +31,7 @@ dependencies:
   search_anchor_picker:
     git:
       url: https://github.com/Alexqwesa/search_anchor_picker.git
-      ref: v0.0.4
+      ref: v0.1.0
 ```
 
 ## Basic picker
@@ -109,7 +109,7 @@ Use focused builders to replace only the region you own:
 - `triggerBuilder`, `headerBuilder`, and `itemBuilder`
 - `searchFieldBuilder` and `resultsBuilder`
 - `loadingBuilder`, `emptyBuilder`, and `errorBuilder`
-- `saveEmptyBuilder`, `viewBuilder`, and `viewSurfaceBuilder`
+- `viewBuilder` and `viewSurfaceBuilder`
 
 For example, a custom error region still uses the core retry lifecycle:
 
@@ -130,11 +130,11 @@ The default widgets are not built while the popup is closed.
 `SubPickerTile` is an optional convenience widget for sublist membership:
 
 ```dart
-headerBuilder: (context, actions, items) => [
+headerBuilder: (context, controller, items) => [
   SubPickerTile<Person>(
     title: 'Manage directory membership',
     config: directoryConfig,
-    parentActions: actions,
+    parentController: controller,
     initialSelectedIds: directoryIds,
     menuOffset: const Offset(30, 12),
     onFinish: ({required added, required removed}) async {
@@ -146,7 +146,7 @@ headerBuilder: (context, actions, items) => [
 ```
 
 Sub-picker removals are removed from the parent pending selection when
-`parentActions` is provided. Additions enter the parent list unselected.
+`parentController` is provided. Additions enter the parent list unselected.
 
 ## Server-side search safety
 
@@ -173,10 +173,9 @@ Prefer `onFinish(added:, removed:)` for save-on-close APIs, or `onToggle` for
 per-row persistence. `OnToggleMode.optimistic` updates a checkbox immediately and
 rolls it back if the async callback returns `false`.
 
-`onFinishReplaceAll(finalIds)` is deprecated. A full pending snapshot cannot prove
-that IDs missing from a partial server result were deleted, so replacing backend
-state wholesale can remove valid hidden selections. Existing callers continue to
-work, and empty replacement still requires the explicit save-empty action.
+There is no replace-all close callback. Apply the explicit `added` and `removed`
+deltas, or use `initialSelectedIds` when the parent has a complete authoritative
+selection snapshot.
 
 ## License
 

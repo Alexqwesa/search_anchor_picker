@@ -11,8 +11,8 @@ Use this checklist when changing an integration:
   deletion.
 - Use `selectLoaded`, `clearLoaded`, and their filtered variants for bulk user
   intent. Reserve `syncPending` for mirroring changes already persisted elsewhere.
-- Do not add new `onFinishReplaceAll` usage; it is deprecated because partial
-  server results cannot safely replace authoritative selection state.
+- Do not derive a replacement selection from partial server results. Apply
+  `onFinish` deltas, or reseed `initialSelectedIds` from authoritative state.
 - Use `SearchViewTheme` or SearchAnchor-style view properties before replacing a
   whole visual region with a builder.
 - Keep nested popup offsets desktop-oriented; mobile defaults to full-screen.

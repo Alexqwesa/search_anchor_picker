@@ -1,24 +1,32 @@
-## 0.0.4
+## 0.1.0
 
 Breaking package identity:
 
 * Renamed the unpublished package from `generic_search_selector` to
   `search_anchor_picker`; imports now use
   `package:search_anchor_picker/search_anchor_picker.dart`.
+* Renamed `GenericPickerActions` / `PickerActions` to
+  `GenericPickerController` / `PickerController`, and renamed
+  `SubPickerTile.parentActions` to `parentController`.
+* Removed the deprecated `onFinishReplaceAll`, `minWidth`, and `maxHeight`
+  APIs. Use explicit `onFinish` deltas and `viewConstraints`.
+* Removed the replace-all-only empty-save parameters, builder, and default
+  widget.
+
+## 0.0.4
 
 SearchAnchor parity / UI:
 
 * Added SearchAnchor-compatible view properties and `SearchViewTheme` fallback.
 * Added mobile full-screen and desktop anchored popup defaults.
-* Added focused builders for search, results, loading, empty, error, save-empty,
-  composed view, and surface regions.
+* Added focused builders for search, results, loading, empty, error, composed
+  view, and surface regions.
 * Moved optional/default widgets under `lib/src/widgets/` and added `widgets.dart`.
-* Deprecated `minWidth` / `maxHeight` in favor of `viewConstraints`.
+* Added `viewConstraints` for popup sizing.
 
 Selection / lifecycle:
 
-* Split close persistence into `onFinish({added, removed})` explicit deltas and
-  the now-deprecated `onFinishReplaceAll(finalIds)` compatibility callback.
+* Close persistence uses `onFinish({added, removed})` explicit deltas.
 * Simplified header actions: `selectLoaded`, `clearLoaded`, and their filtered
   variants record explicit deltas by default; `syncPending(added:, removed:)` is
   the sole pending-only synchronization escape hatch.
@@ -26,7 +34,6 @@ Selection / lifecycle:
 * Extracted selection-session bookkeeping and expanded lifecycle coverage.
 * Added loading/error/retry states, stale-load suppression, idempotent close,
   and safe callback failure cleanup.
-* Empty legacy replace-all saves still require explicit confirmation.
 
 Docs / example:
 

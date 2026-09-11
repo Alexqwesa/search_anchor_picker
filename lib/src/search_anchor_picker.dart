@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' show clampDouble, lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -21,17 +20,12 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
     this.onToggle,
     this.onToggleMode = OnToggleMode.awaitGate,
     this.onFinish,
-    this.onFinishReplaceAll,
-    this.showSaveEmptyButton = true,
-    this.saveEmptyLabel,
     this.searchController,
     this.triggerBuilder,
     this.triggerChild,
     this.iconWhenEmpty,
     this.iconWhenSelected,
     this.iconSize,
-    this.maxHeight,
-    this.minWidth,
     this.headerBuilder,
     this.headerTiles,
     this.selectedFirst,
@@ -42,7 +36,6 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
     this.loadingBuilder,
     this.emptyBuilder,
     this.errorBuilder,
-    this.saveEmptyBuilder,
     this.viewBuilder,
     this.viewSurfaceBuilder,
     this.menuOffset = Offset.zero,
@@ -82,15 +75,6 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   final Future<bool> Function(T item, bool nextSelected)? onToggle;
   final OnToggleMode onToggleMode;
   final GenericOnFinish<K>? onFinish;
-
-  @Deprecated(
-    'Unsafe with server-side filtering or pagination. Use onFinish for explicit '
-    'deltas or onToggle for per-item persistence.',
-  )
-  final GenericOnFinishReplaceAll<K>? onFinishReplaceAll;
-
-  final bool showSaveEmptyButton;
-  final String? saveEmptyLabel;
   final SearchController? searchController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget? triggerChild;
@@ -98,15 +82,9 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   final Widget? iconWhenSelected;
   final double? iconSize;
 
-  @Deprecated('Use viewConstraints instead.')
-  final double? maxHeight;
-
-  @Deprecated('Use viewConstraints instead.')
-  final double? minWidth;
-
   final List<Widget> Function(
     BuildContext context,
-    GenericPickerActions<T, K> actions,
+    GenericPickerController<T, K> controller,
     List<T> allItems,
   )?
   headerBuilder;
@@ -125,7 +103,6 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   final PickerLoadingBuilder? loadingBuilder;
   final PickerEmptyBuilder? emptyBuilder;
   final PickerErrorBuilder? errorBuilder;
-  final PickerSaveEmptyBuilder? saveEmptyBuilder;
   final PickerViewBuilder? viewBuilder;
   final PickerViewSurfaceBuilder? viewSurfaceBuilder;
 
@@ -174,17 +151,12 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     super.onToggle,
     super.onToggleMode,
     super.onFinish,
-    super.onFinishReplaceAll,
-    super.showSaveEmptyButton,
-    super.saveEmptyLabel,
     super.searchController,
     super.triggerBuilder,
     super.triggerChild,
     super.iconWhenEmpty,
     super.iconWhenSelected,
     super.iconSize,
-    super.maxHeight,
-    super.minWidth,
     super.headerBuilder,
     super.headerTiles,
     super.selectedFirst,
@@ -195,7 +167,6 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     super.loadingBuilder,
     super.emptyBuilder,
     super.errorBuilder,
-    super.saveEmptyBuilder,
     super.viewBuilder,
     super.viewSurfaceBuilder,
     super.menuOffset,
@@ -271,7 +242,6 @@ class _GenericSearchAnchorPickerState<T, K>
   BuildContext? _triggerContext;
   Rect _openedAnchorRect = Rect.zero;
   bool _open = false;
-  bool _allowReplaceAllEmpty = false;
   int _tick = 0;
   ValueNotifier<int>? _viewTickNotifier;
   ValueNotifier<int> get _viewTickN =>
@@ -382,7 +352,6 @@ class _GenericSearchAnchorPickerState<T, K>
 
   void _onOpen() {
     _selection.open(widget.initialSelectedIds);
-    _allowReplaceAllEmpty = false;
     _stableIds = <K>[];
     _itemsSnapshot = null;
     _loadError = null;
@@ -416,10 +385,7 @@ class _GenericSearchAnchorPickerState<T, K>
     final queryAtClose = _controller.text;
     final externalController = widget.searchController;
     final result = _selection.result();
-    final allowEmpty = _allowReplaceAllEmpty;
     final onFinish = widget.onFinish;
-    // ignore: deprecated_member_use_from_same_package
-    final onFinishReplaceAll = widget.onFinishReplaceAll;
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
@@ -453,9 +419,7 @@ class _GenericSearchAnchorPickerState<T, K>
           externalController.text = queryAtClose;
         }
       }
-      unawaited(
-        _runCloseCallbacks(result, allowEmpty, onFinish, onFinishReplaceAll),
-      );
+      unawaited(_runCloseCallback(result, onFinish));
     });
   }
 
@@ -468,11 +432,9 @@ class _GenericSearchAnchorPickerState<T, K>
     });
   }
 
-  Future<void> _runCloseCallbacks(
+  Future<void> _runCloseCallback(
     PickerSelectionResult<K> result,
-    bool allowEmpty,
     GenericOnFinish<K>? onFinish,
-    GenericOnFinishReplaceAll<K>? onFinishReplaceAll,
   ) async {
     try {
       await onFinish?.call(
@@ -481,15 +443,6 @@ class _GenericSearchAnchorPickerState<T, K>
       );
     } catch (error, stackTrace) {
       _reportCallbackError('onFinish', error, stackTrace);
-    }
-
-    try {
-      if (onFinishReplaceAll != null &&
-          (result.finalIds.isNotEmpty || allowEmpty)) {
-        await onFinishReplaceAll(result.finalIds.toList());
-      }
-    } catch (error, stackTrace) {
-      _reportCallbackError('onFinishReplaceAll', error, stackTrace);
     } finally {
       if (mounted) setState(() => _tick++);
     }
@@ -550,7 +503,7 @@ class _GenericSearchAnchorPickerState<T, K>
     final anchorBox = _triggerContext?.findRenderObject() as RenderBox?;
     final overlayBox = _overlayState?.context.findRenderObject() as RenderBox?;
     if (anchorBox == null || overlayBox == null) {
-      return Offset.zero & Size(widget.minWidth ?? 360, 0);
+      return Offset.zero & Size(widget.viewConstraints?.minWidth ?? 360, 0);
     }
     final offset = anchorBox.localToGlobal(Offset.zero, ancestor: overlayBox);
     return offset & anchorBox.size;
@@ -642,7 +595,7 @@ class _GenericSearchAnchorPickerState<T, K>
         } else {
           _syncStableIds(items);
         }
-        final actions = GenericPickerActions<T, K>(
+        final controller = GenericPickerController<T, K>(
           pendingN: _pendingN,
           idOf: widget.config.idOf,
           close: _close,
@@ -654,7 +607,7 @@ class _GenericSearchAnchorPickerState<T, K>
           recordDelta: _recordUserPendingChange,
         );
         final header =
-            widget.headerBuilder?.call(context, actions, items) ??
+            widget.headerBuilder?.call(context, controller, items) ??
             widget.headerTiles ??
             const <Widget>[];
         final byId = <K, T>{
@@ -711,29 +664,6 @@ class _GenericSearchAnchorPickerState<T, K>
         );
   }
 
-  Widget _buildSaveEmptyAction(BuildContext context) {
-    // ignore: deprecated_member_use_from_same_package
-    if (widget.onFinishReplaceAll == null || !widget.showSaveEmptyButton) {
-      return const SizedBox.shrink();
-    }
-    return ValueListenableBuilder<Set<K>>(
-      valueListenable: _pendingN,
-      builder: (context, pending, _) {
-        if (pending.isNotEmpty) return const SizedBox.shrink();
-        void save() {
-          _allowReplaceAllEmpty = true;
-          _close('saveEmpty');
-        }
-
-        return widget.saveEmptyBuilder?.call(context, save) ??
-            DefaultPickerSaveEmptyButton(
-              onPressed: save,
-              label: widget.saveEmptyLabel,
-            );
-      },
-    );
-  }
-
   Widget _buildView(
     BuildContext context,
     PickerViewStyle style,
@@ -745,14 +675,12 @@ class _GenericSearchAnchorPickerState<T, K>
         data: DividerTheme.of(context).copyWith(color: style.dividerColor),
         child: const Divider(height: 1),
       ),
-      saveEmptyAction: _buildSaveEmptyAction(context),
       results: _buildResults(style),
     );
     return widget.viewBuilder?.call(context, parts) ??
         DefaultPickerView(
           searchField: parts.searchField,
           divider: parts.divider,
-          saveEmptyAction: parts.saveEmptyAction,
           results: parts.results,
           shrinkWrap: style.shrinkWrap,
         );
@@ -780,19 +708,6 @@ class _GenericSearchAnchorPickerState<T, K>
         };
   }
 
-  BoxConstraints? _legacyConstraints() {
-    if (widget.viewConstraints != null ||
-        (widget.minWidth == null && widget.maxHeight == null)) {
-      return widget.viewConstraints;
-    }
-    final maxHeight = widget.maxHeight ?? double.infinity;
-    return BoxConstraints(
-      minWidth: widget.minWidth ?? 360,
-      minHeight: math.min(240, maxHeight),
-      maxHeight: maxHeight,
-    );
-  }
-
   PickerViewStyle _resolveStyle(BuildContext context, bool fullScreen) {
     return PickerViewStyle.resolve(
       context,
@@ -805,7 +720,7 @@ class _GenericSearchAnchorPickerState<T, K>
       headerTextStyle: widget.headerTextStyle,
       headerHintStyle: widget.headerHintStyle,
       dividerColor: widget.dividerColor,
-      constraints: _legacyConstraints(),
+      constraints: widget.viewConstraints,
       viewPadding: widget.viewPadding,
       barPadding: widget.viewBarPadding,
       shrinkWrap: widget.shrinkWrap,

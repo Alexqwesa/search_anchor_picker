@@ -10,7 +10,8 @@ The package is split between core behavior and optional visual defaults.
   explicit add/remove intent.
 - `OverlayBody<T, K>` coordinates filtering and row toggles without choosing the
   surrounding popup surface or list layout.
-- `GenericPickerActions<T, K>` exposes explicit-delta bulk operations and
+- `GenericPickerController<T, K>` exposes pending selection state, explicit-delta
+  bulk operations, and
   pending synchronization to header code.
 - `lib/src/widgets/` contains default view widgets, tooltip helpers, feedback UI,
   and the optional `SubPickerTile` convenience widget.
@@ -55,19 +56,19 @@ completes, leaving the picker reusable.
 `loadItems` is a display result, never deletion truth. Pending IDs are not
 intersected with loaded IDs.
 
-Only row toggles and `*AsDelta()` actions record `added` or `removed`. Parent
-updates to `initialSelectedIds` and pending-only actions may reseed/change the
-visible pending state, but they do not create persistence deltas. Reopening starts
-a new selection session from the latest external seed and clears old intent.
+Row toggles, `setSelected`, and loaded/filtered bulk controller commands record
+only IDs they actually change as `added` or `removed`. Parent updates to
+`initialSelectedIds` and `syncPending` may reseed/change visible pending state,
+but they do not create persistence deltas. Reopening starts a new selection
+session from the latest external seed and clears old intent.
 
-`onFinishReplaceAll` remains operational for compatibility but is deprecated.
-Replacing backend state from a partial server result is inherently unsafe. Empty
-replacement additionally requires the explicit save-empty action.
+There is no replace-all close callback. Consumers apply explicit deltas, while a
+parent with a complete authoritative snapshot can reseed `initialSelectedIds`.
 
 ## Nested menus
 
 `SubPickerTile` forwards all focused visual builders and SearchAnchor-style view
-options. When `parentActions` is supplied, explicit sub-picker removals are also
+options. When `parentController` is supplied, explicit sub-picker removals are also
 removed from the parent pending set. Sub-picker additions are not selected in the
 parent automatically.
 

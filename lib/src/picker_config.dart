@@ -236,22 +236,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
 typedef GenericOnFinish<K> =
     Future<void> Function({required List<K> added, required List<K> removed});
 
-/// Called when the popup closes with the full final in-picker selection.
-///
-/// This is a replace-all persistence API. If the final selection is empty,
-/// [GenericSearchAnchorPicker] requires explicit empty-save confirmation before
-/// calling this callback.
-@Deprecated(
-  'Unsafe with server-side filtering or pagination. Use onFinish for explicit '
-  'deltas or onToggle for per-item persistence.',
-)
-typedef GenericOnFinishReplaceAll<K> = Future<void> Function(List<K> finalIds);
-
 typedef OnFinish = GenericOnFinish<int>;
-@Deprecated(
-  'Unsafe with server-side filtering or pagination. Use OnFinish or onToggle.',
-)
-typedef OnFinishReplaceAll = GenericOnFinishReplaceAll<int>;
 
 enum PickerMode { multi, radio, radioToggle }
 
@@ -275,14 +260,14 @@ enum UnselectBehavior {
   // keepSelected,
 }
 
-/// Actions exposed to headerBuilder so callers never need InheritedWidget lookups.
+/// Controller exposed to headerBuilder for selection state and commands.
 ///
 /// Bulk and single-item selection methods record explicit user intent for
 /// [GenericSearchAnchorPicker.onFinish]. Use [syncPending] only when external code
 /// already owns persistence and the popup must mirror those changes without
 /// producing another `added` or `removed` delta.
-class GenericPickerActions<T, K> {
-  GenericPickerActions({
+class GenericPickerController<T, K> {
+  GenericPickerController({
     required ValueNotifier<Set<K>> pendingN,
     required this.idOf,
     required void Function([String? reason]) close,
@@ -374,8 +359,8 @@ class GenericPickerActions<T, K> {
   }
 }
 
-class PickerActions<T> extends GenericPickerActions<T, int> {
-  PickerActions({
+class PickerController<T> extends GenericPickerController<T, int> {
+  PickerController({
     required super.pendingN,
     required super.idOf,
     required super.close,

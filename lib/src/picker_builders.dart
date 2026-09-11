@@ -20,9 +20,6 @@ typedef PickerErrorBuilder =
       VoidCallback retry,
     );
 
-typedef PickerSaveEmptyBuilder =
-    Widget Function(BuildContext context, VoidCallback save);
-
 typedef PickerResultsBuilder =
     Widget Function(
       BuildContext context,
@@ -34,13 +31,11 @@ class PickerViewParts {
   const PickerViewParts({
     required this.searchField,
     required this.divider,
-    required this.saveEmptyAction,
     required this.results,
   });
 
   final Widget searchField;
   final Widget divider;
-  final Widget saveEmptyAction;
   final Widget results;
 }
 

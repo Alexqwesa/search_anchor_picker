@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
 
-Widget _pendingIds(GenericPickerActions<int, int> actions) {
+Widget _pendingIds(GenericPickerController<int, int> controller) {
   return ValueListenableBuilder<Set<int>>(
-    valueListenable: actions.pendingIdsListenable,
+    valueListenable: controller.pendingIdsListenable,
     builder: (context, pending, _) {
       final sorted = pending.toList()..sort();
       return Text('Pending: ${sorted.join(',')}');
@@ -704,53 +704,5 @@ void main() {
 
     expect(addedIds, [3]);
     expect(removedIds, [1]);
-  });
-
-  testWidgets('deprecated replace-all requires explicit empty confirmation', (
-    tester,
-  ) async {
-    final events = <String>[];
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SearchAnchorPicker<int>(
-            config: PickerConfig<int>(
-              loadItems: (_) async => [1],
-              idOf: (i) => i,
-              labelOf: (i) => 'Item $i',
-              searchTermsOf: (i) => ['Item $i'],
-            ),
-            initialSelectedIds: const [1],
-            triggerBuilder: (_, open, __) =>
-                ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: ({required added, required removed}) async {
-              events.add('delta:${removed.join(',')}');
-            },
-            // ignore: deprecated_member_use_from_same_package
-            onFinishReplaceAll: (_) async {
-              events.add('replace-empty');
-            },
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Item 1'));
-    await tester.pumpAndSettle();
-    expect(find.text('Save empty'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pumpAndSettle();
-    expect(events, ['delta:1']);
-
-    await tester.tap(find.text('Open'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Item 1'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Save empty'));
-    await tester.pumpAndSettle();
-    expect(events, ['delta:1', 'delta:1', 'replace-empty']);
   });
 }

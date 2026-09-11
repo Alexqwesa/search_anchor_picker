@@ -359,31 +359,10 @@ class DefaultPickerError extends StatelessWidget {
   }
 }
 
-class DefaultPickerSaveEmptyButton extends StatelessWidget {
-  const DefaultPickerSaveEmptyButton({
-    required this.onPressed,
-    super.key,
-    this.label,
-  });
-
-  final VoidCallback onPressed;
-  final String? label;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-    child: FilledButton.tonal(
-      onPressed: onPressed,
-      child: Text(label ?? 'Save empty'),
-    ),
-  );
-}
-
 class DefaultPickerView extends StatelessWidget {
   const DefaultPickerView({
     required this.searchField,
     required this.divider,
-    required this.saveEmptyAction,
     required this.results,
     required this.shrinkWrap,
     super.key,
@@ -391,7 +370,6 @@ class DefaultPickerView extends StatelessWidget {
 
   final Widget searchField;
   final Widget divider;
-  final Widget saveEmptyAction;
   final Widget results;
   final bool shrinkWrap;
 
@@ -402,7 +380,6 @@ class DefaultPickerView extends StatelessWidget {
     children: [
       searchField,
       divider,
-      saveEmptyAction,
       Flexible(fit: shrinkWrap ? FlexFit.loose : FlexFit.tight, child: results),
     ],
   );
