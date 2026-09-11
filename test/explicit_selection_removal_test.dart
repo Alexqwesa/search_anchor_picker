@@ -19,8 +19,8 @@ void main() {
     'partial results preserve unseen selections and report only explicit unselects',
     (tester) async {
       final finalIds = <int>{1, 2, 3};
-      List<int> addedIds = [];
-      List<int> removedIds = [];
+      var addedIds = <int>[];
+      var removedIds = <int>[];
 
       await tester.pumpWidget(
         MaterialApp(
@@ -63,8 +63,8 @@ void main() {
 
   testWidgets('user row checks are reported as added', (tester) async {
     final finalIds = <int>{1, 2, 3};
-    List<int> addedIds = [];
-    List<int> removedIds = [];
+    var addedIds = <int>[];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -108,7 +108,7 @@ void main() {
     'closing partial results without toggles preserves all selected ids',
     (tester) async {
       final finalIds = <int>{1, 2, 3};
-      List<int> removedIds = [];
+      var removedIds = <int>[];
 
       await tester.pumpWidget(
         MaterialApp(
@@ -150,7 +150,7 @@ void main() {
       final refreshN = ValueNotifier<int>(0);
       var items = [1];
       final finalIds = <int>{1, 2};
-      List<int> removedIds = [];
+      var removedIds = <int>[];
 
       await tester.pumpWidget(
         MaterialApp(
@@ -195,7 +195,7 @@ void main() {
     'parent changing initialSelectedIds while open explicitly reseeds pending',
     (tester) async {
       final selectedN = ValueNotifier<List<int>>(const [1, 2, 3]);
-      List<int> removedIds = [];
+      var removedIds = <int>[];
 
       await tester.pumpWidget(
         MaterialApp(
@@ -264,7 +264,7 @@ void main() {
     'temporary empty initialSelectedIds while open does not report removals',
     (tester) async {
       final selectedN = ValueNotifier<List<int>>(const [1, 2, 3]);
-      List<int> removedIds = [];
+      var removedIds = <int>[];
 
       await tester.pumpWidget(
         MaterialApp(
@@ -309,7 +309,7 @@ void main() {
   testWidgets('syncPending changes final ids without reporting deltas', (
     tester,
   ) async {
-    List<int> removedIds = [];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -356,7 +356,7 @@ void main() {
   testWidgets('syncPending preserves ids outside its explicit changes', (
     tester,
   ) async {
-    List<int> removedIds = [];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -402,7 +402,7 @@ void main() {
   testWidgets('syncPending synchronization does not report removals', (
     tester,
   ) async {
-    List<int> removedIds = [];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -449,7 +449,7 @@ void main() {
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
-    List<int> removedIds = [];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -498,7 +498,7 @@ void main() {
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
-    List<int> addedIds = [];
+    var addedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -547,7 +547,7 @@ void main() {
     tester,
   ) async {
     final finalIds = <int>{1, 2, 3};
-    List<int> removedIds = [];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -598,7 +598,7 @@ void main() {
     tester,
   ) async {
     final finalIds = <int>{1};
-    List<int> addedIds = [];
+    var addedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -648,8 +648,8 @@ void main() {
   testWidgets('setSelected reports deltas while syncPending does not', (
     tester,
   ) async {
-    List<int> addedIds = [];
-    List<int> removedIds = [];
+    var addedIds = <int>[];
+    var removedIds = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(

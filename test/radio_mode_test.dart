@@ -12,7 +12,7 @@ void main() {
     );
 
     // Track selection changes
-    List<int> currentSelection = [];
+    var currentSelection = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(
@@ -76,7 +76,7 @@ void main() {
       searchTermsOf: (_) => [],
     );
 
-    List<int> currentSelection = [];
+    var currentSelection = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(

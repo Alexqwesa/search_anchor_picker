@@ -252,7 +252,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester.getRect(find.byType(DefaultPickerViewSurface)),
-      const Offset(0, 0) & const Size(800, 600),
+      Offset.zero & const Size(800, 600),
     );
   });
 
@@ -279,6 +279,6 @@ void main() {
     final rect = tester.getRect(find.byType(DefaultPickerViewSurface));
     expect(rect.width, 360);
     expect(rect.height, 400);
-    expect(rect, isNot(const Offset(0, 0) & const Size(800, 600)));
+    expect(rect, isNot(Offset.zero & const Size(800, 600)));
   });
 }

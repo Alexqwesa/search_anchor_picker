@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
+import 'package:search_anchor_picker/search_anchor_picker.dart'
+    show GenericSearchAnchorPicker, SearchAnchorPicker, SubPickerTile;
 import 'package:search_anchor_picker/src/picker_builders.dart';
 
 typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
@@ -14,7 +16,7 @@ typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 ///
 /// In-overlay selection lives in an internal [ValueNotifier] while the popup is open.
 ///
-/// **External [initialSelectedIds]:**
+/// **External `initialSelectedIds`:**
 /// - When the popup is **closed**, parent updates re-seed the next open.
 /// - When the popup is **open**, [GenericSearchAnchorPicker] may still sync
 ///   `initialSelectedIds` into pending so nested sub-pickers can reflect
@@ -49,18 +51,14 @@ class GenericPickerConfig<T, K> {
   ///
   /// Requires the [PickerConfig] to be currently attached to a [SearchAnchorPicker] (or [SubPickerTile]).
   void open() {
-    if (internalOnOpen != null) {
-      internalOnOpen!();
-    }
+    internalOnOpen?.call();
   }
 
   /// Programmatically close the picker.
   ///
   /// Requires the [PickerConfig] to be currently attached to a [SearchAnchorPicker] (or [SubPickerTile]).
   void close([String? reason]) {
-    if (internalOnClose != null) {
-      internalOnClose!(reason);
-    }
+    internalOnClose?.call(reason);
   }
 
   /// Loads the current display/search result.

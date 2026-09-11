@@ -22,18 +22,6 @@ class PickerViewStyle {
     required this.shrinkWrap,
   });
 
-  final Color backgroundColor;
-  final double elevation;
-  final Color surfaceTintColor;
-  final OutlinedBorder shape;
-  final Color dividerColor;
-  final TextStyle? headerTextStyle;
-  final TextStyle? headerHintStyle;
-  final BoxConstraints constraints;
-  final EdgeInsetsGeometry? viewPadding;
-  final EdgeInsetsGeometry barPadding;
-  final bool shrinkWrap;
-
   factory PickerViewStyle.resolve(
     BuildContext context, {
     required bool isFullScreen,
@@ -101,11 +89,22 @@ class PickerViewStyle {
           barPadding ??
           viewTheme.barPadding ??
           const EdgeInsets.symmetric(horizontal: 8),
-      shrinkWrap: isFullScreen
-          ? false
-          : shrinkWrap ?? viewTheme.shrinkWrap ?? false,
+      shrinkWrap:
+          !isFullScreen && (shrinkWrap ?? viewTheme.shrinkWrap ?? false),
     );
   }
+
+  final Color backgroundColor;
+  final double elevation;
+  final Color surfaceTintColor;
+  final OutlinedBorder shape;
+  final Color dividerColor;
+  final TextStyle? headerTextStyle;
+  final TextStyle? headerHintStyle;
+  final BoxConstraints constraints;
+  final EdgeInsetsGeometry? viewPadding;
+  final EdgeInsetsGeometry barPadding;
+  final bool shrinkWrap;
 }
 
 class DefaultPickerTrigger extends StatelessWidget {

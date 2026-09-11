@@ -81,7 +81,10 @@ void main() {
     await tester.pump();
 
     await tester.sendEventToBinding(
-      PointerScrollEvent(position: tooltipCenter, scrollDelta: Offset(0, -160)),
+      PointerScrollEvent(
+        position: tooltipCenter,
+        scrollDelta: const Offset(0, -160),
+      ),
     );
     await tester.pump();
 
@@ -89,7 +92,7 @@ void main() {
       await tester.sendEventToBinding(
         PointerScrollEvent(
           position: tooltipCenter,
-          scrollDelta: Offset(0, 160),
+          scrollDelta: const Offset(0, 160),
         ),
       );
       await tester.pump();

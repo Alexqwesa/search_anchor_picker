@@ -1,10 +1,7 @@
-// ignore_for_file: avoid_relative_lib_imports
-
-import '../example/search_anchor_picker_example/lib/main_async.dart'
-    as app_async;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:search_anchor_picker_example/main_async.dart' as app_async;
 
 void main() {
   testWidgets('Async Demo: Load, Refresh, Invalidate', (

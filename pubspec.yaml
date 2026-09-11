@@ -10,7 +10,7 @@ issue_tracker: https://github.com/Alexqwesa/search_anchor_picker/issues
 
 environment:
   sdk: ^3.10.1
-  flutter: ">=1.17.0"
+  flutter: ">=3.38.0"
 
 dependencies:
   flutter:
@@ -19,7 +19,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-  flutter_riverpod:
+  very_good_analysis: ^10.1.0
 
 flutter:

@@ -35,7 +35,7 @@ Rect _searchAnchorStyleRect({
         anchorRect.top,
       );
       if (anchorRect.right < viewWidth) {
-        topLeft = Offset(0.0, topLeft.dy);
+        topLeft = Offset(0, topLeft.dy);
       }
       if (screenSize.height - anchorRect.top < viewHeight) {
         topLeft = Offset(topLeft.dx, screenSize.height - viewHeight);
@@ -78,9 +78,9 @@ void main() {
       recordDelta: (_, _) {},
     );
 
-    int finishCallCount = 0;
-    List<int> lastAdded = [];
-    List<int> lastRemoved = [];
+    var finishCallCount = 0;
+    var lastAdded = <int>[];
+    var lastRemoved = <int>[];
 
     await tester.pumpWidget(
       MaterialApp(

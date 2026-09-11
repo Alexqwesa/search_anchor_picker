@@ -1,11 +1,12 @@
 // ignore_for_file: avoid_relative_lib_imports
 
-import '../example/search_anchor_picker_example/lib/main_radio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../example/search_anchor_picker_example/lib/main_radio.dart';
+
 void main() {
-  testWidgets('Radio Picker: Single Selection', (WidgetTester tester) async {
+  testWidgets('Radio Picker: Single Selection', (tester) async {
     await tester.pumpWidget(const RadioDemoApp());
     await tester.pumpAndSettle();
 
@@ -39,7 +40,7 @@ void main() {
   });
 
   testWidgets('Radio Picker: Sub Picker Selection', (
-    WidgetTester tester,
+    tester,
   ) async {
     await tester.pumpWidget(const RadioDemoApp());
     await tester.pumpAndSettle();
@@ -71,7 +72,7 @@ void main() {
   });
 
   testWidgets('Radio Picker: Parent Selection with Sub (Transient Item)', (
-    WidgetTester tester,
+    tester,
   ) async {
     await tester.pumpWidget(const RadioDemoApp());
     await tester.pumpAndSettle();

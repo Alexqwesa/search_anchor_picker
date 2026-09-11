@@ -18,7 +18,6 @@ void main() {
           body: SearchAnchorPicker(
             config: config,
             initialSelectedIds: const [],
-            mode: PickerMode.multi,
             onFinish: ({required added, required removed}) async {},
           ),
         ),
@@ -46,7 +45,6 @@ void main() {
           body: SearchAnchorPicker(
             config: config,
             initialSelectedIds: const [],
-            mode: PickerMode.multi,
             onFinish: ({required added, required removed}) async {},
           ),
         ),
@@ -66,7 +64,7 @@ void main() {
   });
 
   testWidgets('Picker selects item', (tester) async {
-    List<int> selectedIds = [];
+    var selectedIds = <int>[];
 
     final config = PickerConfig<String>(
       loadItems: (_) async => ['A', 'B', 'C'],
@@ -84,7 +82,6 @@ void main() {
               body: SearchAnchorPicker(
                 config: config,
                 initialSelectedIds: selectedIds,
-                mode: PickerMode.multi,
                 onFinish: ({required added, required removed}) async {
                   setState(() {
                     selectedIds = {

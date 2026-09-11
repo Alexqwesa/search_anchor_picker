@@ -142,8 +142,9 @@ void main() {
 
     config.open();
     await tester.pumpAndSettle();
-    config.close();
-    config.close();
+    config
+      ..close()
+      ..close();
     await tester.pumpAndSettle();
     expect(finishCount, 1);
   });

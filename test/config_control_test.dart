@@ -19,7 +19,6 @@ void main() {
           body: SearchAnchorPicker<int>(
             config: config,
             initialSelectedIds: const [],
-            mode: PickerMode.multi,
           ),
         ),
       ),
@@ -68,7 +67,6 @@ void main() {
           body: SearchAnchorPicker<int>(
             config: mainConfig,
             initialSelectedIds: const [],
-            mode: PickerMode.multi,
             headerBuilder: (context, actions, items) {
               return [
                 SubPickerTile<int>(

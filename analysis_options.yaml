@@ -1,4 +1,18 @@
-include: package:flutter_lints/flutter.yaml
+include: package:very_good_analysis/analysis_options.yaml
+
+linter:
+  rules:
+    # Public classes are documented at the class/API level without repeating
+    # comments for every SearchAnchor-compatible forwarding property.
+    public_member_api_docs: false
+    # Keep callback signatures aligned with Flutter APIs and existing callers.
+    avoid_positional_boolean_parameters: false
+    # Dart format, rather than a hard column limit, owns source wrapping.
+    lines_longer_than_80_chars: false
+    # Several tests suppress diagnostics for generated/example imports.
+    document_ignores: false
+    # The back-target interface intentionally provides a nominal contract.
+    one_member_abstracts: false
 
 # Additional information about this file can be found at
 # https://dart.dev/guides/language/analysis-options

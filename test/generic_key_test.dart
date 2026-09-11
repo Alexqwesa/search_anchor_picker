@@ -1,9 +1,10 @@
 // ignore_for_file: avoid_relative_lib_imports
 
-import '../example/search_anchor_picker_example/lib/main.dart'; // for DemoItem
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
+
+import '../example/search_anchor_picker_example/lib/main.dart'; // for DemoItem
 
 void main() {
   testWidgets('Generic Selection: String IDs', (tester) async {
@@ -57,7 +58,7 @@ void main() {
     await tester.pump();
 
     // Verify selection updated
-    var cb1 = tester.widget<CheckboxListTile>(
+    final cb1 = tester.widget<CheckboxListTile>(
       find.ancestor(
         of: find.text('Item 1'),
         matching: find.byType(CheckboxListTile),

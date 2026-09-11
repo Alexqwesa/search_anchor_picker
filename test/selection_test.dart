@@ -1,11 +1,12 @@
 // ignore_for_file: avoid_relative_lib_imports
 
-import '../example/search_anchor_picker_example/lib/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../example/search_anchor_picker_example/lib/main.dart';
+
 void main() {
-  testWidgets('Icon #1 (Main List A) Selection', (WidgetTester tester) async {
+  testWidgets('Icon #1 (Main List A) Selection', (tester) async {
     await tester.pumpWidget(const DemoApp());
     await tester.pumpAndSettle();
 
@@ -32,7 +33,7 @@ void main() {
     expect(find.widgetWithText(Chip, 'A: Alice (internal)'), findsNothing);
   });
 
-  testWidgets('Icon #1 (Sub Picker A1) Selection', (WidgetTester tester) async {
+  testWidgets('Icon #1 (Sub Picker A1) Selection', (tester) async {
     await tester.pumpWidget(const DemoApp());
     await tester.pumpAndSettle();
 
@@ -72,7 +73,7 @@ void main() {
     expect(find.widgetWithText(Chip, 'A1: Charlie (external)'), findsOneWidget);
   });
 
-  testWidgets('Icon #2 (Main List B) Selection', (WidgetTester tester) async {
+  testWidgets('Icon #2 (Main List B) Selection', (tester) async {
     await tester.pumpWidget(const DemoApp());
     await tester.pumpAndSettle();
 
@@ -94,7 +95,7 @@ void main() {
     expect(find.widgetWithText(Chip, 'B: Igor (internal)'), findsOneWidget);
   });
 
-  testWidgets('Icon #2 (Sub Picker B1) Selection', (WidgetTester tester) async {
+  testWidgets('Icon #2 (Sub Picker B1) Selection', (tester) async {
     await tester.pumpWidget(const DemoApp());
     await tester.pumpAndSettle();
 
@@ -131,7 +132,7 @@ void main() {
   });
 
   testWidgets('Icon #1 (Sub Picker A1) Alert Strategy', (
-    WidgetTester tester,
+    tester,
   ) async {
     await tester.pumpWidget(const DemoApp());
     await tester.pumpAndSettle();

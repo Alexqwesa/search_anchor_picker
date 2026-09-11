@@ -99,7 +99,7 @@ void main() {
   testWidgets('awaitGate rejection leaves selection and deltas unchanged', (
     tester,
   ) async {
-    List<int> addedIds = [];
+    var addedIds = <int>[];
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -135,7 +135,7 @@ void main() {
   testWidgets('optimistic success remains selected and reports delta', (
     tester,
   ) async {
-    List<int> addedIds = [];
+    var addedIds = <int>[];
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

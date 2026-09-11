@@ -10,7 +10,6 @@ import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 /// picker builders rather than constructing this widget directly.
 class OverlayBody<T, K> extends StatefulWidget {
   const OverlayBody({
-    super.key,
     required this.header,
     required this.stableOrder,
     required this.ctrl,
@@ -20,6 +19,7 @@ class OverlayBody<T, K> extends StatefulWidget {
     required this.recordUserPendingChange,
     required this.close,
     required this.shrinkWrap,
+    super.key,
     this.onToggleGate,
     this.onToggleMode = OnToggleMode.awaitGate,
     this.itemBuilder,

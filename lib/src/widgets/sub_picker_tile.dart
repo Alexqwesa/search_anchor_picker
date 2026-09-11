@@ -6,10 +6,10 @@ import 'package:search_anchor_picker/src/search_anchor_picker.dart';
 /// Optional convenience tile for a picker nested in another picker's header.
 class GenericSubPickerTile<T, K> extends StatelessWidget {
   const GenericSubPickerTile({
-    super.key,
     required this.title,
     required this.config,
     required this.initialSelectedIds,
+    super.key,
     this.icon,
     this.parentController,
     this.onFinish,
@@ -45,7 +45,10 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
     this.viewConstraints,
     this.viewPadding,
     this.shrinkWrap,
-  }) : assert(title != null || triggerBuilder != null);
+  }) : assert(
+         title != null || triggerBuilder != null,
+         'Provide either title or triggerBuilder.',
+       );
 
   final String? title;
   final GenericPickerConfig<T, K> config;
@@ -144,10 +147,10 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
 
 class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
   const SubPickerTile({
-    super.key,
     required super.title,
     required super.config,
     required super.initialSelectedIds,
+    super.key,
     super.icon,
     super.parentController,
     super.onFinish,

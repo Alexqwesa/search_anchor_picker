@@ -6,8 +6,9 @@ void main() {
     final session = PickerSelectionSession<int>([1, 2, 3]);
     addTearDown(session.dispose);
 
-    session.open([1, 2, 3]);
-    session.reseed([1]);
+    session
+      ..open([1, 2, 3])
+      ..reseed([1]);
 
     final result = session.result();
     expect(result.finalIds, {1});
@@ -19,13 +20,14 @@ void main() {
     final session = PickerSelectionSession<int>([1, 2]);
     addTearDown(session.dispose);
 
-    session.open([1, 2]);
-    session.recordExplicitChange({1, 2}, {1, 2, 3});
-    session.pendingN.value = {1, 2, 3};
-    session.recordExplicitChange({1, 2, 3}, {1, 3});
-    session.pendingN.value = {1, 3};
-    session.recordExplicitChange({1, 3}, {1, 2, 3});
-    session.pendingN.value = {1, 2, 3};
+    session
+      ..open([1, 2])
+      ..recordExplicitChange({1, 2}, {1, 2, 3})
+      ..pendingN.value = {1, 2, 3}
+      ..recordExplicitChange({1, 2, 3}, {1, 3})
+      ..pendingN.value = {1, 3}
+      ..recordExplicitChange({1, 3}, {1, 2, 3})
+      ..pendingN.value = {1, 2, 3};
 
     final result = session.result();
     expect(result.finalIds, {1, 2, 3});
@@ -37,11 +39,11 @@ void main() {
     final session = PickerSelectionSession<int>([1]);
     addTearDown(session.dispose);
 
-    session.open([1]);
-    session.recordExplicitChange({1}, <int>{});
-    session.pendingN.value = <int>{};
-
-    session.open([2]);
+    session
+      ..open([1])
+      ..recordExplicitChange({1}, <int>{})
+      ..pendingN.value = <int>{}
+      ..open([2]);
     final result = session.result();
     expect(result.finalIds, {2});
     expect(result.added, isEmpty);

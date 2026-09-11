@@ -13,6 +13,11 @@ Breaking package identity:
 * Removed the replace-all-only empty-save parameters, builder, and default
   widget.
 
+* Raised the declared Flutter minimum to 3.38 and activated
+  `very_good_analysis` for the package.
+* Kept Riverpod isolated to the async example by moving its integration test
+  into the example package.
+
 ## 0.0.4
 
 SearchAnchor parity / UI:

@@ -13,9 +13,9 @@ import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 /// SearchAnchor-like picker with stable selection and nested popup support.
 class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   const GenericSearchAnchorPicker({
-    super.key,
     required this.config,
     required this.initialSelectedIds,
+    super.key,
     this.mode = PickerMode.multi,
     this.onToggle,
     this.onToggleMode = OnToggleMode.awaitGate,
@@ -144,9 +144,9 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
 
 class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
   const SearchAnchorPicker({
-    super.key,
     required super.config,
     required super.initialSelectedIds,
+    super.key,
     super.mode,
     super.onToggle,
     super.onToggleMode,
@@ -263,7 +263,7 @@ class _GenericSearchAnchorPickerState<T, K>
 
   void _bindConfigControl() {
     widget.config.internalOnOpen = _requestOpen;
-    widget.config.internalOnClose = ([reason]) => _close(reason);
+    widget.config.internalOnClose = _close;
   }
 
   void _unbindConfigControl(GenericPickerConfig<T, K> config) {
@@ -333,20 +333,22 @@ class _GenericSearchAnchorPickerState<T, K>
     _loadStackTrace = null;
     _viewTickN.value++;
 
-    Future<List<T>>.sync(() => widget.config.loadItems(context)).then(
-      (items) {
-        if (!mounted || !_open || generation != _loadGeneration) return;
-        _itemsSnapshot = items;
-        _loading = false;
-        _viewTickN.value++;
-      },
-      onError: (Object error, StackTrace stackTrace) {
-        if (!mounted || !_open || generation != _loadGeneration) return;
-        _loading = false;
-        _loadError = error;
-        _loadStackTrace = stackTrace;
-        _viewTickN.value++;
-      },
+    unawaited(
+      Future<List<T>>.sync(() => widget.config.loadItems(context)).then(
+        (items) {
+          if (!mounted || !_open || generation != _loadGeneration) return;
+          _itemsSnapshot = items;
+          _loading = false;
+          _viewTickN.value++;
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          if (!mounted || !_open || generation != _loadGeneration) return;
+          _loading = false;
+          _loadError = error;
+          _loadStackTrace = stackTrace;
+          _viewTickN.value++;
+        },
+      ),
     );
   }
 
@@ -441,7 +443,7 @@ class _GenericSearchAnchorPickerState<T, K>
         added: result.added.toList(),
         removed: result.removed.toList(),
       );
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _reportCallbackError('onFinish', error, stackTrace);
     } finally {
       if (mounted) setState(() => _tick++);
@@ -452,7 +454,7 @@ class _GenericSearchAnchorPickerState<T, K>
     if (callback == null) return;
     try {
       callback();
-    } catch (error, stackTrace) {
+    } on Object catch (error, stackTrace) {
       _reportCallbackError(name, error, stackTrace);
     }
   }
