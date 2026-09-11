@@ -242,15 +242,19 @@ final List<_PickerBackTarget> _openPickerStack = <_PickerBackTarget>[];
 
 class _GenericSearchAnchorPickerState<T, K>
     extends State<GenericSearchAnchorPicker<T, K>>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver
+    with TickerProviderStateMixin, WidgetsBindingObserver
     implements _PickerBackTarget {
   SearchController? _ownedController;
+  String _retainedQuery = '';
   FocusNode? _searchFocusNode;
   AnimationController? _openController;
   PickerSelectionSession<K>? _selectionSession;
 
-  SearchController get _controller =>
-      widget.searchController ?? (_ownedController ??= SearchController());
+  SearchController get _controller {
+    if (widget.searchController case final external?) return external;
+    return _ownedController ??= SearchController()..text = _retainedQuery;
+  }
+
   FocusNode get _effectiveSearchFocusNode =>
       _searchFocusNode ??= FocusNode(debugLabel: 'Picker search');
   AnimationController get _animationController =>
@@ -410,6 +414,7 @@ class _GenericSearchAnchorPickerState<T, K>
     _openPickerStack.remove(this);
     _loadGeneration++;
     final queryAtClose = _controller.text;
+    final externalController = widget.searchController;
     final result = _selection.result();
     final allowEmpty = _allowReplaceAllEmpty;
     final onFinish = widget.onFinish;
@@ -420,14 +425,33 @@ class _GenericSearchAnchorPickerState<T, K>
     _removeOverlay();
     _headerKeys = null;
     _detachListenable(widget.config.listenable);
+    _itemsSnapshot = null;
+    _stableIds = <K>[];
+    _selectionSession?.dispose();
+    _selectionSession = null;
+    _viewTickNotifier?.dispose();
+    _viewTickNotifier = null;
+    _openController?.dispose();
+    _openController = null;
+    _searchFocusNode?.dispose();
+    _searchFocusNode = null;
+    if (externalController == null) {
+      _retainedQuery = widget.closeQueryBehavior == CloseQueryBehavior.clear
+          ? ''
+          : queryAtClose;
+      _ownedController?.dispose();
+      _ownedController = null;
+    }
     _callLifecycleCallback('viewOnClose', widget.viewOnClose);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (widget.closeQueryBehavior == CloseQueryBehavior.clear) {
-        _controller.clear();
-      } else {
-        _controller.text = queryAtClose;
+      if (externalController != null) {
+        if (widget.closeQueryBehavior == CloseQueryBehavior.clear) {
+          externalController.clear();
+        } else {
+          externalController.text = queryAtClose;
+        }
       }
       unawaited(
         _runCloseCallbacks(result, allowEmpty, onFinish, onFinishReplaceAll),
@@ -961,18 +985,15 @@ class _GenericSearchAnchorPickerState<T, K>
                 enabled: widget.enabled,
               ));
 
+    final triggerWithContext = Builder(
+      builder: (triggerContext) {
+        _triggerContext = triggerContext;
+        return trigger;
+      },
+    );
+    if (widget.enabled) return triggerWithContext;
     return IgnorePointer(
-      ignoring: !widget.enabled,
-      child: AnimatedOpacity(
-        opacity: widget.enabled ? 1 : 0.38,
-        duration: const Duration(milliseconds: 100),
-        child: Builder(
-          builder: (triggerContext) {
-            _triggerContext = triggerContext;
-            return trigger;
-          },
-        ),
-      ),
+      child: Opacity(opacity: 0.38, child: triggerWithContext),
     );
   }
 }

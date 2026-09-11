@@ -18,6 +18,45 @@ class _TrackedListenable extends ChangeNotifier {
 }
 
 void main() {
+  testWidgets('1000 closed pickers allocate no popup animation or load state', (
+    tester,
+  ) async {
+    var loadCalls = 0;
+    final configs = List.generate(
+      1000,
+      (_) => PickerConfig<int>(
+        loadItems: (_) async {
+          loadCalls++;
+          return const [1];
+        },
+        idOf: (item) => item,
+        labelOf: (item) => 'Item $item',
+        searchTermsOf: (item) => ['Item $item'],
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Stack(
+          children: [
+            for (final config in configs)
+              SearchAnchorPicker<int>(
+                config: config,
+                initialSelectedIds: const [],
+                triggerChild: const SizedBox.shrink(),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.byType(SearchAnchorPicker<int>), findsNWidgets(1000));
+    expect(find.byType(AnimatedOpacity), findsNothing);
+    expect(find.byType(DefaultPickerSearchField), findsNothing);
+    expect(find.byType(SearchBar), findsNothing);
+    expect(loadCalls, 0);
+  });
+
   testWidgets('closed picker does not subscribe to its data listenable', (
     tester,
   ) async {
@@ -205,6 +244,36 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: SizedBox()));
     controller.text = 'still alive';
     expect(controller.text, 'still alive');
+  });
+
+  testWidgets('internally owned controller preserves query across reopen', (
+    tester,
+  ) async {
+    final config = _config(() async => [1, 2]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+
+    config.open();
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(SearchBar), 'Item 2');
+    await tester.pumpAndSettle();
+    config.close();
+    await tester.pumpAndSettle();
+
+    config.open();
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<SearchBar>(find.byType(SearchBar)).controller!.text,
+      'Item 2',
+    );
+    expect(find.text('Item 1'), findsNothing);
+    expect(find.text('Item 2'), findsWidgets);
   });
 
   testWidgets('callback failure is reported but picker remains reusable', (
