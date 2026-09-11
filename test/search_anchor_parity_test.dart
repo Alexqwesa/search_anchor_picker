@@ -23,6 +23,47 @@ PickerConfig<int> _configFrom(Future<List<int>> Function() load) {
 }
 
 void main() {
+  testWidgets('default clear action restores search focus', (tester) async {
+    final controller = SearchController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: SearchAnchorPicker<int>(
+          config: _config(),
+          initialSelectedIds: const [],
+          searchController: controller,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(SearchBar), 'Item');
+    await tester.pumpAndSettle();
+
+    final searchBar = tester.widget<SearchBar>(find.byType(SearchBar));
+    searchBar.focusNode!.unfocus();
+    await tester.pump();
+    tester
+        .widget<IconButton>(
+          find.ancestor(
+            of: find.byIcon(Icons.close),
+            matching: find.byType(IconButton),
+          ),
+        )
+        .onPressed!();
+    await tester.pump();
+
+    expect(controller.text, isEmpty);
+    expect(searchBar.focusNode!.hasFocus, isTrue);
+
+    tester.testTextInput.enterText('Item 2');
+    await tester.pump();
+    expect(controller.text, 'Item 2');
+  });
+
   testWidgets('popup builders stay lazy and replace only their regions', (
     tester,
   ) async {

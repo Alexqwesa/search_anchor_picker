@@ -351,6 +351,65 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('SubPickerTile clear action restores search focus', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Sub Picker',
+            isFullScreen: false,
+            config: PickerConfig(
+              loadItems: (_) async => [1, 2],
+              idOf: (i) => i,
+              labelOf: (i) => 'Item $i',
+              searchTermsOf: (i) => ['Item $i'],
+            ),
+            initialSelectedIds: const [],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Sub Picker'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(SearchBar), 'Item');
+    await tester.pumpAndSettle();
+
+    final searchBar = tester.widget<SearchBar>(find.byType(SearchBar));
+    searchBar.focusNode!.unfocus();
+    await tester.pump();
+    tester
+        .widget<IconButton>(
+          find.ancestor(
+            of: find.byIcon(Icons.close),
+            matching: find.byType(IconButton),
+          ),
+        )
+        .onPressed!();
+    await tester.pump();
+
+    expect(searchBar.focusNode!.hasFocus, isTrue);
+    tester.testTextInput.enterText('Item 1');
+    await tester.pump();
+    expect(
+      find.ancestor(
+        of: find.text('Item 1').last,
+        matching: find.byType(CheckboxListTile),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(
+        of: find.text('Item 2'),
+        matching: find.byType(CheckboxListTile),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('Escape closes only the topmost open menu', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

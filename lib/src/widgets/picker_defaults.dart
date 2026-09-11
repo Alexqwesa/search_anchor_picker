@@ -142,6 +142,8 @@ class DefaultPickerSearchField extends StatelessWidget {
     required this.style,
     required this.isFullScreen,
     super.key,
+    this.focusNode,
+    this.clearQuery,
     this.leading,
     this.trailing,
     this.hintText,
@@ -156,6 +158,8 @@ class DefaultPickerSearchField extends StatelessWidget {
   });
 
   final SearchController controller;
+  final FocusNode? focusNode;
+  final VoidCallback? clearQuery;
   final VoidCallback close;
   final PickerViewStyle style;
   final bool isFullScreen;
@@ -190,11 +194,12 @@ class DefaultPickerSearchField extends StatelessWidget {
                   IconButton(
                     tooltip: localizations.clearButtonTooltip,
                     icon: const Icon(Icons.close),
-                    onPressed: controller.clear,
+                    onPressed: clearQuery ?? controller.clear,
                   ),
                 ];
           return SearchBar(
             controller: controller,
+            focusNode: focusNode,
             autoFocus: true,
             constraints: effectiveHeight == null
                 ? null

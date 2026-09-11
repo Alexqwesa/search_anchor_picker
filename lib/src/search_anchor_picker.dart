@@ -245,11 +245,14 @@ class _GenericSearchAnchorPickerState<T, K>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver
     implements _PickerBackTarget {
   SearchController? _ownedController;
+  FocusNode? _searchFocusNode;
   AnimationController? _openController;
   PickerSelectionSession<K>? _selectionSession;
 
   SearchController get _controller =>
       widget.searchController ?? (_ownedController ??= SearchController());
+  FocusNode get _effectiveSearchFocusNode =>
+      _searchFocusNode ??= FocusNode(debugLabel: 'Picker search');
   AnimationController get _animationController =>
       _openController ??= AnimationController(
         vsync: this,
@@ -343,6 +346,7 @@ class _GenericSearchAnchorPickerState<T, K>
     _selectionSession?.dispose();
     _viewTickNotifier?.dispose();
     _openController?.dispose();
+    _searchFocusNode?.dispose();
     _ownedController?.dispose();
     super.dispose();
   }
@@ -428,6 +432,15 @@ class _GenericSearchAnchorPickerState<T, K>
       unawaited(
         _runCloseCallbacks(result, allowEmpty, onFinish, onFinishReplaceAll),
       );
+    });
+  }
+
+  void _clearQuery() {
+    _controller.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _open) {
+        _searchFocusNode?.requestFocus();
+      }
     });
   }
 
@@ -655,6 +668,8 @@ class _GenericSearchAnchorPickerState<T, K>
     return widget.searchFieldBuilder?.call(context, _controller, _close) ??
         DefaultPickerSearchField(
           controller: _controller,
+          focusNode: _effectiveSearchFocusNode,
+          clearQuery: _clearQuery,
           close: _close,
           style: style,
           isFullScreen: fullScreen,
