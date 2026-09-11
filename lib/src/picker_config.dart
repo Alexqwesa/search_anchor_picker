@@ -261,9 +261,9 @@ enum UnselectBehavior {
 /// Controller exposed to headerBuilder for selection state and commands.
 ///
 /// Bulk and single-item selection methods record explicit user intent for
-/// [GenericSearchAnchorPicker.onFinish]. Use [syncPending] only when external code
-/// already owns persistence and the popup must mirror those changes without
-/// producing another `added` or `removed` delta.
+/// [GenericSearchAnchorPicker.onFinish]. Use [syncPending] to copy an
+/// already-persisted external change into this open picker's pending selection
+/// without producing another `added` or `removed` delta.
 class GenericPickerController<T, K> {
   GenericPickerController({
     required ValueNotifier<Set<K>> pendingN,
@@ -298,11 +298,13 @@ class GenericPickerController<T, K> {
   /// Listen to in-popup selection changes from custom header UI.
   ValueListenable<Set<K>> get pendingIdsListenable => _pendingN;
 
-  /// Applies externally-owned changes without recording persistence intent.
+  /// Copies an externally applied delta into this open picker's pending IDs.
   ///
-  /// This is intended for synchronization after external state was already
-  /// changed, such as reflecting a nested picker's result in its parent popup.
-  /// IDs present in both collections end unselected.
+  /// IDs in [added] become selected and IDs in [removed] become unselected;
+  /// every other pending ID stays unchanged. This is intended for changes that
+  /// were already persisted by a nested picker or another external owner, so it
+  /// does not report the same intent through `onFinish`. If an ID appears in
+  /// both collections, [removed] wins.
   void syncPending({
     Iterable<K> added = const [],
     Iterable<K> removed = const [],

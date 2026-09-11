@@ -17,6 +17,8 @@ Breaking package identity:
   `very_good_analysis` for the package.
 * Kept Riverpod isolated to the async example by moving its integration test
   into the example package.
+* Split agent documentation into a package maintenance guide and a standalone
+  consumer integration skill.
 
 ## 0.0.4
 
@@ -63,7 +65,7 @@ Behavior / docs:
 
 * Selected IDs missing from the current `loadItems` page are preserved (server-side search safe).
 * Documented `OnToggleMode.awaitGate` vs `OnToggleMode.optimistic` for async checkbox UX.
-* Added `doc/AGENTS.md` and consumer skill template for integrator pitfalls.
+* Added agent-facing integration guidance for common consumer pitfalls.
 * Example web deploy workflow + online demo link.
 
 ## 0.0.2

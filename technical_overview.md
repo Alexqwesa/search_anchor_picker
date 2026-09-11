@@ -58,9 +58,10 @@ intersected with loaded IDs.
 
 Row toggles, `setSelected`, and loaded/filtered bulk controller commands record
 only IDs they actually change as `added` or `removed`. Parent updates to
-`initialSelectedIds` and `syncPending` may reseed/change visible pending state,
-but they do not create persistence deltas. Reopening starts a new selection
-session from the latest external seed and clears old intent.
+`initialSelectedIds` may reseed pending state. `syncPending` copies an external
+delta into the currently open picker's pending IDs. Neither operation creates a
+new persistence delta. Reopening starts a new selection session from the latest
+external seed and clears old intent.
 
 There is no replace-all close callback. Consumers apply explicit deltas, while a
 parent with a complete authoritative snapshot can reseed `initialSelectedIds`.
