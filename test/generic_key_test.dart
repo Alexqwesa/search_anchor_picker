@@ -1,9 +1,9 @@
 // ignore_for_file: avoid_relative_lib_imports
 
-import '../example/example_of_generic_search_selector/lib/main.dart'; // for DemoItem
+import '../example/search_anchor_picker_example/lib/main.dart'; // for DemoItem
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:generic_search_selector/generic_search_selector.dart';
+import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 void main() {
   testWidgets('Generic Selection: String IDs', (tester) async {

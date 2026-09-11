@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:generic_search_selector/src/picker_builders.dart';
-import 'package:generic_search_selector/src/picker_config.dart';
-import 'package:generic_search_selector/src/picker_debug.dart';
-import 'package:generic_search_selector/src/widgets/picker_defaults.dart';
+import 'package:search_anchor_picker/src/picker_builders.dart';
+import 'package:search_anchor_picker/src/picker_config.dart';
+import 'package:search_anchor_picker/src/picker_debug.dart';
+import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 
 /// Core result-list coordinator. Public callers should customize it through
 /// picker builders rather than constructing this widget directly.

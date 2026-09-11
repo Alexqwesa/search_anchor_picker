@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
-import 'package:generic_search_selector/src/picker_builders.dart';
+import 'package:search_anchor_picker/src/picker_builders.dart';
 
 typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 

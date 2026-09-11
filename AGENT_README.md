@@ -1,6 +1,6 @@
 # Agent documentation moved
 
-Full agent integration rules live in **[docs/AGENTS.md](docs/AGENTS.md)**.
+Full agent integration rules live in **[doc/AGENTS.md](doc/AGENTS.md)**.
 
 That file covers:
 
@@ -9,4 +9,4 @@ That file covers:
 - `OnToggleMode` (`awaitGate` vs `optimistic`)
 - `idOf` stability and `listenable` vs `actions.refresh()`
 
-Consumer apps should add a short Cursor skill (see end of `docs/AGENTS.md`).
+Consumer apps should add a short Cursor skill (see end of `doc/AGENTS.md`).

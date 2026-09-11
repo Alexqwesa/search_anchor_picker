@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:generic_search_selector/src/selection_session.dart';
+import 'package:search_anchor_picker/src/selection_session.dart';
 
 void main() {
   test('external reseeds change pending without creating deltas', () {

@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_relative_lib_imports
 
-import '../example/example_of_generic_search_selector/lib/main_async.dart'
+import '../example/search_anchor_picker_example/lib/main_async.dart'
     as app_async;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

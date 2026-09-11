@@ -1,11 +1,11 @@
-name: generic_search_selector
+name: search_anchor_picker
 description: >-
   Generic searchable picker (multi-select / radio) with stable in-overlay
   selection, nested sub-pickers, and optional async toggle gating.
 version: 0.0.4
-homepage: https://github.com/Alexqwesa/generic_search_selector
-repository: https://github.com/Alexqwesa/generic_search_selector
-issue_tracker: https://github.com/Alexqwesa/generic_search_selector/issues
+homepage: https://github.com/Alexqwesa/search_anchor_picker
+repository: https://github.com/Alexqwesa/search_anchor_picker
+issue_tracker: https://github.com/Alexqwesa/search_anchor_picker/issues
 
 environment:
   sdk: ^3.10.1

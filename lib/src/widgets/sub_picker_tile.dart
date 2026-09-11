@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:generic_search_selector/src/picker_builders.dart';
-import 'package:generic_search_selector/src/picker_config.dart';
-import 'package:generic_search_selector/src/search_anchor_picker.dart';
+import 'package:search_anchor_picker/src/picker_builders.dart';
+import 'package:search_anchor_picker/src/picker_config.dart';
+import 'package:search_anchor_picker/src/search_anchor_picker.dart';
 
 /// Optional convenience tile for a picker nested in another picker's header.
 class GenericSubPickerTile<T, K> extends StatelessWidget {

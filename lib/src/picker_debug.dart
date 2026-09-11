@@ -1,7 +1,7 @@
 import 'dart:developer' as dev;
 import 'package:flutter/foundation.dart';
 
-/// Internal logger for the Generic Search Selector library.
+/// Internal logger for the Search Anchor Picker library.
 ///
 /// Use [PickerDebug.enableLogging] to turn on debug logs.
 /// Use [PickerDebug.onLog] to redirect logs to your own system (e.g. Crashlytics).

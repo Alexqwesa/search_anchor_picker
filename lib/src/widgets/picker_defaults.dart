@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:generic_search_selector/src/picker_config.dart';
-import 'package:generic_search_selector/src/widgets/overflow_tooltip_text.dart';
-import 'package:generic_search_selector/src/widgets/passive_tooltip.dart';
+import 'package:search_anchor_picker/src/picker_config.dart';
+import 'package:search_anchor_picker/src/widgets/overflow_tooltip_text.dart';
+import 'package:search_anchor_picker/src/widgets/passive_tooltip.dart';
 
 /// Effective visual values used by the default picker view widgets.
 class PickerViewStyle {

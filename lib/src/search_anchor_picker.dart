@@ -4,12 +4,12 @@ import 'dart:ui' show clampDouble, lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:generic_search_selector/src/overlay_body.dart';
-import 'package:generic_search_selector/src/picker_builders.dart';
-import 'package:generic_search_selector/src/picker_config.dart';
-import 'package:generic_search_selector/src/picker_debug.dart';
-import 'package:generic_search_selector/src/selection_session.dart';
-import 'package:generic_search_selector/src/widgets/picker_defaults.dart';
+import 'package:search_anchor_picker/src/overlay_body.dart';
+import 'package:search_anchor_picker/src/picker_builders.dart';
+import 'package:search_anchor_picker/src/picker_config.dart';
+import 'package:search_anchor_picker/src/picker_debug.dart';
+import 'package:search_anchor_picker/src/selection_session.dart';
+import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 
 /// SearchAnchor-like picker with stable selection and nested popup support.
 class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
@@ -509,7 +509,7 @@ class _GenericSearchAnchorPickerState<T, K>
       FlutterErrorDetails(
         exception: error,
         stack: stack,
-        library: 'generic_search_selector',
+        library: 'search_anchor_picker',
         context: ErrorDescription('while running $callback'),
       ),
     );

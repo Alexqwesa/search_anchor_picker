@@ -1,9 +1,9 @@
-# Generic Search Selector
+# Search Anchor Picker
 
 A Flutter Material 3 picker that feels like `SearchAnchor`, with multi-select,
 radio selection, stable selected-first ordering, and optional nested menus.
 
-[Open the web example](https://alexqwesa.github.io/generic_search_selector/)
+[Open the web example](https://alexqwesa.github.io/search_anchor_picker/)
 
 ## Features
 
@@ -21,17 +21,17 @@ radio selection, stable selected-first ordering, and optional nested menus.
 
 ```yaml
 dependencies:
-  generic_search_selector: ^0.0.3
+  search_anchor_picker: ^0.0.4
 ```
 
 To use the Git repository directly:
 
 ```yaml
 dependencies:
-  generic_search_selector:
+  search_anchor_picker:
     git:
-      url: https://github.com/Alexqwesa/generic_search_selector.git
-      ref: v0.0.3
+      url: https://github.com/Alexqwesa/search_anchor_picker.git
+      ref: v0.0.4
 ```
 
 ## Basic picker
@@ -102,7 +102,7 @@ use an anchored popup. Set `isFullScreen` explicitly to override this behavior.
 
 The core owns search state, selection, popup placement, focus, keyboard handling,
 and lifecycle. Visual defaults live under `lib/src/widgets/` and are exported by
-both the main package and `package:generic_search_selector/widgets.dart`.
+both the main package and `package:search_anchor_picker/widgets.dart`.
 
 Use focused builders to replace only the region you own:
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:generic_search_selector/generic_search_selector.dart';
+import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 void main() {
   testWidgets('PickerMode.radioToggle allows deselection', (tester) async {

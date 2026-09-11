@@ -30,12 +30,12 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: example/example_of_generic_search_selector
+        working-directory: example/search_anchor_picker_example
         run: flutter pub get
 
       - name: Build web example
-        working-directory: example/example_of_generic_search_selector
-        run: flutter build web --release --base-href "/generic_search_selector/"
+        working-directory: example/search_anchor_picker_example
+        run: flutter build web --release --base-href "/search_anchor_picker/"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -43,7 +43,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: example/example_of_generic_search_selector/build/web
+          path: example/search_anchor_picker_example/build/web
 
   deploy:
     environment:

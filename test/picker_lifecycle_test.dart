@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:generic_search_selector/generic_search_selector.dart';
+import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 PickerConfig<int> _config(Future<List<int>> Function() load) {
   return PickerConfig<int>(

@@ -1,5 +1,11 @@
 ## 0.0.4
 
+Breaking package identity:
+
+* Renamed the unpublished package from `generic_search_selector` to
+  `search_anchor_picker`; imports now use
+  `package:search_anchor_picker/search_anchor_picker.dart`.
+
 SearchAnchor parity / UI:
 
 * Added SearchAnchor-compatible view properties and `SearchViewTheme` fallback.
@@ -45,7 +51,7 @@ Behavior / docs:
 
 * Selected IDs missing from the current `loadItems` page are preserved (server-side search safe).
 * Documented `OnToggleMode.awaitGate` vs `OnToggleMode.optimistic` for async checkbox UX.
-* Added `docs/AGENTS.md` and consumer skill template for integrator pitfalls.
+* Added `doc/AGENTS.md` and consumer skill template for integrator pitfalls.
 * Example web deploy workflow + online demo link.
 
 ## 0.0.2

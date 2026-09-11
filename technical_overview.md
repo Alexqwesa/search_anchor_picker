@@ -1,4 +1,4 @@
-# Technical Overview: Generic Search Selector
+# Technical Overview: Search Anchor Picker
 
 ## Architecture
 
@@ -10,8 +10,8 @@ The package is split between core behavior and optional visual defaults.
   explicit add/remove intent.
 - `OverlayBody<T, K>` coordinates filtering and row toggles without choosing the
   surrounding popup surface or list layout.
-- `GenericPickerActions<T, K>` exposes safe pending-only and explicit-delta bulk
-  operations to header code.
+- `GenericPickerActions<T, K>` exposes explicit-delta bulk operations and
+  pending synchronization to header code.
 - `lib/src/widgets/` contains default view widgets, tooltip helpers, feedback UI,
   and the optional `SubPickerTile` convenience widget.
 
