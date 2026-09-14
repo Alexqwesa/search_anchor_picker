@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
+import 'package:search_anchor_picker/src/picker_resource_tracker.dart';
 
 PickerConfig<int> _config(Future<List<int>> Function() load) {
   return PickerConfig<int>(
@@ -18,12 +19,21 @@ class _TrackedListenable extends ChangeNotifier {
 }
 
 void main() {
-  testWidgets('1000 closed pickers allocate no popup animation or load state', (
+  testWidgets('10000 closed pickers keep popup resources lazy', (
     tester,
   ) async {
+    const pickerCount = 10000;
     var loadCalls = 0;
+    var headerBuildCalls = 0;
+    var triggerBuildCalls = 0;
+    GlobalKey? openedHeaderKey;
+    final source = _TrackedListenable();
+    PickerResourceTracker.reset();
+    addTearDown(source.dispose);
+    addTearDown(PickerResourceTracker.reset);
+
     final configs = List.generate(
-      1000,
+      pickerCount,
       (_) => PickerConfig<int>(
         loadItems: (_) async {
           loadCalls++;
@@ -32,6 +42,7 @@ void main() {
         idOf: (item) => item,
         labelOf: (item) => 'Item $item',
         searchTermsOf: (item) => ['Item $item'],
+        listenable: source,
       ),
     );
 
@@ -44,17 +55,72 @@ void main() {
                 config: config,
                 initialSelectedIds: const [],
                 triggerChild: const SizedBox.shrink(),
+                triggerBuilder: (context, open, version) {
+                  triggerBuildCalls++;
+                  return GestureDetector(
+                    onTap: open,
+                    child: const SizedBox.shrink(),
+                  );
+                },
+                headerBuilder: (context, controller, items) {
+                  headerBuildCalls++;
+                  openedHeaderKey = controller.getKey('header');
+                  return [SizedBox(key: openedHeaderKey)];
+                },
               ),
           ],
         ),
       ),
     );
 
-    expect(find.byType(SearchAnchorPicker<int>), findsNWidgets(1000));
+    expect(find.byType(SearchAnchorPicker<int>), findsNWidgets(pickerCount));
     expect(find.byType(AnimatedOpacity), findsNothing);
     expect(find.byType(DefaultPickerSearchField), findsNothing);
     expect(find.byType(SearchBar), findsNothing);
     expect(loadCalls, 0);
+    expect(headerBuildCalls, 0);
+    expect(triggerBuildCalls, pickerCount);
+    expect(source.hasActiveListeners, isFalse);
+    expect(PickerResourceTracker.createdByType, isEmpty);
+    expect(PickerResourceTracker.liveByType, isEmpty);
+
+    final stopwatch = Stopwatch()..start();
+    configs[pickerCount ~/ 2].open();
+    await tester.pump();
+    stopwatch.stop();
+
+    expect(loadCalls, 1);
+    expect(headerBuildCalls, 1);
+    expect(triggerBuildCalls, pickerCount + 1);
+    expect(source.hasActiveListeners, isTrue);
+    expect(PickerResourceTracker.createdByType, hasLength(9));
+    expect(PickerResourceTracker.createdByType.values, everyElement(1));
+    expect(
+      PickerResourceTracker.liveByType,
+      PickerResourceTracker.createdByType,
+    );
+    expect(openedHeaderKey, isNotNull);
+    expect(
+      find.byKey(openedHeaderKey!, skipOffstage: false),
+      findsOneWidget,
+    );
+
+    // Wall-clock values vary across CI hosts; allocation and rebuild counts are
+    // the stable performance contract. Keep the duration visible on failure.
+    expect(
+      stopwatch.elapsed,
+      lessThan(const Duration(seconds: 5)),
+      reason: 'Opening one of $pickerCount anchors took ${stopwatch.elapsed}.',
+    );
+
+    configs[pickerCount ~/ 2].close();
+    await tester.pumpAndSettle();
+
+    expect(source.hasActiveListeners, isFalse);
+    expect(PickerResourceTracker.createdByType, hasLength(9));
+    expect(PickerResourceTracker.createdByType.values, everyElement(1));
+    expect(PickerResourceTracker.liveByType, isEmpty);
+    expect(openedHeaderKey!.currentContext, isNull);
   });
 
   testWidgets('closed picker does not subscribe to its data listenable', (

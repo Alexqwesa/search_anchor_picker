@@ -7,6 +7,7 @@ import 'package:search_anchor_picker/src/overlay_body.dart';
 import 'package:search_anchor_picker/src/picker_builders.dart';
 import 'package:search_anchor_picker/src/picker_config.dart';
 import 'package:search_anchor_picker/src/picker_debug.dart';
+import 'package:search_anchor_picker/src/picker_resource_tracker.dart';
 import 'package:search_anchor_picker/src/selection_session.dart';
 import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 
@@ -223,18 +224,36 @@ class _GenericSearchAnchorPickerState<T, K>
 
   SearchController get _controller {
     if (widget.searchController case final external?) return external;
-    return _ownedController ??= SearchController()..text = _retainedQuery;
+    if (_ownedController case final owned?) return owned;
+    final controller = SearchController()..text = _retainedQuery;
+    PickerResourceTracker.register(controller);
+    return _ownedController = controller;
   }
 
-  FocusNode get _effectiveSearchFocusNode =>
-      _searchFocusNode ??= FocusNode(debugLabel: 'Picker search');
-  AnimationController get _animationController =>
-      _openController ??= AnimationController(
-        vsync: this,
-        duration: _openViewDuration,
-      )..addListener(() => _overlayEntry?.markNeedsBuild());
-  PickerSelectionSession<K> get _selection => _selectionSession ??=
-      PickerSelectionSession<K>(widget.initialSelectedIds);
+  FocusNode get _effectiveSearchFocusNode {
+    if (_searchFocusNode case final focusNode?) return focusNode;
+    final focusNode = FocusNode(debugLabel: 'Picker search');
+    PickerResourceTracker.register(focusNode);
+    return _searchFocusNode = focusNode;
+  }
+
+  AnimationController get _animationController {
+    if (_openController case final controller?) return controller;
+    final controller = AnimationController(
+      vsync: this,
+      duration: _openViewDuration,
+    )..addListener(() => _overlayEntry?.markNeedsBuild());
+    PickerResourceTracker.register(controller);
+    return _openController = controller;
+  }
+
+  PickerSelectionSession<K> get _selection {
+    if (_selectionSession case final session?) return session;
+    final session = PickerSelectionSession<K>(widget.initialSelectedIds);
+    PickerResourceTracker.register(session);
+    return _selectionSession = session;
+  }
+
   ValueNotifier<Set<K>> get _pendingN => _selection.pendingN;
 
   OverlayEntry? _overlayEntry;
@@ -244,8 +263,13 @@ class _GenericSearchAnchorPickerState<T, K>
   bool _open = false;
   int _tick = 0;
   ValueNotifier<int>? _viewTickNotifier;
-  ValueNotifier<int> get _viewTickN =>
-      _viewTickNotifier ??= ValueNotifier<int>(0);
+  ValueNotifier<int> get _viewTickN {
+    if (_viewTickNotifier case final notifier?) return notifier;
+    final notifier = ValueNotifier<int>(0);
+    PickerResourceTracker.register(notifier);
+    return _viewTickNotifier = notifier;
+  }
+
   Map<Object, GlobalKey>? _headerKeys;
   List<K> _stableIds = <K>[];
   List<T>? _itemsSnapshot;
@@ -274,13 +298,63 @@ class _GenericSearchAnchorPickerState<T, K>
   void _attachListenable(Listenable? listenable) {
     if (listenable == null) return;
     _listenableCallback = _reload;
+    PickerResourceTracker.register(_listenableCallback!);
     listenable.addListener(_listenableCallback!);
   }
 
   void _detachListenable(Listenable? listenable) {
     if (listenable == null || _listenableCallback == null) return;
     listenable.removeListener(_listenableCallback!);
+    PickerResourceTracker.unregister(_listenableCallback!);
     _listenableCallback = null;
+  }
+
+  void _clearHeaderKeys() {
+    final keys = _headerKeys;
+    if (keys == null) return;
+    keys.values.forEach(PickerResourceTracker.unregister);
+    PickerResourceTracker.unregister(keys);
+    _headerKeys = null;
+  }
+
+  void _disposeSelectionSession() {
+    final session = _selectionSession;
+    if (session == null) return;
+    PickerResourceTracker.unregister(session);
+    session.dispose();
+    _selectionSession = null;
+  }
+
+  void _disposeViewTickNotifier() {
+    final notifier = _viewTickNotifier;
+    if (notifier == null) return;
+    PickerResourceTracker.unregister(notifier);
+    notifier.dispose();
+    _viewTickNotifier = null;
+  }
+
+  void _disposeOpenController() {
+    final controller = _openController;
+    if (controller == null) return;
+    PickerResourceTracker.unregister(controller);
+    controller.dispose();
+    _openController = null;
+  }
+
+  void _disposeSearchFocusNode() {
+    final focusNode = _searchFocusNode;
+    if (focusNode == null) return;
+    PickerResourceTracker.unregister(focusNode);
+    focusNode.dispose();
+    _searchFocusNode = null;
+  }
+
+  void _disposeOwnedController() {
+    final controller = _ownedController;
+    if (controller == null) return;
+    PickerResourceTracker.unregister(controller);
+    controller.dispose();
+    _ownedController = null;
   }
 
   @override
@@ -317,11 +391,12 @@ class _GenericSearchAnchorPickerState<T, K>
     _removeOverlay();
     _unbindConfigControl(widget.config);
     _detachListenable(widget.config.listenable);
-    _selectionSession?.dispose();
-    _viewTickNotifier?.dispose();
-    _openController?.dispose();
-    _searchFocusNode?.dispose();
-    _ownedController?.dispose();
+    _clearHeaderKeys();
+    _disposeSelectionSession();
+    _disposeViewTickNotifier();
+    _disposeOpenController();
+    _disposeSearchFocusNode();
+    _disposeOwnedController();
     super.dispose();
   }
 
@@ -391,24 +466,19 @@ class _GenericSearchAnchorPickerState<T, K>
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
-    _headerKeys = null;
+    _clearHeaderKeys();
     _detachListenable(widget.config.listenable);
     _itemsSnapshot = null;
     _stableIds = <K>[];
-    _selectionSession?.dispose();
-    _selectionSession = null;
-    _viewTickNotifier?.dispose();
-    _viewTickNotifier = null;
-    _openController?.dispose();
-    _openController = null;
-    _searchFocusNode?.dispose();
-    _searchFocusNode = null;
+    _disposeSelectionSession();
+    _disposeViewTickNotifier();
+    _disposeOpenController();
+    _disposeSearchFocusNode();
     if (externalController == null) {
       _retainedQuery = widget.closeQueryBehavior == CloseQueryBehavior.clear
           ? ''
           : queryAtClose;
-      _ownedController?.dispose();
-      _ownedController = null;
+      _disposeOwnedController();
     }
     _callLifecycleCallback('viewOnClose', widget.viewOnClose);
 
@@ -490,13 +560,19 @@ class _GenericSearchAnchorPickerState<T, K>
     _overlayState = overlay;
     _openedAnchorRect = _currentAnchorRect();
     _animationController.value = 0;
-    _overlayEntry = OverlayEntry(builder: (_) => _buildOverlayEntry());
-    overlay.insert(_overlayEntry!);
+    final entry = OverlayEntry(builder: (_) => _buildOverlayEntry());
+    PickerResourceTracker.register(entry);
+    _overlayEntry = entry;
+    overlay.insert(entry);
     unawaited(_animationController.forward());
   }
 
   void _removeOverlay() {
-    _overlayEntry?.remove();
+    final entry = _overlayEntry;
+    if (entry != null) {
+      entry.remove();
+      PickerResourceTracker.unregister(entry);
+    }
     _overlayEntry = null;
     _overlayState = null;
   }
@@ -511,8 +587,19 @@ class _GenericSearchAnchorPickerState<T, K>
     return offset & anchorBox.size;
   }
 
-  GlobalKey _getKey(Object id) =>
-      (_headerKeys ??= <Object, GlobalKey>{}).putIfAbsent(id, GlobalKey.new);
+  GlobalKey _getKey(Object id) {
+    var keys = _headerKeys;
+    if (keys == null) {
+      keys = <Object, GlobalKey>{};
+      PickerResourceTracker.register(keys);
+      _headerKeys = keys;
+    }
+    return keys.putIfAbsent(id, () {
+      final key = GlobalKey();
+      PickerResourceTracker.register(key);
+      return key;
+    });
+  }
 
   void _computeStableIds(List<T> items) {
     final selectedFirst = widget.selectedFirst ?? widget.config.selectedFirst;
