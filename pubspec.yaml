@@ -3,7 +3,7 @@ description: >-
   Generic searchable picker (multi-select / radio) with stable in-overlay
   selection, nested sub-pickers, async toggle gating, and lazy lifecycle-managed
   controllers and focus nodes.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/Alexqwesa/search_anchor_picker
 repository: https://github.com/Alexqwesa/search_anchor_picker
 issue_tracker: https://github.com/Alexqwesa/search_anchor_picker/issues
