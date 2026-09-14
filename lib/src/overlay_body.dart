@@ -25,6 +25,8 @@ class OverlayBody<T, K> extends StatefulWidget {
     this.itemBuilder,
     this.resultsBuilder,
     this.emptyBuilder,
+    this.emptyText,
+    this.noResultsText,
   });
 
   final List<Widget> header;
@@ -47,6 +49,8 @@ class OverlayBody<T, K> extends StatefulWidget {
   itemBuilder;
   final PickerResultsBuilder? resultsBuilder;
   final PickerEmptyBuilder? emptyBuilder;
+  final String? emptyText;
+  final String? noResultsText;
 
   @override
   State<OverlayBody<T, K>> createState() => _OverlayBodyState<T, K>();
@@ -155,7 +159,11 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
             if (filtered.isEmpty) {
               children.add(
                 widget.emptyBuilder?.call(context, query) ??
-                    DefaultPickerEmpty(query: query),
+                    DefaultPickerEmpty(
+                      query: query,
+                      emptyText: widget.emptyText,
+                      noResultsText: widget.noResultsText,
+                    ),
               );
             } else {
               for (final item in filtered) {

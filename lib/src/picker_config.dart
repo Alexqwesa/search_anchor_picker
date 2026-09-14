@@ -394,4 +394,11 @@ class PickerController<T> extends GenericPickerController<T, int> {
   });
 }
 
-enum CloseQueryBehavior { keep, clear }
+/// Controls what happens to the search query when the picker closes.
+enum CloseQueryBehavior {
+  /// Preserve the query for the next time the picker opens.
+  keep,
+
+  /// Clear the query after closing the picker.
+  clear,
+}

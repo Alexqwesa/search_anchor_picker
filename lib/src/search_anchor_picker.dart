@@ -36,6 +36,8 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
     this.searchFieldBuilder,
     this.loadingBuilder,
     this.emptyBuilder,
+    this.emptyText,
+    this.noResultsText,
     this.errorBuilder,
     this.viewBuilder,
     this.viewSurfaceBuilder,
@@ -103,6 +105,12 @@ class GenericSearchAnchorPicker<T, K> extends StatefulWidget {
   final PickerSearchFieldBuilder? searchFieldBuilder;
   final PickerLoadingBuilder? loadingBuilder;
   final PickerEmptyBuilder? emptyBuilder;
+
+  /// Overrides the localized default shown when no items were loaded.
+  final String? emptyText;
+
+  /// Overrides the localized default shown when a query has no matches.
+  final String? noResultsText;
   final PickerErrorBuilder? errorBuilder;
   final PickerViewBuilder? viewBuilder;
   final PickerViewSurfaceBuilder? viewSurfaceBuilder;
@@ -167,6 +175,8 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     super.searchFieldBuilder,
     super.loadingBuilder,
     super.emptyBuilder,
+    super.emptyText,
+    super.noResultsText,
     super.errorBuilder,
     super.viewBuilder,
     super.viewSurfaceBuilder,
@@ -746,6 +756,8 @@ class _GenericSearchAnchorPickerState<T, K>
           itemBuilder: widget.itemBuilder,
           resultsBuilder: widget.resultsBuilder,
           emptyBuilder: widget.emptyBuilder,
+          emptyText: widget.emptyText,
+          noResultsText: widget.noResultsText,
         );
       },
     );

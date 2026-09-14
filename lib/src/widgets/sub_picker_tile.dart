@@ -23,6 +23,8 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
     this.searchFieldBuilder,
     this.loadingBuilder,
     this.emptyBuilder,
+    this.emptyText,
+    this.noResultsText,
     this.errorBuilder,
     this.viewBuilder,
     this.viewSurfaceBuilder,
@@ -66,6 +68,12 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
   final PickerSearchFieldBuilder? searchFieldBuilder;
   final PickerLoadingBuilder? loadingBuilder;
   final PickerEmptyBuilder? emptyBuilder;
+
+  /// Overrides the localized default shown when no sub-picker items load.
+  final String? emptyText;
+
+  /// Overrides the localized default shown when a query has no matches.
+  final String? noResultsText;
   final PickerErrorBuilder? errorBuilder;
   final PickerViewBuilder? viewBuilder;
   final PickerViewSurfaceBuilder? viewSurfaceBuilder;
@@ -106,6 +114,8 @@ class GenericSubPickerTile<T, K> extends StatelessWidget {
       searchFieldBuilder: searchFieldBuilder,
       loadingBuilder: loadingBuilder,
       emptyBuilder: emptyBuilder,
+      emptyText: emptyText,
+      noResultsText: noResultsText,
       errorBuilder: errorBuilder,
       viewBuilder: viewBuilder,
       viewSurfaceBuilder: viewSurfaceBuilder,
@@ -164,6 +174,8 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     super.searchFieldBuilder,
     super.loadingBuilder,
     super.emptyBuilder,
+    super.emptyText,
+    super.noResultsText,
     super.errorBuilder,
     super.viewBuilder,
     super.viewSurfaceBuilder,

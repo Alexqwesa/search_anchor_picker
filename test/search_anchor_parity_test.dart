@@ -163,6 +163,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: _config(items: const []),
           initialSelectedIds: const [],
+          emptyText: 'Ignored default text',
           emptyBuilder: (context, query) => const Text('Custom empty'),
           viewBuilder: (context, parts) => Column(
             children: [
@@ -182,9 +183,56 @@ void main() {
     await tester.tap(find.byIcon(Icons.search));
     await tester.pumpAndSettle();
     expect(find.text('Custom empty'), findsOneWidget);
+    expect(find.text('Ignored default text'), findsNothing);
     expect(find.byKey(const Key('custom-surface')), findsOneWidget);
     expect(find.byType(DefaultPickerViewSurface), findsNothing);
     expect(find.byType(SearchBar), findsOneWidget);
+  });
+
+  testWidgets('default empty view uses built-in locale messages', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Localizations.override(
+            context: context,
+            locale: const Locale('es'),
+            child: const Column(
+              children: [
+                DefaultPickerEmpty(query: ''),
+                DefaultPickerEmpty(query: 'missing'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('No hay elementos'), findsOneWidget);
+    expect(find.text('No hay resultados'), findsOneWidget);
+  });
+
+  testWidgets('empty text overrides flow through the picker', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: _config(items: const []),
+          initialSelectedIds: const [],
+          emptyText: 'Nothing loaded',
+          noResultsText: 'Nothing matched',
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing loaded'), findsOneWidget);
+
+    await tester.enterText(find.byType(SearchBar), 'missing');
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing loaded'), findsNothing);
+    expect(find.text('Nothing matched'), findsOneWidget);
   });
 
   testWidgets('explicit view properties override SearchViewTheme', (

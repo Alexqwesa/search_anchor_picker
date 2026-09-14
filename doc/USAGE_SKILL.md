@@ -180,6 +180,10 @@ Focused builders replace only their own region:
 - `loadingBuilder`, `emptyBuilder`, `errorBuilder`
 - `viewBuilder`, `viewSurfaceBuilder`
 
+The default empty view uses built-in locale-aware “No items” and “No results”
+messages. Prefer `emptyText` and `noResultsText` for wording-only overrides; use
+`emptyBuilder` when the application needs a different layout or behavior.
+
 Core popup placement, focus, keyboard handling, loading, and selection lifecycle
 remain active when a visual builder is supplied. Default and convenience widgets
 are also exported from `package:search_anchor_picker/widgets.dart`.

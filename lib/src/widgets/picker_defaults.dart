@@ -322,20 +322,72 @@ class DefaultPickerLoading extends StatelessWidget {
   );
 }
 
+/// Default message shown when the picker has no visible results.
 class DefaultPickerEmpty extends StatelessWidget {
-  const DefaultPickerEmpty({required this.query, super.key});
+  /// Creates the default empty-results view for [query].
+  const DefaultPickerEmpty({
+    required this.query,
+    super.key,
+    this.emptyText,
+    this.noResultsText,
+  });
 
+  /// The current search query, or an empty string when no search is active.
   final String query;
+
+  /// Text shown when no items were loaded.
+  ///
+  /// When null, a built-in translation is selected from the current locale.
+  final String? emptyText;
+
+  /// Text shown when loaded items do not match [query].
+  ///
+  /// When null, a built-in translation is selected from the current locale.
+  final String? noResultsText;
 
   @override
   Widget build(BuildContext context) {
+    final messages = _pickerEmptyMessages(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(query.isEmpty ? 'No items' : 'No results'),
+        child: Text(
+          query.isEmpty
+              ? emptyText ?? messages.empty
+              : noResultsText ?? messages.noResults,
+        ),
       ),
     );
   }
+}
+
+typedef _PickerEmptyMessages = ({String empty, String noResults});
+
+const _PickerEmptyMessages _englishPickerEmptyMessages = (
+  empty: 'No items',
+  noResults: 'No results',
+);
+
+const _pickerEmptyMessagesByLanguage = <String, _PickerEmptyMessages>{
+  'ar': (empty: 'لا توجد عناصر', noResults: 'لا توجد نتائج'),
+  'de': (empty: 'Keine Einträge', noResults: 'Keine Ergebnisse'),
+  'en': _englishPickerEmptyMessages,
+  'es': (empty: 'No hay elementos', noResults: 'No hay resultados'),
+  'fr': (empty: 'Aucun élément', noResults: 'Aucun résultat'),
+  'it': (empty: 'Nessun elemento', noResults: 'Nessun risultato'),
+  'ja': (empty: '項目がありません', noResults: '結果がありません'),
+  'ko': (empty: '항목 없음', noResults: '결과 없음'),
+  'pt': (empty: 'Nenhum item', noResults: 'Nenhum resultado'),
+  'ru': (empty: 'Нет элементов', noResults: 'Нет результатов'),
+  'uk': (empty: 'Немає елементів', noResults: 'Немає результатів'),
+  'vi': (empty: 'Không có mục nào', noResults: 'Không có kết quả'),
+  'zh': (empty: '没有项目', noResults: '没有结果'),
+};
+
+_PickerEmptyMessages _pickerEmptyMessages(BuildContext context) {
+  final languageCode = Localizations.maybeLocaleOf(context)?.languageCode;
+  return _pickerEmptyMessagesByLanguage[languageCode] ??
+      _englishPickerEmptyMessages;
 }
 
 class DefaultPickerError extends StatelessWidget {

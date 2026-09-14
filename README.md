@@ -142,6 +142,10 @@ Use focused builders to replace only the region you own:
 - `loadingBuilder`, `emptyBuilder`, and `errorBuilder`
 - `viewBuilder` and `viewSurfaceBuilder`
 
+The default empty view localizes “No items” and “No results” for several common
+languages using the app's current locale. Set `emptyText` / `noResultsText` to
+provide application wording, or use `emptyBuilder` to replace the region.
+
 For example, a custom error region still uses the core retry lifecycle:
 
 ```dart

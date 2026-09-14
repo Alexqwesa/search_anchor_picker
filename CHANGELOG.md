@@ -1,3 +1,9 @@
+## 0.1.2
+
+* Added API documentation for the public libraries and query-close behavior.
+* Added localized default empty/no-results messages with `emptyText` and
+  `noResultsText` overrides for main and nested pickers.
+
 ## 0.1.1
 
 * Made item reloads explicit: ordinary `PickerConfig` replacement now rebinds

@@ -35,6 +35,8 @@ support nested popup offsets. The view still follows SearchAnchor behavior:
 - Desktop placement uses SearchAnchor's left/right and bottom-edge fallback,
   then applies `menuOffset` only on axes with enough screen space.
 - The opening animation uses the emphasized SearchAnchor curve and duration.
+- The default empty region resolves compact built-in translations from the
+  current locale, while text overrides and `emptyBuilder` remain optional.
 
 Flutter's private SearchAnchor default class cannot be reused directly, so the
 small public-value resolver is kept in `DefaultPickerView` support code. Parity
