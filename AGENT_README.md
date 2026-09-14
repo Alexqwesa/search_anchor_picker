@@ -19,8 +19,12 @@ Preserve these properties across every change:
   `added` or `removed` deltas. External reseeds and `syncPending` do not.
 - Async loads are generation guarded. Stale or post-disposal completions must
   not update an overlay.
-- Escape, back, and outside taps close only the topmost applicable picker, and
-  close callbacks run at most once per session.
+- Config identity is not a reload signal. Rebind configuration on replacement,
+  but fetch only on open, `controller.refresh()`, a configured `Listenable`
+  notification, or a changed `reloadKey` while open.
+- Escape and back close only the topmost picker. Outside taps close anchored
+  popups; full-screen views instead retain a visible close/back affordance.
+  Close callbacks run at most once per session.
 - Search remains editable after opening and after clearing the query.
 
 ## Repository map
@@ -57,6 +61,10 @@ Mobile defaults to full-screen. Desktop defaults to an anchored popup.
 `menuOffset` applies only to anchored popups and only on axes where the shifted
 popup remains on screen.
 
+The default full-screen search field owns a localized back button. A custom
+`viewLeading` or `searchFieldBuilder` replaces that affordance and must expose
+the core-provided close callback when no other visible exit exists.
+
 Do not use `CompositedTransformFollower` for the popup. The package owns an
 `OverlayEntry` specifically to support nested offsets without follower-layer
 paint-transform failures or parent clipping.
@@ -75,6 +83,12 @@ Before changing selection behavior, test all three state channels separately:
 Never derive removals by intersecting pending IDs with a loaded page. Verify
 partial server results, reloads, temporary empty external seeds, close/reopen,
 radio modes, bulk controller commands, and nested picker synchronization.
+
+Keep reload invalidation explicit. Inline `PickerConfig(...)` objects are normal
+Flutter usage and may be recreated on every parent build. Such replacement must
+not cause I/O or loops. `reloadKey` changes may be coalesced within one frame;
+all reload paths must retain stale-request suppression and closed-picker lazy
+subscription behavior.
 
 `syncPending(added:, removed:)` symmetrically applies an already-persisted
 external delta to the currently open picker's temporary pending IDs. It does not

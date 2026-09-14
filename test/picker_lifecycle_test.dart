@@ -154,6 +154,223 @@ void main() {
     expect(source.hasActiveListeners, isFalse);
   });
 
+  testWidgets('inline config replacement does not reload an open picker', (
+    tester,
+  ) async {
+    late StateSetter rebuild;
+    var parentBuildValue = 0;
+    var loadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            final buildValue = parentBuildValue;
+            return SearchAnchorPicker<int>(
+              config: PickerConfig<int>(
+                loadItems: (_) async {
+                  loadCalls++;
+                  return [1];
+                },
+                idOf: (item) => item,
+                labelOf: (item) => 'Build $buildValue item $item',
+                searchTermsOf: (item) => ['Item $item'],
+              ),
+              initialSelectedIds: const [],
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+    expect(find.text('Build 0 item 1'), findsOneWidget);
+
+    rebuild(() => parentBuildValue++);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+    expect(find.text('Build 0 item 1'), findsNothing);
+    expect(find.text('Build 1 item 1'), findsOneWidget);
+  });
+
+  testWidgets('reloadKey change reloads once and same-frame changes coalesce', (
+    tester,
+  ) async {
+    late StateSetter rebuild;
+    var reloadKey = 0;
+    var unrelatedValue = 0;
+    var loadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return SearchAnchorPicker<int>(
+              config: PickerConfig<int>(
+                reloadKey: reloadKey,
+                title: 'Build $unrelatedValue',
+                loadItems: (_) async {
+                  loadCalls++;
+                  return [1];
+                },
+                idOf: (item) => item,
+                labelOf: (item) => 'Item $item',
+                searchTermsOf: (item) => ['Item $item'],
+              ),
+              initialSelectedIds: const [],
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    rebuild(() => unrelatedValue++);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    rebuild(() => reloadKey = 1);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 2);
+
+    rebuild(() => reloadKey = 2);
+    rebuild(() => reloadKey = 3);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 3);
+  });
+
+  testWidgets('replacing config rebinds its open-only listenable', (
+    tester,
+  ) async {
+    final firstSource = ChangeNotifier();
+    final secondSource = ChangeNotifier();
+    addTearDown(firstSource.dispose);
+    addTearDown(secondSource.dispose);
+    late StateSetter rebuild;
+    Listenable source = firstSource;
+    var loadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return SearchAnchorPicker<int>(
+              config: PickerConfig<int>(
+                loadItems: (_) async {
+                  loadCalls++;
+                  return [1];
+                },
+                idOf: (item) => item,
+                labelOf: (item) => 'Item $item',
+                searchTermsOf: (item) => ['Item $item'],
+                listenable: source,
+              ),
+              initialSelectedIds: const [],
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    rebuild(() => source = secondSource);
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    firstSource.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    secondSource.notifyListeners();
+    await tester.pumpAndSettle();
+    expect(loadCalls, 2);
+  });
+
+  testWidgets('controller refresh explicitly reloads once', (tester) async {
+    var loadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: _config(() async {
+            loadCalls++;
+            return [1];
+          }),
+          initialSelectedIds: const [],
+          headerBuilder: (context, value, items) {
+            return [
+              TextButton(
+                onPressed: value.refresh,
+                child: const Text('Refresh'),
+              ),
+            ];
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+
+    await tester.tap(find.text('Refresh'));
+    await tester.pumpAndSettle();
+    expect(loadCalls, 2);
+  });
+
+  testWidgets('config replaced while closed is used on the next open', (
+    tester,
+  ) async {
+    late StateSetter rebuild;
+    var useSecondLoader = false;
+    var firstLoadCalls = 0;
+    var secondLoadCalls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            final useSecond = useSecondLoader;
+            return SearchAnchorPicker<int>(
+              config: _config(() async {
+                if (useSecond) {
+                  secondLoadCalls++;
+                  return [2];
+                }
+                firstLoadCalls++;
+                return [1];
+              }),
+              initialSelectedIds: const [],
+            );
+          },
+        ),
+      ),
+    );
+
+    rebuild(() => useSecondLoader = true);
+    await tester.pumpAndSettle();
+    expect(firstLoadCalls, 0);
+    expect(secondLoadCalls, 0);
+
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(firstLoadCalls, 0);
+    expect(secondLoadCalls, 1);
+    expect(find.text('Item 2'), findsOneWidget);
+  });
+
   testWidgets('parent seed changed while closed is used on next open', (
     tester,
   ) async {

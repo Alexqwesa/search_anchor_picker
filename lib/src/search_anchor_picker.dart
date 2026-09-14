@@ -277,6 +277,8 @@ class _GenericSearchAnchorPickerState<T, K>
   StackTrace? _loadStackTrace;
   bool _loading = false;
   int _loadGeneration = 0;
+  int _scheduledReloadGeneration = 0;
+  bool _reloadScheduled = false;
   VoidCallback? _listenableCallback;
 
   @override
@@ -363,17 +365,22 @@ class _GenericSearchAnchorPickerState<T, K>
     if (oldWidget.config != widget.config) {
       _unbindConfigControl(oldWidget.config);
       _bindConfigControl();
-      if (_open) {
-        _detachListenable(oldWidget.config.listenable);
-        _attachListenable(widget.config.listenable);
+      final entry = _overlayEntry;
+      if (_open && entry != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _open) _reload();
+          if (mounted && _open && identical(_overlayEntry, entry)) {
+            entry.markNeedsBuild();
+          }
         });
       }
-    } else if (_open &&
-        oldWidget.config.listenable != widget.config.listenable) {
+    }
+
+    if (_open && oldWidget.config.listenable != widget.config.listenable) {
       _detachListenable(oldWidget.config.listenable);
       _attachListenable(widget.config.listenable);
+    }
+    if (_open && oldWidget.config.reloadKey != widget.config.reloadKey) {
+      _scheduleReload();
     }
 
     if (!_listEquals(oldWidget.initialSelectedIds, widget.initialSelectedIds)) {
@@ -386,6 +393,7 @@ class _GenericSearchAnchorPickerState<T, K>
   @override
   void dispose() {
     _loadGeneration++;
+    _cancelScheduledReload();
     WidgetsBinding.instance.removeObserver(this);
     _openPickerStack.remove(this);
     _removeOverlay();
@@ -398,6 +406,22 @@ class _GenericSearchAnchorPickerState<T, K>
     _disposeSearchFocusNode();
     _disposeOwnedController();
     super.dispose();
+  }
+
+  void _scheduleReload() {
+    if (_reloadScheduled) return;
+    _reloadScheduled = true;
+    final generation = ++_scheduledReloadGeneration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (generation != _scheduledReloadGeneration) return;
+      _reloadScheduled = false;
+      if (mounted && _open) _reload();
+    });
+  }
+
+  void _cancelScheduledReload() {
+    _scheduledReloadGeneration++;
+    _reloadScheduled = false;
   }
 
   void _reload() {
@@ -459,6 +483,7 @@ class _GenericSearchAnchorPickerState<T, K>
     WidgetsBinding.instance.removeObserver(this);
     _openPickerStack.remove(this);
     _loadGeneration++;
+    _cancelScheduledReload();
     final queryAtClose = _controller.text;
     final externalController = widget.searchController;
     final result = _selection.result();

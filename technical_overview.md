@@ -30,6 +30,8 @@ support nested popup offsets. The view still follows SearchAnchor behavior:
 - Mobile platforms default to full-screen; desktop platforms use an anchored
   popup sized from the anchor and effective view constraints.
 - Full-screen mode ignores menu offsets, outer view padding, and popup sides.
+- Anchored views support outside-tap closure. Full-screen views have no outside
+  region and use the default search field's localized back button instead.
 - Desktop placement uses SearchAnchor's left/right and bottom-edge fallback,
   then applies `menuOffset` only on axes with enough screen space.
 - The opening animation uses the emphasized SearchAnchor curve and duration.
@@ -39,6 +41,13 @@ small public-value resolver is kept in `DefaultPickerView` support code. Parity
 tests compare theme resolution, constraints, platform behavior, and placement.
 
 ## Loading and lifecycle
+
+Configuration identity and data revision are intentionally separate. Replacing
+`PickerConfig` rebinds its control callbacks and, when necessary, its open-only
+`Listenable` subscription without loading. Loads occur only on open, explicit
+controller refresh, a configured `Listenable` notification, or a changed
+`reloadKey` while open. Same-frame `reloadKey` changes are coalesced, and the
+next open always uses the latest loader.
 
 Each load receives a generation number. Only the newest generation may publish
 items or errors, so a slow previous request cannot overwrite a newer server page.

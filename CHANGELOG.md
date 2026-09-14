@@ -1,3 +1,9 @@
+## 0.1.1
+
+* Made item reloads explicit: ordinary `PickerConfig` replacement now rebinds
+  without fetching, while `reloadKey`, `listenable`, and controller `refresh()`
+  provide deliberate invalidation paths.
+
 ## 0.1.0
 
 Breaking package identity:

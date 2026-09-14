@@ -229,6 +229,7 @@ void main() {
   testWidgets('mobile defaults full screen and ignores menuOffset', (
     tester,
   ) async {
+    var closeCalls = 0;
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -243,6 +244,7 @@ void main() {
             config: _config(),
             initialSelectedIds: const [],
             menuOffset: const Offset(100, 100),
+            viewOnClose: () => closeCalls++,
           ),
         ),
       ),
@@ -254,9 +256,23 @@ void main() {
       tester.getRect(find.byType(DefaultPickerViewSurface)),
       Offset.zero & const Size(800, 600),
     );
+
+    final searchFieldContext = tester.element(
+      find.byType(DefaultPickerSearchField),
+    );
+    final backTooltip = MaterialLocalizations.of(
+      searchFieldContext,
+    ).backButtonTooltip;
+    expect(find.byTooltip(backTooltip), findsOneWidget);
+
+    await tester.tap(find.byTooltip(backTooltip));
+    await tester.pumpAndSettle();
+    expect(find.byType(DefaultPickerViewSurface), findsNothing);
+    expect(closeCalls, 1);
   });
 
   testWidgets('desktop defaults to anchored 360 wide popup', (tester) async {
+    var closeCalls = 0;
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -270,6 +286,7 @@ void main() {
           child: SearchAnchorPicker<int>(
             config: _config(),
             initialSelectedIds: const [],
+            viewOnClose: () => closeCalls++,
           ),
         ),
       ),
@@ -280,5 +297,10 @@ void main() {
     expect(rect.width, 360);
     expect(rect.height, 400);
     expect(rect, isNot(Offset.zero & const Size(800, 600)));
+
+    await tester.tapAt(const Offset(790, 590));
+    await tester.pumpAndSettle();
+    expect(find.byType(DefaultPickerViewSurface), findsNothing);
+    expect(closeCalls, 1);
   });
 }

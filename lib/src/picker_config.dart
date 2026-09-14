@@ -6,6 +6,8 @@ import 'package:search_anchor_picker/src/picker_builders.dart';
 
 typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 
+const _reloadKeyNotProvided = Object();
+
 /// Configuration for a [SearchAnchorPicker].
 ///
 /// This object is intentionally "meta": the picker UI is generic, and you adapt
@@ -33,6 +35,7 @@ class GenericPickerConfig<T, K> {
     this.title,
     this.selectedFirst = true,
     this.listenable,
+    this.reloadKey,
     this.unselectBehavior = UnselectBehavior.allow,
     this.isItemInUse,
     this.unselectWarningBuilder,
@@ -121,9 +124,18 @@ class GenericPickerConfig<T, K> {
   /// This order is computed once per open (stable while the overlay is open).
   final bool selectedFirst;
 
-  /// If provided, the overlay will rebuild when this notifies.
-  /// Use this when your items source is a ChangeNotifier / ValueNotifier / etc.
+  /// If provided, the open picker reloads items when this notifies.
+  ///
+  /// The listener is attached only while the picker is open.
   final Listenable? listenable;
+
+  /// An explicit revision for declarative item reloads.
+  ///
+  /// Replacing [GenericPickerConfig] alone only rebinds its configuration and
+  /// does not reload items. While the picker is open, changing this value
+  /// reloads [loadItems]. A closed picker always loads with the latest
+  /// configuration when it next opens.
+  final Object? reloadKey;
 
   /// Strategy to handle deselection of items that might be "in use".
   final UnselectBehavior unselectBehavior;
@@ -149,6 +161,7 @@ class GenericPickerConfig<T, K> {
     String? title,
     bool? selectedFirst,
     Listenable? listenable,
+    Object? reloadKey = _reloadKeyNotProvided,
     UnselectBehavior? unselectBehavior,
     bool Function(T)? isItemInUse,
     GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
@@ -165,6 +178,9 @@ class GenericPickerConfig<T, K> {
       title: title ?? this.title,
       selectedFirst: selectedFirst ?? this.selectedFirst,
       listenable: listenable ?? this.listenable,
+      reloadKey: identical(reloadKey, _reloadKeyNotProvided)
+          ? this.reloadKey
+          : reloadKey,
       unselectBehavior: unselectBehavior ?? this.unselectBehavior,
       isItemInUse: isItemInUse ?? this.isItemInUse,
       unselectWarningBuilder:
@@ -187,6 +203,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
     super.title,
     super.selectedFirst = true,
     super.listenable,
+    super.reloadKey,
     super.unselectBehavior = UnselectBehavior.allow,
     super.isItemInUse,
     super.unselectWarningBuilder,
@@ -205,6 +222,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
     String? title,
     bool? selectedFirst,
     Listenable? listenable,
+    Object? reloadKey = _reloadKeyNotProvided,
     UnselectBehavior? unselectBehavior,
     bool Function(T)? isItemInUse,
     GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
@@ -221,6 +239,9 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
       title: title ?? this.title,
       selectedFirst: selectedFirst ?? this.selectedFirst,
       listenable: listenable ?? this.listenable,
+      reloadKey: identical(reloadKey, _reloadKeyNotProvided)
+          ? this.reloadKey
+          : reloadKey,
       unselectBehavior: unselectBehavior ?? this.unselectBehavior,
       isItemInUse: isItemInUse ?? this.isItemInUse,
       unselectWarningBuilder:

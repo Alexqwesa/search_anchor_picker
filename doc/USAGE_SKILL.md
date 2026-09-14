@@ -76,6 +76,23 @@ Use `onToggle` when each row needs immediate validation or persistence:
 Handle persistence errors in application code and return `false` from
 `onToggle` when the requested change must not remain selected.
 
+## Item reloads
+
+Do not rely on replacing an inline `PickerConfig(...)` to reload data. Parent
+rebuilds rebind the latest configuration but intentionally do not call
+`loadItems`.
+
+Use one explicit reload signal:
+
+- `controller.refresh()` for a command initiated by popup UI.
+- `config.listenable` for repository/notifier-driven invalidation. It is
+  subscribed only while the picker is open.
+- `config.reloadKey` for declarative revisions. Changing its value while open
+  reloads once; rebuilding with an equal value does not.
+
+Closed pickers do not reload. Opening always invokes the latest configured
+`loadItems`, and stale request completions cannot overwrite a newer result.
+
 ## Header controller
 
 `headerBuilder` receives a `GenericPickerController<T, K>` containing pending
@@ -144,6 +161,12 @@ asymmetry belongs to `SubPickerTile`, not to `syncPending` itself.
 Desktop submenus may use `menuOffset`. Mobile defaults to a full-screen view;
 set `isFullScreen` explicitly only when the application intentionally differs
 from SearchAnchor behavior.
+
+Anchored views may close from an outside tap. Full-screen views have no outside
+area and use the default localized back button. If you provide `viewLeading`,
+keep a visible control that closes the picker. If you replace the complete
+search field with `searchFieldBuilder`, wire the builder's `close` callback into
+your custom UI.
 
 ## Visual customization
 

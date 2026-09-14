@@ -64,6 +64,32 @@ SearchAnchorPicker<Person>(
 picker is open, explicit row toggles are tracked independently so `onFinish`
 reports only actual user add/remove intent.
 
+## Reloading items
+
+Creating a new inline `PickerConfig(...)` during a parent rebuild does not
+reload an open picker. Configuration changes are rebound without treating object
+identity as a data revision.
+
+Reload deliberately through one of these paths:
+
+- Call `controller.refresh()` from custom popup UI.
+- Provide `config.listenable`; notifications reload only while the popup is open.
+- Change `config.reloadKey` for declarative revision-based reloads.
+
+```dart
+PickerConfig<Person>(
+  reloadKey: resultsRevision,
+  listenable: repository.changes,
+  loadItems: (_) => repository.search(),
+  idOf: (person) => person.id,
+  labelOf: (person) => person.name,
+  searchTermsOf: (person) => [person.name],
+);
+```
+
+A closed picker never subscribes or reloads. Its next open always calls the
+latest `loadItems` once.
+
 ## SearchAnchor styling
 
 The default view resolves values in the same order as Flutter `SearchAnchor`:
@@ -97,6 +123,11 @@ keyboard configuration, and open/close/change/submit callbacks.
 On Android, iOS, and Fuchsia the default view is full screen. Desktop platforms
 use an anchored popup. Set `isFullScreen` explicitly to override this behavior.
 `menuOffset` only applies to anchored popups and is ignored in full-screen mode.
+Anchored popups close when the user taps outside; a full-screen view has no
+outside area, so its default search field always provides a localized back
+button. Supplying `viewLeading` replaces that button, and a custom
+`searchFieldBuilder` replaces the whole field; custom versions must expose the
+provided `close` callback when users otherwise have no visible way to leave.
 
 ## Optional default widgets
 
