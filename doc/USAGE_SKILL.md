@@ -104,11 +104,13 @@ headerBuilder: (context, controller, items) => [
 - `refresh()` reloads items and `close()` closes the current popup.
 - `getKey(id)` creates a popup-lifetime key for stateful header children. Do not
   retain the controller or its keys after close.
-- `syncPending(added:, removed:)` copies an externally applied selection change
-  into this controller's currently open picker. IDs in `added` become checked;
-  IDs in `removed` become unchecked; all other pending IDs stay unchanged. It
-  intentionally creates no `onFinish` delta because the change was already
-  persisted by the caller, a nested picker, or another external owner.
+- `syncPending(added:, removed:)` applies both sides of an externally persisted
+  delta to this controller's currently open picker: it adds `added` IDs to the
+  temporary pending set and removes `removed` IDs from that set. It does not
+  mutate `initialSelectedIds` or any parent/application state. The caller must
+  update that authoritative state separately. No `onFinish` delta is created
+  because this method only mirrors a change that was already persisted. If the
+  same ID is supplied in both arguments, removal wins as conflict resolution.
 
 Loaded and filtered commands never touch hidden server-side selections.
 
@@ -132,9 +134,12 @@ headerBuilder: (context, controller, items) => [
 ];
 ```
 
-With `parentController`, explicit sub-picker removals are mirrored into parent
-pending state without creating duplicate parent deltas. Sub-picker additions do
-not automatically select those IDs in the parent.
+With `parentController`, `SubPickerTile` intentionally calls
+`syncPending(removed: removed)` only. Removing membership in the child therefore
+unchecks the same ID in the open parent picker without creating a duplicate
+parent delta. Child additions are not forwarded because adding an item to the
+child sublist should not automatically select it in the parent main list. This
+asymmetry belongs to `SubPickerTile`, not to `syncPending` itself.
 
 Desktop submenus may use `menuOffset`. Mobile defaults to a full-screen view;
 set `isFullScreen` explicitly only when the application intentionally differs

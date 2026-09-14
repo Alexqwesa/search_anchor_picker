@@ -298,13 +298,13 @@ class GenericPickerController<T, K> {
   /// Listen to in-popup selection changes from custom header UI.
   ValueListenable<Set<K>> get pendingIdsListenable => _pendingN;
 
-  /// Copies an externally applied delta into this open picker's pending IDs.
+  /// Applies an externally persisted delta to this open picker's pending IDs.
   ///
-  /// IDs in [added] become selected and IDs in [removed] become unselected;
-  /// every other pending ID stays unchanged. This is intended for changes that
-  /// were already persisted by a nested picker or another external owner, so it
-  /// does not report the same intent through `onFinish`. If an ID appears in
-  /// both collections, [removed] wins.
+  /// This symmetrically adds [added] and removes [removed] from the temporary
+  /// pending set. It does not mutate `initialSelectedIds` or caller state. It is
+  /// intended for changes already persisted by a nested picker or another
+  /// external owner, so it does not report the same intent through `onFinish`.
+  /// If an ID appears in both collections, [removed] wins.
   void syncPending({
     Iterable<K> added = const [],
     Iterable<K> removed = const [],

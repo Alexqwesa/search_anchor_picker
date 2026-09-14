@@ -76,9 +76,11 @@ Never derive removals by intersecting pending IDs with a loaded page. Verify
 partial server results, reloads, temporary empty external seeds, close/reopen,
 radio modes, bulk controller commands, and nested picker synchronization.
 
-`syncPending(added:, removed:)` copies an already-persisted external delta into
-the currently open picker's pending IDs: `added` IDs are inserted and `removed`
-IDs are deleted. It must not emit that same change again through `onFinish`.
+`syncPending(added:, removed:)` symmetrically applies an already-persisted
+external delta to the currently open picker's temporary pending IDs. It does not
+mutate `initialSelectedIds` or caller state and must not emit the same change
+again through `onFinish`. `SubPickerTile` intentionally forwards only child
+removals; that nested-list policy is separate from `syncPending` behavior.
 
 ## Verification
 

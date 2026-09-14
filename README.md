@@ -162,11 +162,11 @@ Header selection helpers record explicit persistence intent:
 Bulk helpers affect only the current loaded result. Hidden server-side selections
 are untouched.
 
-Use `syncPending(added:, removed:)` to copy an already-persisted external change
-into the currently open picker's checkboxes. IDs in `added` become selected and
-IDs in `removed` become unselected; all other pending IDs stay unchanged. It
-does not report those changes again through `onFinish`. Authoritative full-state
-changes belong in `initialSelectedIds`.
+Use `syncPending(added:, removed:)` to apply an already-persisted external delta
+to the currently open picker's temporary pending set. It processes additions
+and removals symmetrically, but does not mutate `initialSelectedIds` or caller
+state and does not report the change again through `onFinish`. The caller must
+update its authoritative selected IDs separately.
 
 ## Persistence APIs
 
