@@ -213,6 +213,61 @@ void main() {
     expect(find.text('No hay resultados'), findsOneWidget);
   });
 
+  testWidgets('default retry and unselect feedback use locale messages', (
+    tester,
+  ) async {
+    var retryCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Localizations.override(
+            context: context,
+            locale: const Locale('es'),
+            child: Builder(
+              builder: (localizedContext) => Column(
+                children: [
+                  DefaultPickerError(retry: () => retryCalls++),
+                  const DefaultPickerUnselectWarning(label: 'Cuenta'),
+                  TextButton(
+                    onPressed: () {
+                      unawaited(
+                        showDefaultPickerUnselectConfirmation(
+                          localizedContext,
+                          label: 'Cuenta',
+                        ),
+                      );
+                    },
+                    child: const Text('Open confirmation'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(find.text('Cuenta está actualmente en uso.'), findsOneWidget);
+    await tester.tap(find.text('Reintentar'));
+    expect(retryCalls, 1);
+
+    await tester.tap(find.text('Open confirmation'));
+    await tester.pump();
+    expect(find.text('¿Quitar elemento?'), findsOneWidget);
+    expect(
+      find.text(
+        'Cuenta está actualmente en uso. '
+        'Quitar este elemento puede afectar a otros datos.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Quitar'), findsOneWidget);
+
+    await tester.tap(find.text('Quitar'));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('empty text overrides flow through the picker', (tester) async {
     await tester.pumpWidget(
       MaterialApp(

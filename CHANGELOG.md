@@ -3,6 +3,8 @@
 * Added API documentation for the public libraries and query-close behavior.
 * Added localized default empty/no-results messages with `emptyText` and
   `noResultsText` overrides for main and nested pickers.
+* Localized default retry and in-use removal warning/confirmation text through
+  the same locale resolver.
 
 ## 0.1.1
 

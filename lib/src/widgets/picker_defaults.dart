@@ -347,7 +347,7 @@ class DefaultPickerEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final messages = _pickerEmptyMessages(context);
+    final messages = _pickerDefaultMessages(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -361,34 +361,146 @@ class DefaultPickerEmpty extends StatelessWidget {
   }
 }
 
-typedef _PickerEmptyMessages = ({String empty, String noResults});
+typedef _PickerDefaultMessages = ({
+  String empty,
+  String noResults,
+  String retry,
+  String removeItemTitle,
+  String inUse,
+  String removeImpact,
+  String remove,
+});
 
-const _PickerEmptyMessages _englishPickerEmptyMessages = (
+const _PickerDefaultMessages _englishPickerDefaultMessages = (
   empty: 'No items',
   noResults: 'No results',
+  retry: 'Retry',
+  removeItemTitle: 'Remove item?',
+  inUse: '{label} is currently in use.',
+  removeImpact: 'Removing it might affect other data.',
+  remove: 'Remove',
 );
 
-const _pickerEmptyMessagesByLanguage = <String, _PickerEmptyMessages>{
-  'ar': (empty: 'لا توجد عناصر', noResults: 'لا توجد نتائج'),
-  'de': (empty: 'Keine Einträge', noResults: 'Keine Ergebnisse'),
-  'en': _englishPickerEmptyMessages,
-  'es': (empty: 'No hay elementos', noResults: 'No hay resultados'),
-  'fr': (empty: 'Aucun élément', noResults: 'Aucun résultat'),
-  'it': (empty: 'Nessun elemento', noResults: 'Nessun risultato'),
-  'ja': (empty: '項目がありません', noResults: '結果がありません'),
-  'ko': (empty: '항목 없음', noResults: '결과 없음'),
-  'pt': (empty: 'Nenhum item', noResults: 'Nenhum resultado'),
-  'ru': (empty: 'Нет элементов', noResults: 'Нет результатов'),
-  'uk': (empty: 'Немає елементів', noResults: 'Немає результатів'),
-  'vi': (empty: 'Không có mục nào', noResults: 'Không có kết quả'),
-  'zh': (empty: '没有项目', noResults: '没有结果'),
+const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
+  'ar': (
+    empty: 'لا توجد عناصر',
+    noResults: 'لا توجد نتائج',
+    retry: 'إعادة المحاولة',
+    removeItemTitle: 'إزالة العنصر؟',
+    inUse: '{label} قيد الاستخدام حاليًا.',
+    removeImpact: 'قد تؤثر إزالته في بيانات أخرى.',
+    remove: 'إزالة',
+  ),
+  'de': (
+    empty: 'Keine Einträge',
+    noResults: 'Keine Ergebnisse',
+    retry: 'Erneut versuchen',
+    removeItemTitle: 'Element entfernen?',
+    inUse: '{label} wird derzeit verwendet.',
+    removeImpact: 'Das Entfernen kann sich auf andere Daten auswirken.',
+    remove: 'Entfernen',
+  ),
+  'en': _englishPickerDefaultMessages,
+  'es': (
+    empty: 'No hay elementos',
+    noResults: 'No hay resultados',
+    retry: 'Reintentar',
+    removeItemTitle: '¿Quitar elemento?',
+    inUse: '{label} está actualmente en uso.',
+    removeImpact: 'Quitar este elemento puede afectar a otros datos.',
+    remove: 'Quitar',
+  ),
+  'fr': (
+    empty: 'Aucun élément',
+    noResults: 'Aucun résultat',
+    retry: 'Réessayer',
+    removeItemTitle: 'Supprimer l’élément ?',
+    inUse: '{label} est actuellement utilisé.',
+    removeImpact: 'Sa suppression peut affecter d’autres données.',
+    remove: 'Supprimer',
+  ),
+  'it': (
+    empty: 'Nessun elemento',
+    noResults: 'Nessun risultato',
+    retry: 'Riprova',
+    removeItemTitle: 'Rimuovere l’elemento?',
+    inUse: '{label} è attualmente in uso.',
+    removeImpact: 'La rimozione potrebbe influire su altri dati.',
+    remove: 'Rimuovi',
+  ),
+  'ja': (
+    empty: '項目がありません',
+    noResults: '結果がありません',
+    retry: '再試行',
+    removeItemTitle: '項目を削除しますか？',
+    inUse: '{label} は現在使用中です。',
+    removeImpact: '削除すると他のデータに影響する可能性があります。',
+    remove: '削除',
+  ),
+  'ko': (
+    empty: '항목 없음',
+    noResults: '결과 없음',
+    retry: '다시 시도',
+    removeItemTitle: '항목을 제거할까요?',
+    inUse: '{label}은(는) 현재 사용 중입니다.',
+    removeImpact: '제거하면 다른 데이터에 영향을 줄 수 있습니다.',
+    remove: '제거',
+  ),
+  'pt': (
+    empty: 'Nenhum item',
+    noResults: 'Nenhum resultado',
+    retry: 'Tentar novamente',
+    removeItemTitle: 'Remover item?',
+    inUse: '{label} está em uso.',
+    removeImpact: 'A remoção pode afetar outros dados.',
+    remove: 'Remover',
+  ),
+  'ru': (
+    empty: 'Нет элементов',
+    noResults: 'Нет результатов',
+    retry: 'Повторить',
+    removeItemTitle: 'Удалить элемент?',
+    inUse: '{label} сейчас используется.',
+    removeImpact: 'Удаление может повлиять на другие данные.',
+    remove: 'Удалить',
+  ),
+  'uk': (
+    empty: 'Немає елементів',
+    noResults: 'Немає результатів',
+    retry: 'Повторити',
+    removeItemTitle: 'Видалити елемент?',
+    inUse: '{label} зараз використовується.',
+    removeImpact: 'Видалення може вплинути на інші дані.',
+    remove: 'Видалити',
+  ),
+  'vi': (
+    empty: 'Không có mục nào',
+    noResults: 'Không có kết quả',
+    retry: 'Thử lại',
+    removeItemTitle: 'Xóa mục?',
+    inUse: '{label} hiện đang được sử dụng.',
+    removeImpact: 'Việc xóa có thể ảnh hưởng đến dữ liệu khác.',
+    remove: 'Xóa',
+  ),
+  'zh': (
+    empty: '没有项目',
+    noResults: '没有结果',
+    retry: '重试',
+    removeItemTitle: '移除项目？',
+    inUse: '{label} 当前正在使用。',
+    removeImpact: '移除它可能会影响其他数据。',
+    remove: '移除',
+  ),
 };
 
-_PickerEmptyMessages _pickerEmptyMessages(BuildContext context) {
+_PickerDefaultMessages _pickerDefaultMessages(BuildContext context) {
   final languageCode = Localizations.maybeLocaleOf(context)?.languageCode;
-  return _pickerEmptyMessagesByLanguage[languageCode] ??
-      _englishPickerEmptyMessages;
+  return _pickerDefaultMessagesByLanguage[languageCode] ??
+      _englishPickerDefaultMessages;
 }
+
+String _withLabel(String message, String label) =>
+    message.replaceAll('{label}', label);
 
 class DefaultPickerError extends StatelessWidget {
   const DefaultPickerError({required this.retry, super.key});
@@ -397,13 +509,14 @@ class DefaultPickerError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final messages = _pickerDefaultMessages(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: FilledButton.tonalIcon(
           onPressed: retry,
           icon: const Icon(Icons.refresh),
-          label: const Text('Retry'),
+          label: Text(messages.retry),
         ),
       ),
     );
@@ -463,7 +576,10 @@ class DefaultPickerUnselectWarning extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Text('$label is currently in use.');
+  Widget build(BuildContext context) {
+    final messages = _pickerDefaultMessages(context);
+    return Text(_withLabel(messages.inUse, label));
+  }
 }
 
 Future<bool> showDefaultPickerUnselectConfirmation(
@@ -471,6 +587,11 @@ Future<bool> showDefaultPickerUnselectConfirmation(
   required String label,
 }) async {
   final overlay = Overlay.of(context, rootOverlay: true);
+  final messages = _pickerDefaultMessages(context);
+  final materialLocalizations = Localizations.of<MaterialLocalizations>(
+    context,
+    MaterialLocalizations,
+  );
   final completer = Completer<bool>();
   late final OverlayEntry entry;
 
@@ -482,23 +603,26 @@ Future<bool> showDefaultPickerUnselectConfirmation(
 
   entry = OverlayEntry(
     builder: (context) {
-      final localizations = MaterialLocalizations.of(context);
+      final cancelLabel =
+          materialLocalizations?.cancelButtonLabel ??
+          MaterialLocalizations.of(context).cancelButtonLabel;
       return Material(
         color: Colors.black54,
         child: Center(
           child: AlertDialog(
-            title: const Text('Remove item?'),
+            title: Text(messages.removeItemTitle),
             content: Text(
-              '$label is currently in use. Removing it might affect other data.',
+              '${_withLabel(messages.inUse, label)} '
+              '${messages.removeImpact}',
             ),
             actions: [
               TextButton(
                 onPressed: () => close(false),
-                child: Text(localizations.cancelButtonLabel),
+                child: Text(cancelLabel),
               ),
               TextButton(
                 onPressed: () => close(true),
-                child: const Text('Remove'),
+                child: Text(messages.remove),
               ),
             ],
           ),
