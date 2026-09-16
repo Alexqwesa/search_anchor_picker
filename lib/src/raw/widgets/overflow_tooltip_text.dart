@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:search_anchor_picker/src/widgets/passive_tooltip.dart';
+import 'package:search_anchor_picker/src/raw/widgets/passive_tooltip.dart';
 
 /// Text that shows a tooltip only when it is ellipsized.
 class OverflowTooltipText extends StatelessWidget {

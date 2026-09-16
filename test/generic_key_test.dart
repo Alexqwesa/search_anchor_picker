@@ -29,11 +29,11 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinish: ({required added, required removed}) async {
+              onFinish: (result) {
                 finishCount++;
                 selected
-                  ..addAll(added)
-                  ..removeAll(removed);
+                  ..addAll(result.added)
+                  ..removeAll(result.removed);
               },
             ),
           ),
@@ -97,11 +97,11 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinish: ({required added, required removed}) async {
+              onFinish: (result) {
                 finishCount++;
                 selected
-                  ..addAll(added)
-                  ..removeAll(removed);
+                  ..addAll(result.added)
+                  ..removeAll(result.removed);
               },
             ),
           ),

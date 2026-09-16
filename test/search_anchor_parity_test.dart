@@ -87,8 +87,9 @@ void main() {
             loadingBuilds++;
             return const Text('Custom loading');
           },
-          itemBuilder: (context, item, selected, toggle) =>
-              ListTile(onTap: toggle, title: Text('Custom item $item')),
+          itemBuilder:
+              (context, item, selected, relatedListItemStatus, toggle) =>
+                  ListTile(onTap: toggle, title: Text('Custom item $item')),
           resultsBuilder: (context, controller, children) =>
               ListView(controller: controller, children: children),
         ),

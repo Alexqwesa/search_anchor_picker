@@ -80,16 +80,13 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
     });
   }
 
-  Future<void> _finish({
-    required List<int> added,
-    required List<int> removed,
-  }) async {
+  void _finish(PickerSelectionResult<int> result) {
     setState(() {
       _selectedIds
-        ..addAll(added)
-        ..removeAll(removed);
-      _lastAdded = _sorted(added);
-      _lastRemoved = _sorted(removed);
+        ..addAll(result.added)
+        ..removeAll(result.removed);
+      _lastAdded = _sorted(result.added);
+      _lastRemoved = _sorted(result.removed);
     });
   }
 

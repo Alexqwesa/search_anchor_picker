@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 void main() {
-  testWidgets('optimistic onToggle updates checkbox before gate completes', (
+  testWidgets('optimistic gate updates checkbox before gate completes', (
     tester,
   ) async {
     final gate = Completer<bool>();
@@ -23,8 +23,11 @@ void main() {
               searchTermsOf: (_) => [],
             ),
             initialSelectedIds: const [],
-            onToggleMode: OnToggleMode.optimistic,
-            onToggle: (_, __) => gate.future,
+            canChangeSelection: (_) => gate.future,
+            persistence: PickerPersistence.immediate(
+              persist: _noopPersist,
+              applyMode: PickerApplyMode.optimistic,
+            ),
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('open')),
           ),
@@ -52,7 +55,7 @@ void main() {
     expect(reverted.value, false);
   });
 
-  testWidgets('awaitGate onToggle blocks checkbox until gate returns true', (
+  testWidgets('pessimistic gate blocks checkbox until gate returns true', (
     tester,
   ) async {
     final gate = Completer<bool>();
@@ -68,7 +71,7 @@ void main() {
               searchTermsOf: (_) => [],
             ),
             initialSelectedIds: const [],
-            onToggle: (_, __) => gate.future,
+            canChangeSelection: (_) => gate.future,
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('open')),
           ),
@@ -96,7 +99,7 @@ void main() {
     expect(checkbox.value, true);
   });
 
-  testWidgets('awaitGate rejection leaves selection and deltas unchanged', (
+  testWidgets('pessimistic rejection leaves selection and deltas unchanged', (
     tester,
   ) async {
     var addedIds = <int>[];
@@ -111,9 +114,9 @@ void main() {
               searchTermsOf: (_) => const [],
             ),
             initialSelectedIds: const [],
-            onToggle: (_, _) async => false,
-            onFinish: ({required added, required removed}) async {
-              addedIds = added;
+            canChangeSelection: (_) async => false,
+            onFinish: (result) {
+              addedIds = result.added.toList();
             },
           ),
         ),
@@ -147,10 +150,13 @@ void main() {
               searchTermsOf: (_) => const [],
             ),
             initialSelectedIds: const [],
-            onToggleMode: OnToggleMode.optimistic,
-            onToggle: (_, _) async => true,
-            onFinish: ({required added, required removed}) async {
-              addedIds = added;
+            canChangeSelection: (_) async => true,
+            persistence: PickerPersistence.immediate(
+              persist: _noopPersist,
+              applyMode: PickerApplyMode.optimistic,
+            ),
+            onFinish: (result) {
+              addedIds = result.added.toList();
             },
           ),
         ),
@@ -165,3 +171,5 @@ void main() {
     expect(addedIds, [1]);
   });
 }
+
+Future<void> _noopPersist(PickerDelta<int> delta) async {}

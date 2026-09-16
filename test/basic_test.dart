@@ -18,7 +18,7 @@ void main() {
           body: SearchAnchorPicker(
             config: config,
             initialSelectedIds: const [],
-            onFinish: ({required added, required removed}) async {},
+            onFinish: (_) {},
           ),
         ),
       ),
@@ -45,7 +45,7 @@ void main() {
           body: SearchAnchorPicker(
             config: config,
             initialSelectedIds: const [],
-            onFinish: ({required added, required removed}) async {},
+            onFinish: (_) {},
           ),
         ),
       ),
@@ -82,12 +82,12 @@ void main() {
               body: SearchAnchorPicker(
                 config: config,
                 initialSelectedIds: selectedIds,
-                onFinish: ({required added, required removed}) async {
+                onFinish: (result) {
                   setState(() {
                     selectedIds = {
                       ...selectedIds,
-                      ...added,
-                    }.difference(removed.toSet()).toList();
+                      ...result.added,
+                    }.difference(result.removed).toList();
                   });
                 },
               ),

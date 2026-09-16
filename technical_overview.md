@@ -5,7 +5,7 @@
 The package is split between core behavior and optional visual defaults.
 
 - `GenericSearchAnchorPicker<T, K>` owns popup placement, focus, search loading,
-  animation, keyboard handling, and callback lifecycle.
+  animation, keyboard handling, related-list status, and callback lifecycle.
 - `PickerSelectionSession<K>` owns the open snapshot, current pending IDs, and
   explicit add/remove intent.
 - `OverlayBody<T, K>` coordinates filtering and row toggles without choosing the
@@ -13,8 +13,10 @@ The package is split between core behavior and optional visual defaults.
 - `GenericPickerController<T, K>` exposes pending selection state, explicit-delta
   bulk operations, and
   pending synchronization to header code.
-- `lib/src/widgets/` contains default view widgets, tooltip helpers, feedback UI,
-  and the optional `SubPickerTile` convenience widget.
+- `SubPickerTile` is the optional nested-picker convenience widget, including
+  parent-selection effects.
+- Default view widgets, tooltip helpers, and feedback UI are exported by
+  `package:search_anchor_picker/widgets.dart`.
 
 Never-opened pickers allocate no search, animation, selection-notifier, dynamic
 key, or data-listener resources. Popup widgets, overlay entries, dynamic header
@@ -67,6 +69,14 @@ completes, leaving the picker reusable.
 `loadItems` is a display result, never deletion truth. Pending IDs are not
 intersected with loaded IDs.
 
+`PickerRelatedListItemStatus`, supplied by `relatedListItemStatusOf`, describes
+auxiliary-list membership and unselect policy based on related-list usage.
+`member`, `notMember`, and `unknown` do not alter pending
+IDs. `unknown` preserves uncertainty when an item is absent from a partial
+page; an authoritative per-item flag can establish membership without loading
+the whole auxiliary list. The optional `relatedListItemStatusListenable`
+subscription exists only while open and repaints rows without loading data.
+
 Row toggles, `setSelected`, and loaded/filtered bulk controller commands record
 only IDs they actually change as `added` or `removed`. Parent updates to
 `initialSelectedIds` may reseed pending state. `syncPending` symmetrically applies
@@ -81,9 +91,23 @@ parent with a complete authoritative snapshot can reseed `initialSelectedIds`.
 ## Nested menus
 
 `SubPickerTile` forwards all focused visual builders and SearchAnchor-style view
-options. When `parentController` is supplied, explicit sub-picker removals are also
-removed from the parent pending set. Sub-picker additions are not selected in the
-parent automatically.
+options. Parent selection and sub-list membership are independent by default.
+`SubPickerParentSelectionEffect` defaults to `none`. Its opt-in `selectAdded`,
+`deselectRemoved`, and `mirror` values apply either or
+both sides of a successfully persisted child delta into the open parent's pending set.
+`syncPending` applies the update on the next frame. These effects do not persist
+parent selection, update the external parent seed, or create a parent
+persistence delta. Consumers with separate parent-selection persistence must
+save that change in the child persist callback and handle failures.
+
+`SubPickerTile` forwards `canChangeSelection`, `persistence`, `onFinish`, and
+`headerBuilder`. Accepted deltas share one apply pipeline for rows and bulk
+commands. Immediate persistence syncs after each successful persist and does
+not replay the net session on close. On-close persistence and local-only
+sessions sync leftover changes after close. Root and nested pickers use the
+same contracts. Policies run before gates, pending applies defer close, and
+rejected/throwing optimistic gates roll back. Deferred controller updates are
+session-guarded so late child saves cannot mutate a closed or reopened parent.
 
 Nested overlays use no follower layers or permanent trigger keys. This avoids the
 paint-transform failures that can occur when editing a search field under a

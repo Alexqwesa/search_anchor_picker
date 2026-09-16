@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
-import 'package:search_anchor_picker/src/picker_resource_tracker.dart';
+import 'package:search_anchor_picker/src/raw/picker_resource_tracker.dart';
 
 PickerConfig<int> _config(Future<List<int>> Function() load) {
   return PickerConfig<int>(
@@ -16,6 +16,8 @@ PickerConfig<int> _config(Future<List<int>> Function() load) {
 
 class _TrackedListenable extends ChangeNotifier {
   bool get hasActiveListeners => hasListeners;
+
+  void signal() => notifyListeners();
 }
 
 void main() {
@@ -152,6 +154,205 @@ void main() {
     config.close();
     await tester.pumpAndSettle();
     expect(source.hasActiveListeners, isFalse);
+  });
+
+  testWidgets(
+    'related-list status repaints without reloading or changing selection',
+    (tester) async {
+      final relatedListItemStatusChanges = _TrackedListenable();
+      addTearDown(relatedListItemStatusChanges.dispose);
+      var membership = PickerAuxiliaryMembership.member;
+      var loadCalls = 0;
+      final config = PickerConfig<int>(
+        loadItems: (_) async {
+          loadCalls++;
+          return [1];
+        },
+        idOf: (item) => item,
+        labelOf: (item) => 'Item $item',
+        searchTermsOf: (item) => ['Item $item'],
+        relatedListItemStatusOf: (_) =>
+            PickerRelatedListItemStatus(auxiliaryMembership: membership),
+        relatedListItemStatusListenable: relatedListItemStatusChanges,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SearchAnchorPicker<int>(
+            config: config,
+            initialSelectedIds: const [1],
+          ),
+        ),
+      );
+      expect(relatedListItemStatusChanges.hasActiveListeners, isFalse);
+
+      config.open();
+      await tester.pumpAndSettle();
+      expect(loadCalls, 1);
+      expect(relatedListItemStatusChanges.hasActiveListeners, isTrue);
+      expect(find.byIcon(Icons.person), findsOneWidget);
+
+      membership = PickerAuxiliaryMembership.unknown;
+      relatedListItemStatusChanges.signal();
+      await tester.pumpAndSettle();
+      expect(loadCalls, 1);
+      expect(find.byIcon(Icons.person_search_outlined), findsOneWidget);
+
+      membership = PickerAuxiliaryMembership.notMember;
+      relatedListItemStatusChanges.signal();
+      await tester.pumpAndSettle();
+      expect(loadCalls, 1);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(
+        tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+        isTrue,
+      );
+
+      config.close();
+      await tester.pumpAndSettle();
+      expect(relatedListItemStatusChanges.hasActiveListeners, isFalse);
+    },
+  );
+
+  testWidgets(
+    'partial membership keeps absence unknown unless independently known',
+    (
+      tester,
+    ) async {
+      const loadedSublistIds = {1};
+      const authoritativeMembership = {2: false};
+      final config = PickerConfig<int>(
+        loadItems: (_) async => [1, 2, 3],
+        idOf: (item) => item,
+        labelOf: (item) => 'Item $item',
+        searchTermsOf: (item) => ['Item $item'],
+        relatedListItemStatusOf: (item) => PickerRelatedListItemStatus(
+          auxiliaryMembership: loadedSublistIds.contains(item)
+              ? PickerAuxiliaryMembership.member
+              : switch (authoritativeMembership[item]) {
+                  true => PickerAuxiliaryMembership.member,
+                  false => PickerAuxiliaryMembership.notMember,
+                  null => PickerAuxiliaryMembership.unknown,
+                },
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SearchAnchorPicker<int>(
+            config: config,
+            initialSelectedIds: const [2, 3],
+          ),
+        ),
+      );
+
+      config.open();
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.person), findsOneWidget);
+      expect(find.byIcon(Icons.person_outline), findsOneWidget);
+      expect(find.byIcon(Icons.person_search_outlined), findsOneWidget);
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.ancestor(
+                of: find.text('Item 2'),
+                matching: find.byType(CheckboxListTile),
+              ),
+            )
+            .value,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<CheckboxListTile>(
+              find.ancestor(
+                of: find.text('Item 3'),
+                matching: find.byType(CheckboxListTile),
+              ),
+            )
+            .value,
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets('blocked related-list status keeps selection and shows warning', (
+    tester,
+  ) async {
+    final config = PickerConfig<int>(
+      loadItems: (_) async => [1],
+      idOf: (item) => item,
+      labelOf: (item) => 'Item $item',
+      searchTermsOf: (item) => ['Item $item'],
+      relatedListItemStatusOf: (_) => const PickerRelatedListItemStatus(
+        unselectPolicy: PickerUnselectPolicy.blocked,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: config,
+            initialSelectedIds: const [1],
+          ),
+        ),
+      ),
+    );
+
+    config.open();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 1'));
+    await tester.pump();
+
+    expect(find.text('Item 1 is currently in use.'), findsOneWidget);
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      isTrue,
+    );
+  });
+
+  testWidgets('confirm related-list status unselects only after confirmation', (
+    tester,
+  ) async {
+    final config = PickerConfig<int>(
+      loadItems: (_) async => [1],
+      idOf: (item) => item,
+      labelOf: (item) => 'Item $item',
+      searchTermsOf: (item) => ['Item $item'],
+      relatedListItemStatusOf: (_) => const PickerRelatedListItemStatus(
+        unselectPolicy: PickerUnselectPolicy.confirm,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [1],
+        ),
+      ),
+    );
+
+    config.open();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Remove item?'), findsOneWidget);
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      isTrue,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, 'Remove'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      isFalse,
+    );
   });
 
   testWidgets('inline config replacement does not reload an open picker', (
@@ -416,7 +617,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: config,
           initialSelectedIds: const [],
-          onFinish: ({required added, required removed}) async {
+          onFinish: (_) {
             finishCount++;
           },
         ),
@@ -574,7 +775,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: config,
           initialSelectedIds: const [],
-          onFinish: ({required added, required removed}) async {
+          onFinish: (_) {
             throw StateError('save failed');
           },
         ),

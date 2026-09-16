@@ -73,10 +73,10 @@ void main() {
                   title: 'Open Sub',
                   config: subConfig,
                   initialSelectedIds: const [],
-                  mode:
-                      PickerMode.radio, // Radio mode -> closes itself on select
-                  onFinish: ({required added, required removed}) async {
-                    if (added.isNotEmpty) {
+                  selectionMode:
+                      SelectionMode.single, // Closes itself on select
+                  onFinish: (result) {
+                    if (result.added.isNotEmpty) {
                       // If selection made in sub-picker, CLOSE MAIN PICKER too.
                       mainConfig.close();
                     }
