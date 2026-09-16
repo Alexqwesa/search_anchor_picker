@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:search_anchor_picker/src/picker_builders.dart';
-import 'package:search_anchor_picker/src/picker_config.dart';
-import 'package:search_anchor_picker/src/picker_debug.dart';
-import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
+import 'package:search_anchor_picker/src/raw/picker_builders.dart';
+import 'package:search_anchor_picker/src/raw/picker_config.dart';
+import 'package:search_anchor_picker/src/raw/picker_debug.dart';
+import 'package:search_anchor_picker/src/raw/widgets/picker_defaults.dart';
 
 /// Core result-list coordinator. Public callers should customize it through
 /// picker builders rather than constructing this widget directly.
@@ -14,14 +14,12 @@ class OverlayBody<T, K> extends StatefulWidget {
     required this.stableOrder,
     required this.ctrl,
     required this.pendingN,
-    required this.mode,
+    required this.selectionMode,
     required this.config,
-    required this.recordUserPendingChange,
+    required this.applySelectionDelta,
     required this.close,
     required this.shrinkWrap,
     super.key,
-    this.onToggleGate,
-    this.onToggleMode = OnToggleMode.awaitGate,
     this.itemBuilder,
     this.resultsBuilder,
     this.emptyBuilder,
@@ -33,11 +31,14 @@ class OverlayBody<T, K> extends StatefulWidget {
   final List<T> stableOrder;
   final SearchController ctrl;
   final ValueNotifier<Set<K>> pendingN;
-  final PickerMode mode;
-  final GenericPickerConfig<T, K> config;
-  final Future<bool> Function(T item, bool nextSelected)? onToggleGate;
-  final OnToggleMode onToggleMode;
-  final void Function(Set<K> before, Set<K> after) recordUserPendingChange;
+  final SelectionMode selectionMode;
+  final GenericRawPickerConfig<T, K> config;
+  final Future<bool> Function({
+    required BuildContext context,
+    required Set<K> added,
+    required Set<K> removed,
+  })
+  applySelectionDelta;
   final void Function([String? reason]) close;
   final bool shrinkWrap;
   final Widget Function(
@@ -58,6 +59,7 @@ class OverlayBody<T, K> extends StatefulWidget {
 
 class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
   final ScrollController _scroll = ScrollController();
+  final Set<K> _toggling = <K>{};
 
   @override
   void dispose() {
@@ -72,74 +74,37 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
         .any((term) => term.toLowerCase().contains(query));
   }
 
-  Future<bool> _confirmUnselect(BuildContext context, T item) async {
-    switch (widget.config.unselectBehavior) {
-      case UnselectBehavior.block:
-        return false;
-      case UnselectBehavior.showWarning:
-        final content =
-            widget.config.unselectWarningBuilder?.call(context, item) ??
-            DefaultPickerUnselectWarning(label: widget.config.labelOf(item));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: content, duration: const Duration(seconds: 2)),
-        );
-        return false;
-      case UnselectBehavior.alert:
-        return widget.config.unselectConfirmationBuilder?.call(context, item) ??
-            showDefaultPickerUnselectConfirmation(
-              context,
-              label: widget.config.labelOf(item),
-            );
-      case UnselectBehavior.allow:
-        return true;
-    }
-  }
-
   Future<void> _toggle(T item, K id, bool next) async {
     PickerDebug.log('OverlayBody: User toggle item=$item, next=$next');
-    final useOptimistic =
-        widget.onToggleMode == OnToggleMode.optimistic &&
-        widget.mode == PickerMode.multi &&
-        widget.onToggleGate != null;
-
-    if (!useOptimistic && widget.onToggleGate != null) {
-      final accepted = await widget.onToggleGate!(item, next);
-      if (!mounted || !accepted) return;
-    }
-
-    final current = widget.pendingN.value;
-    if (widget.mode != PickerMode.multi) {
-      if (!next && widget.mode == PickerMode.radio) return;
-      final nextPending = next ? <K>{id} : <K>{};
-      widget.recordUserPendingChange(current, nextPending);
-      widget.pendingN.value = nextPending;
-      widget.close('radio');
+    if (_toggling.contains(id) ||
+        (widget.selectionMode != SelectionMode.multi && _toggling.isNotEmpty) ||
+        (!next && widget.selectionMode == SelectionMode.single)) {
       return;
     }
-
-    if (!next &&
-        (widget.config.isItemInUse?.call(item) ?? false) &&
-        !await _confirmUnselect(context, item)) {
-      return;
-    }
-    if (!mounted) return;
-
-    final before = {...widget.pendingN.value};
-    final after = {...before};
-    next ? after.add(id) : after.remove(id);
-    widget.recordUserPendingChange(before, after);
-    widget.pendingN.value = after;
-
-    if (useOptimistic) {
-      unawaited(() async {
-        final accepted = await widget.onToggleGate!(item, next);
-        if (!mounted || accepted) return;
-        final latest = {...widget.pendingN.value};
-        final reverted = {...latest};
-        before.contains(id) ? reverted.add(id) : reverted.remove(id);
-        widget.recordUserPendingChange(latest, reverted);
-        widget.pendingN.value = reverted;
-      }());
+    _toggling.add(id);
+    try {
+      final current = widget.pendingN.value;
+      late final Set<K> added;
+      late final Set<K> removed;
+      if (widget.selectionMode != SelectionMode.multi) {
+        final nextPending = next ? <K>{id} : <K>{};
+        added = nextPending.difference(current);
+        removed = current.difference(nextPending);
+      } else {
+        added = next ? {id} : <K>{};
+        removed = next ? <K>{} : {id};
+      }
+      final applied = await widget.applySelectionDelta(
+        context: context,
+        added: added,
+        removed: removed,
+      );
+      if (!applied || !mounted) return;
+      if (widget.selectionMode != SelectionMode.multi) {
+        widget.close('single');
+      }
+    } finally {
+      _toggling.remove(id);
     }
   }
 
@@ -172,13 +137,13 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
                 void toggle() => _toggle(item, id, !selected);
                 children.add(
                   widget.itemBuilder?.call(context, item, selected, toggle) ??
-                      DefaultPickerItemTile(
+                      RawDefaultPickerItemTile(
                         selected: selected,
                         onToggle: (next) => _toggle(item, id, next),
                         label: widget.config.labelOf(item),
                         tooltip: widget.config.tooltipOf?.call(item),
                         leading: widget.config.iconOf?.call(item),
-                        mode: widget.mode,
+                        selectionMode: widget.selectionMode,
                       ),
                 );
               }

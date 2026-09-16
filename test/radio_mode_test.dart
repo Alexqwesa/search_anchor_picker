@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 void main() {
-  testWidgets('PickerMode.radioToggle allows deselection', (tester) async {
+  testWidgets('SelectionMode.singleOptional allows deselection', (
+    tester,
+  ) async {
     final config = PickerConfig<int>(
       loadItems: (_) async => [1, 2],
       idOf: (i) => i,
@@ -22,12 +24,14 @@ void main() {
               return SearchAnchorPicker<int>(
                 config: config,
                 initialSelectedIds: currentSelection,
-                mode: PickerMode.radioToggle,
-                onFinish: ({required added, required removed}) async {
+                selectionMode: SelectionMode.singleOptional,
+                onFinish: (result) {
                   setState(() {
                     currentSelection = [
-                      ...currentSelection.where((id) => !removed.contains(id)),
-                      ...added,
+                      ...currentSelection.where(
+                        (id) => !result.removed.contains(id),
+                      ),
+                      ...result.added,
                     ];
                   });
                 },
@@ -66,7 +70,7 @@ void main() {
     expect(currentSelection, isEmpty);
   });
 
-  testWidgets('PickerMode.radio enforces single selection (no deselect)', (
+  testWidgets('SelectionMode.single enforces single selection (no deselect)', (
     tester,
   ) async {
     final config = PickerConfig<int>(
@@ -86,12 +90,14 @@ void main() {
               return SearchAnchorPicker<int>(
                 config: config,
                 initialSelectedIds: currentSelection,
-                mode: PickerMode.radio,
-                onFinish: ({required added, required removed}) async {
+                selectionMode: SelectionMode.single,
+                onFinish: (result) {
                   setState(() {
                     currentSelection = [
-                      ...currentSelection.where((id) => !removed.contains(id)),
-                      ...added,
+                      ...currentSelection.where(
+                        (id) => !result.removed.contains(id),
+                      ),
+                      ...result.added,
                     ];
                   });
                 },
@@ -115,7 +121,7 @@ void main() {
     await tester.tap(find.text('Item 1'));
     await tester.pumpAndSettle();
 
-    // Verify it did NOT close (standard radio behavior blocks unselect)
+    // Verify it did NOT close (single selection blocks unselect)
     // "Item 1" should still be visible because picker is open
     expect(find.text('Item 1'), findsOneWidget); // Still open
 

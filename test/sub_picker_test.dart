@@ -1,5 +1,7 @@
 // ignore_for_file: unnecessary_underscores
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,19 +65,21 @@ Offset _resolvedOffsetForTest({
 }
 
 void main() {
-  testWidgets('SubPickerTile syncs removals but not additions', (tester) async {
+  testWidgets('explicit parent effect syncs removals but not additions', (
+    tester,
+  ) async {
     final parentPending = ValueNotifier<Set<int>>({1, 2, 3});
     // Mock parent controller
     final parentController = PickerController<int>(
       pendingN: parentPending,
       idOf: (i) => i,
       close: ([_]) {},
-      mode: PickerMode.multi,
+      selectionMode: SelectionMode.multi,
       getKey: (_) => GlobalKey(),
       refresh: () {},
       loadedIds: () => const [1, 2, 3],
       filteredIds: () => const [1, 2, 3],
-      recordDelta: (_, _) {},
+      applyDelta: (_, _) async => true,
     );
 
     var finishCallCount = 0;
@@ -98,10 +102,12 @@ void main() {
               2,
             ], // 1, 2 are selected in sub-picker (present in main)
             parentController: parentController,
-            onFinish: ({required added, required removed}) async {
+            parentSelectionEffect:
+                SubPickerParentSelectionEffect.deselectRemoved,
+            onFinish: (result) {
               finishCallCount++;
-              lastAdded = added;
-              lastRemoved = removed;
+              lastAdded = result.added.toList();
+              lastRemoved = result.removed.toList();
             },
           ),
         ),
@@ -158,6 +164,217 @@ void main() {
     ); // 3 was not involved in sub-picker
   });
 
+  testWidgets('parent effect can select additions or sync both sides', (
+    tester,
+  ) async {
+    for (final (effect, expected) in [
+      (SubPickerParentSelectionEffect.selectAdded, {1, 2, 3, 4}),
+      (SubPickerParentSelectionEffect.mirror, {1, 3, 4}),
+    ]) {
+      final parentPending = ValueNotifier<Set<int>>({1, 2, 3});
+      addTearDown(parentPending.dispose);
+      final parentController = PickerController<int>(
+        pendingN: parentPending,
+        idOf: (item) => item,
+        close: ([_]) {},
+        selectionMode: SelectionMode.multi,
+        getKey: (_) => GlobalKey(),
+        refresh: () {},
+        loadedIds: () => const [1, 2, 3, 4],
+        filteredIds: () => const [1, 2, 3, 4],
+        applyDelta: (_, _) async => true,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SubPickerTile<int>(
+              key: ValueKey(effect),
+              title: 'Sub Picker',
+              config: PickerConfig<int>(
+                loadItems: (_) async => [1, 2, 3, 4],
+                idOf: (item) => item,
+                labelOf: (item) => '$item',
+                searchTermsOf: (_) => const [],
+              ),
+              initialSelectedIds: const [1, 2],
+              parentController: parentController,
+              parentSelectionEffect: effect,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Sub Picker'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('4'));
+      await tester.pump();
+      await tester.tap(find.text('2'));
+      await tester.pump();
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      expect(parentPending.value, expected);
+    }
+  });
+
+  testWidgets('SubPickerTile does not mutate parent selection by default', (
+    tester,
+  ) async {
+    final parentPending = ValueNotifier<Set<int>>({1, 2});
+    addTearDown(parentPending.dispose);
+    final parentController = PickerController<int>(
+      pendingN: parentPending,
+      idOf: (item) => item,
+      close: ([_]) {},
+      selectionMode: SelectionMode.multi,
+      getKey: (_) => GlobalKey(),
+      refresh: () {},
+      loadedIds: () => const [1, 2],
+      filteredIds: () => const [1, 2],
+      applyDelta: (_, _) async => true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Sub Picker',
+            config: PickerConfig<int>(
+              loadItems: (_) async => [1, 2],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [1],
+            parentController: parentController,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Sub Picker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(parentPending.value, {1, 2});
+  });
+
+  testWidgets('parent effect waits for successful child persistence', (
+    tester,
+  ) async {
+    final parentPending = ValueNotifier<Set<int>>({1});
+    addTearDown(parentPending.dispose);
+    final save = Completer<void>();
+    final parentController = PickerController<int>(
+      pendingN: parentPending,
+      idOf: (item) => item,
+      close: ([_]) {},
+      selectionMode: SelectionMode.multi,
+      getKey: (_) => GlobalKey(),
+      refresh: () {},
+      loadedIds: () => const [1],
+      filteredIds: () => const [1],
+      applyDelta: (_, _) async => true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Sub Picker',
+            config: PickerConfig<int>(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [1],
+            parentController: parentController,
+            parentSelectionEffect:
+                SubPickerParentSelectionEffect.deselectRemoved,
+            persistence: PickerPersistence.onClose(
+              persist: (_) => save.future,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Sub Picker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(parentPending.value, {1});
+
+    save.complete();
+    await tester.pumpAndSettle();
+    expect(parentPending.value, isEmpty);
+  });
+
+  testWidgets('failed child persistence leaves parent selection unchanged', (
+    tester,
+  ) async {
+    final errors = <FlutterErrorDetails>[];
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previousOnError);
+    final parentPending = ValueNotifier<Set<int>>({1});
+    addTearDown(parentPending.dispose);
+    final parentController = PickerController<int>(
+      pendingN: parentPending,
+      idOf: (item) => item,
+      close: ([_]) {},
+      selectionMode: SelectionMode.multi,
+      getKey: (_) => GlobalKey(),
+      refresh: () {},
+      loadedIds: () => const [1],
+      filteredIds: () => const [1],
+      applyDelta: (_, _) async => true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Sub Picker',
+            config: PickerConfig<int>(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [1],
+            parentController: parentController,
+            parentSelectionEffect:
+                SubPickerParentSelectionEffect.deselectRemoved,
+            persistence: PickerPersistence.onClose(
+              persist: (_) async {
+                throw StateError('save failed');
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Sub Picker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(parentPending.value, {1});
+    expect(errors, hasLength(1));
+    expect(errors.single.exception.toString(), contains('save failed'));
+  });
+
   testWidgets('SubPickerTile uses triggerBuilder', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -202,15 +419,24 @@ void main() {
               idOf: (i) => i,
               labelOf: (i) => '$i',
               searchTermsOf: (_) => [],
+              relatedListItemStatusOf: (_) => const PickerRelatedListItemStatus(
+                auxiliaryMembership: PickerAuxiliaryMembership.notMember,
+                unselectPolicy: PickerUnselectPolicy.blocked,
+              ),
             ),
             initialSelectedIds: const [],
-            itemBuilder: (context, item, isSelected, onToggle) {
-              return ListTile(
-                title: Text('Custom Item $item'),
-                selected: isSelected,
-                onTap: onToggle,
-              );
-            },
+            itemBuilder:
+                (context, item, isSelected, relatedListItemStatus, onToggle) {
+                  return ListTile(
+                    title: Text(
+                      'Custom Item $item '
+                      '${relatedListItemStatus.auxiliaryMembership?.name} '
+                      '${relatedListItemStatus.unselectPolicy.name}',
+                    ),
+                    selected: isSelected,
+                    onTap: onToggle,
+                  );
+                },
           ),
         ),
       ),
@@ -219,10 +445,10 @@ void main() {
     await tester.tap(find.text('Sub Picker'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Custom Item 1'), findsOneWidget);
-    expect(find.text('Custom Item 2'), findsOneWidget);
+    expect(find.text('Custom Item 1 notMember blocked'), findsOneWidget);
+    expect(find.text('Custom Item 2 notMember blocked'), findsOneWidget);
 
-    await tester.tap(find.text('Custom Item 1'));
+    await tester.tap(find.text('Custom Item 1 notMember blocked'));
     await tester.pump();
   });
 

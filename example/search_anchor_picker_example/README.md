@@ -1,7 +1,7 @@
 # Search Anchor Picker example
 
 Demonstrates main pickers, nested `SubPickerTile` menus, async data sources,
-radio modes, explicit delta persistence, and SearchAnchor-compatible popup
+single-selection modes, explicit delta persistence, and SearchAnchor-compatible popup
 customization.
 
 Run locally with:

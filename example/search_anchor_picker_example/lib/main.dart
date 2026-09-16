@@ -116,8 +116,7 @@ class _DemoHomeState extends State<DemoHome> {
   PickerConfig<DemoItem> configForRepo(
     ItemsRepo<DemoItem> repo, {
     String? title,
-    UnselectBehavior unselectBehavior = UnselectBehavior.allow,
-    bool Function(DemoItem)? isItemInUse,
+    PickerRelatedListItemStatus Function(DemoItem)? relatedListItemStatusOf,
   }) {
     return PickerConfig<DemoItem>(
       title: title,
@@ -132,8 +131,7 @@ class _DemoHomeState extends State<DemoHome> {
       ),
       comparator: (a, b) => a.label.compareTo(b.label),
       selectedFirst: true,
-      unselectBehavior: unselectBehavior,
-      isItemInUse: isItemInUse,
+      relatedListItemStatusOf: relatedListItemStatusOf,
     );
   }
 
@@ -171,11 +169,11 @@ class _DemoHomeState extends State<DemoHome> {
     final subA1Config = configForRepo(
       subA1,
       title: 'Sub A1',
-      unselectBehavior: UnselectBehavior.alert,
-      isItemInUse: (item) {
-        // Warn if trying to remove an item that is currently selected in MAIN list A.
-        return selectedOnScreenA.contains(item.id);
-      },
+      relatedListItemStatusOf: (item) => PickerRelatedListItemStatus(
+        unselectPolicy: selectedOnScreenA.contains(item.id)
+            ? PickerUnselectPolicy.confirm
+            : PickerUnselectPolicy.allow,
+      ),
     );
     final subA2Config = configForRepo(subA2, title: 'Sub A2');
 
@@ -208,23 +206,26 @@ class _DemoHomeState extends State<DemoHome> {
                   child: SearchAnchorPicker<DemoItem>(
                     config: mainAConfig,
                     initialSelectedIds: _ids(selectedOnScreenA),
-                    mode: PickerMode.multi,
+                    selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    onToggle: (item, next) async {
-                      setState(() {
-                        next
-                            ? selectedOnScreenA.add(item.id)
-                            : selectedOnScreenA.remove(item.id);
-                      });
-                      return true;
-                    },
+                    persistence: PickerPersistence.immediate(
+                      persist: (delta) async {
+                        setState(() {
+                          selectedOnScreenA
+                            ..addAll(delta.added)
+                            ..removeAll(delta.removed);
+                        });
+                      },
+                    ),
 
                     // Header has two sub pickers that modify listA contents
                     headerBuilder: (ctx, actions, allItems) {
                       return [
                         SubPickerTile<DemoItem>(
                           parentController: actions,
+                          parentSelectionEffect:
+                              SubPickerParentSelectionEffect.deselectRemoved,
                           key: actions.getKey('subA1'),
                           title: 'Add/remove from Sub A1',
                           icon: Icons.playlist_add,
@@ -234,20 +235,27 @@ class _DemoHomeState extends State<DemoHome> {
                             listA.items,
                             subA1.items,
                           ),
-                          onFinish: ({required added, required removed}) async {
-                            final addItems = added
-                                .map((id) => findById(subA1.items, id))
-                                .whereType<DemoItem>()
-                                .toList();
-
-                            setState(() {
-                              listA.addAll(addItems, same);
-                              listA.removeWhere((x) => removed.contains(x.id));
-                            });
-                          },
+                          // Save per row; parent removal sync follows persistence.
+                          persistence: PickerPersistence.immediate(
+                            persist: (delta) async {
+                              setState(() {
+                                listA.addAll(
+                                  delta.added
+                                      .map((id) => findById(subA1.items, id))
+                                      .whereType<DemoItem>(),
+                                  same,
+                                );
+                                listA.removeWhere(
+                                  (item) => delta.removed.contains(item.id),
+                                );
+                              });
+                            },
+                          ),
                         ),
                         SubPickerTile<DemoItem>(
                           parentController: actions,
+                          parentSelectionEffect:
+                              SubPickerParentSelectionEffect.deselectRemoved,
                           key: actions.getKey('subA2'),
                           title: 'Add/remove from Sub A2',
                           icon: Icons.playlist_add_check,
@@ -256,17 +264,21 @@ class _DemoHomeState extends State<DemoHome> {
                             listA.items,
                             subA2.items,
                           ),
-                          onFinish: ({required added, required removed}) async {
-                            final addItems = added
-                                .map((id) => findById(subA2.items, id))
-                                .whereType<DemoItem>()
-                                .toList();
+                          persistence: PickerPersistence.onClose(
+                            persist: (delta) async {
+                              final addItems = delta.added
+                                  .map((id) => findById(subA2.items, id))
+                                  .whereType<DemoItem>()
+                                  .toList();
 
-                            setState(() {
-                              listA.addAll(addItems, same);
-                              listA.removeWhere((x) => removed.contains(x.id));
-                            });
-                          },
+                              setState(() {
+                                listA.addAll(addItems, same);
+                                listA.removeWhere(
+                                  (item) => delta.removed.contains(item.id),
+                                );
+                              });
+                            },
+                          ),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -333,53 +345,58 @@ class _DemoHomeState extends State<DemoHome> {
                   child: SearchAnchorPicker<DemoItem>(
                     config: mainBConfig,
                     initialSelectedIds: _ids(selectedOnScreenB),
-                    mode: PickerMode.multi,
+                    selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    onToggle: (item, next) async {
-                      setState(() {
-                        next
-                            ? selectedOnScreenB.add(item.id)
-                            : selectedOnScreenB.remove(item.id);
-                      });
-                      return true;
-                    },
+                    persistence: PickerPersistence.immediate(
+                      persist: (delta) async {
+                        setState(() {
+                          selectedOnScreenB
+                            ..addAll(delta.added)
+                            ..removeAll(delta.removed);
+                        });
+                      },
+                    ),
 
                     headerBuilder: (ctx, actions, allItems) {
                       return [
                         SubPickerTile<DemoItem>(
                           parentController: actions,
+                          parentSelectionEffect:
+                              SubPickerParentSelectionEffect.mirror,
                           key: actions.getKey('subB1'),
                           title: 'Select from Sub B1 (to screen)',
                           icon: Icons.person_add_alt_1,
                           config: subB1Config,
                           initialSelectedIds: _ids(selectedOnScreenB),
-                          onFinish: ({required added, required removed}) async {
-                            setState(() {
-                              selectedOnScreenB
-                                ..addAll(added)
-                                ..removeAll(removed);
-                            });
-                            // For this use case (screen selection), we want to ADD added items to pending too.
-                            // But SubPickerTile only removes. So we manually mix in added items.
-                            actions.syncPending(added: added);
-                          },
+                          persistence: PickerPersistence.onClose(
+                            persist: (delta) async {
+                              setState(() {
+                                selectedOnScreenB
+                                  ..addAll(delta.added)
+                                  ..removeAll(delta.removed);
+                              });
+                            },
+                          ),
                         ),
                         SubPickerTile<DemoItem>(
                           parentController: actions,
+                          parentSelectionEffect:
+                              SubPickerParentSelectionEffect.mirror,
                           key: actions.getKey('subB2'),
                           title: 'Select from Sub B2 (to screen)',
                           icon: Icons.person_add_alt,
                           config: subB2Config,
                           initialSelectedIds: _ids(selectedOnScreenB),
-                          onFinish: ({required added, required removed}) async {
-                            setState(() {
-                              selectedOnScreenB
-                                ..addAll(added)
-                                ..removeAll(removed);
-                            });
-                            actions.syncPending(added: added);
-                          },
+                          persistence: PickerPersistence.onClose(
+                            persist: (delta) async {
+                              setState(() {
+                                selectedOnScreenB
+                                  ..addAll(delta.added)
+                                  ..removeAll(delta.removed);
+                              });
+                            },
+                          ),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -469,19 +486,19 @@ class _DemoHomeState extends State<DemoHome> {
                 _CircleIconTrigger(
                   child: SearchAnchorPicker<DemoItem>(
                     config: configForRepo(listA, title: 'Radio picker demo'),
-                    mode: PickerMode.radio,
+                    selectionMode: SelectionMode.single,
 
                     // Seed selection for radio (0 or 1 item).
                     initialSelectedIds: selectedRadioId == null
                         ? const []
                         : [selectedRadioId!],
 
-                    // In radio mode, toggling "true" is the selection action.
-                    onToggle: (item, next) async {
-                      if (!next) return false; // ignore deselect
-                      setState(() => selectedRadioId = item.id);
-                      return true;
-                    },
+                    persistence: PickerPersistence.immediate(
+                      persist: (delta) async {
+                        if (delta.added.isEmpty) return;
+                        setState(() => selectedRadioId = delta.added.first);
+                      },
+                    ),
 
                     triggerBuilder: (_, open, version) {
                       final has = selectedRadioId != null;

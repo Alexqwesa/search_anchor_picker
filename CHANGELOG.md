@@ -1,3 +1,19 @@
+## 0.2.0
+
+* Breaking: per-item rules use `relatedListItemStatusOf` returning
+  `PickerRelatedListItemStatus(auxiliaryMembership:, unselectPolicy:)`.
+  `relatedListItemStatusListenable` refreshes status without reloading items.
+* Added `PickerAuxiliaryMembership`: `member`, `notMember`, and `unknown`.
+  Absence from a partial page stays unknown unless independently established.
+* Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
+* Breaking: persistence is `PickerPersistence.onClose` or
+  `PickerPersistence.immediate`. `canChangeSelection` is only a gate.
+  `onFinish` observes the net session and does not persist.
+* Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
+  `selectAddedAndDeselectRemoved` is `mirror`. Parent sync runs after a
+  successful persist, or after close for local-only leftover changes.
+* Row toggles and bulk header commands share the same apply pipeline.
+
 ## 0.1.2
 
 * Added API documentation for the public libraries and query-close behavior.

@@ -1,16 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:search_anchor_picker/src/raw/picker_persistence.dart';
 
-class PickerSelectionResult<K> {
-  const PickerSelectionResult({
-    required this.finalIds,
-    required this.added,
-    required this.removed,
-  });
-
-  final Set<K> finalIds;
-  final Set<K> added;
-  final Set<K> removed;
-}
+export 'package:search_anchor_picker/src/raw/picker_persistence.dart'
+    show PickerSelectionResult;
 
 /// Owns one open picker's selection snapshot and explicit user intent.
 class PickerSelectionSession<K> {
@@ -22,6 +14,7 @@ class PickerSelectionSession<K> {
   Set<K> _openedIds = <K>{};
   final Set<K> _explicitlyAdded = <K>{};
   final Set<K> _explicitlyRemoved = <K>{};
+  Set<K>? _acceptedIds;
 
   Set<K> get openedIds => _openedIds;
 
@@ -29,6 +22,7 @@ class PickerSelectionSession<K> {
     _openedIds = seed.toSet();
     _explicitlyAdded.clear();
     _explicitlyRemoved.clear();
+    _acceptedIds = null;
     pendingN.value = {..._openedIds};
   }
 
@@ -48,12 +42,20 @@ class PickerSelectionSession<K> {
       ..removeAll(added);
   }
 
-  PickerSelectionResult<K> result() {
+  /// Advances the persistence baseline only for successfully applied toggles.
+  void acceptToggle(Set<K> before, Set<K> after) {
+    (_acceptedIds ??= {..._openedIds})
+      ..addAll(after.difference(before))
+      ..removeAll(before.difference(after));
+  }
+
+  PickerSelectionResult<K> result({bool remainingOnly = false}) {
     final finalIds = {...pendingN.value};
+    final baseline = remainingOnly ? (_acceptedIds ?? _openedIds) : _openedIds;
     return PickerSelectionResult<K>(
       finalIds: finalIds,
-      added: _explicitlyAdded.intersection(finalIds.difference(_openedIds)),
-      removed: _explicitlyRemoved.intersection(_openedIds.difference(finalIds)),
+      added: _explicitlyAdded.intersection(finalIds.difference(baseline)),
+      removed: _explicitlyRemoved.intersection(baseline.difference(finalIds)),
     );
   }
 

@@ -1,7 +1,7 @@
 # Search Anchor Picker
 
 A Flutter Material 3 picker that feels like `SearchAnchor`, with multi-select,
-radio selection, stable selected-first ordering, and optional nested menus.
+single selection, stable selected-first ordering, and optional nested menus.
 
 [Open the web example](https://alexqwesa.github.io/search_anchor_picker/)
 
@@ -9,11 +9,11 @@ radio selection, stable selected-first ordering, and optional nested menus.
 
 - SearchAnchor-compatible popup styling and `SearchViewTheme` support.
 - Anchored desktop popups and full-screen mobile views by default.
-- Multi-select, radio, and radio-toggle modes.
+- Multi, single, and single-optional selection modes.
 - Nested `SubPickerTile` menus with optional animated offsets.
 - Safe client-side and server-side search: missing loaded items are never
   interpreted as deleted selections.
-- Delta persistence through `onFinish(added:, removed:)`.
+- Delta persistence through `PickerPersistence` (`onClose` or `immediate`).
 - Optional builders for every visual region; built-in widgets are only defaults.
 - No permanent trigger `GlobalKey`; popup resources are created on demand.
 
@@ -21,7 +21,7 @@ radio selection, stable selected-first ordering, and optional nested menus.
 
 ```yaml
 dependencies:
-  search_anchor_picker: ^0.1.0
+  search_anchor_picker: ^0.1.2
 ```
 
 To use the Git repository directly:
@@ -31,7 +31,7 @@ dependencies:
   search_anchor_picker:
     git:
       url: https://github.com/Alexqwesa/search_anchor_picker.git
-      ref: v0.1.0
+      ref: v0.1.2
 ```
 
 ## Basic picker
@@ -48,10 +48,12 @@ SearchAnchorPicker<Person>(
     searchTermsOf: (person) => [person.name, person.email],
   ),
   initialSelectedIds: selectedIds.toList(),
-  onFinish: ({required added, required removed}) async {
-    await api.addPeople(added);
-    await api.removePeople(removed);
-  },
+  persistence: PickerPersistence.onClose(
+    persist: (delta) async {
+      await api.addPeople(delta.added);
+      await api.removePeople(delta.removed);
+    },
+  ),
   triggerBuilder: (context, open, version) => IconButton(
     tooltip: 'Pick people',
     onPressed: open,
@@ -62,7 +64,7 @@ SearchAnchorPicker<Person>(
 
 `initialSelectedIds` is the external source of truth for the next open. While a
 picker is open, explicit row toggles are tracked independently so `onFinish`
-reports only actual user add/remove intent.
+observes only actual user add/remove intent.
 
 ## Reloading items
 
@@ -132,8 +134,8 @@ provided `close` callback when users otherwise have no visible way to leave.
 ## Optional default widgets
 
 The core owns search state, selection, popup placement, focus, keyboard handling,
-and lifecycle. Visual defaults live under `lib/src/widgets/` and are exported by
-both the main package and `package:search_anchor_picker/widgets.dart`.
+and lifecycle. Visual defaults are exported by both the main package and
+`package:search_anchor_picker/widgets.dart`.
 
 Use focused builders to replace only the region you own:
 
@@ -141,6 +143,11 @@ Use focused builders to replace only the region you own:
 - `searchFieldBuilder` and `resultsBuilder`
 - `loadingBuilder`, `emptyBuilder`, and `errorBuilder`
 - `viewBuilder` and `viewSurfaceBuilder`
+
+`itemBuilder` receives `(context, item, isSelected, relatedListItemStatus, toggle)`.
+The `relatedListItemStatus` comes from `config.relatedListItemStatusOf`, so custom rows
+can use both `auxiliaryMembership` and `unselectPolicy` without recomputing them.
+Calling `toggle` still uses the picker's unselect policy and selection logic.
 
 The default empty view localizes “No items” and “No results” for several common
 languages using the app's current locale. Set `emptyText` / `noResultsText` to
@@ -162,6 +169,53 @@ errorBuilder: (context, error, stackTrace, retry) => Center(
 
 The default widgets are not built while the popup is closed.
 
+## Related-list status and sub-list membership
+
+`relatedListItemStatusOf` returns a `PickerRelatedListItemStatus` for each item. The
+related list may be a parent list that uses the item or an auxiliary sub-list.
+Its `auxiliaryMembership` describes membership, and its `unselectPolicy`
+controls whether removing the selection is allowed, blocked, or confirmed.
+
+Selection and auxiliary-list membership are separate. A checked parent item can
+still be a non-member of a sub-list, and a partial server response may leave
+membership unknown:
+
+```dart
+PickerConfig<Person>(
+  relatedListItemStatusListenable: directoryMembership,
+  relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
+    auxiliaryMembership: directoryMembership.value.contains(person.id)
+        ? PickerAuxiliaryMembership.member
+        : allDirectoryMembershipIdsLoaded
+            ? PickerAuxiliaryMembership.notMember
+            : PickerAuxiliaryMembership.unknown,
+    unselectPolicy: person.isInUse
+        ? PickerUnselectPolicy.blocked
+        : PickerUnselectPolicy.allow,
+  ),
+  // loadItems, idOf, labelOf, and searchTermsOf...
+),
+```
+
+`member`, `notMember`, and `unknown` describe only the auxiliary list; they
+never check or uncheck the item. The default row uses a filled, outlined, or
+search-marked person icon respectively. A custom `iconOf` overrides these
+icons. `unknown` is appropriate when a paged or filtered server result cannot
+prove membership. If each item has an authoritative `isInDirectory` flag, use
+that to return `member` or `notMember` even when the directory is paginated.
+Only infer `unknown` from absence when the full membership set is not known;
+finishing one page does not make that set complete.
+
+`PickerUnselectPolicy.blocked` keeps the checkbox selected and shows a localized
+in-use warning. `confirm` asks for localized confirmation, while `allow`
+unselects normally. Use `unselectWarningBuilder` and
+`unselectConfirmationBuilder` for application-specific feedback.
+
+`relatedListItemStatusListenable` redraws related-list status without calling
+`loadItems`. Its listener is attached only while the popup is open.
+`SubPickerParentSelectionEffect` separately controls whether a successfully
+persisted child delta also updates the open parent's checkboxes.
+
 ## Nested pickers
 
 `SubPickerTile` is an optional convenience widget for sublist membership:
@@ -171,19 +225,65 @@ headerBuilder: (context, controller, items) => [
   SubPickerTile<Person>(
     title: 'Manage directory membership',
     config: directoryConfig,
-    parentController: controller,
     initialSelectedIds: directoryIds,
     menuOffset: const Offset(30, 12),
-    onFinish: ({required added, required removed}) async {
-      await directoryApi.add(added);
-      await directoryApi.remove(removed);
-    },
+    persistence: PickerPersistence.onClose(
+      persist: (delta) async {
+        await directoryApi.add(delta.added);
+        await directoryApi.remove(delta.removed);
+      },
+    ),
   ),
 ],
 ```
 
-Sub-picker removals are removed from the parent pending selection when
-`parentController` is provided. Additions enter the parent list unselected.
+Sub-list membership does not change parent selection by default. Opt in when
+child changes should update the open parent's checkboxes:
+
+```dart
+SubPickerTile<Person>(
+  parentController: controller,
+  parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
+  // title, config, initialSelectedIds, and persistence...
+)
+```
+
+Choose `selectAdded` to check added items, `deselectRemoved` to uncheck removed
+items, or `mirror` for both. `none` is the default.
+These effects **only update the open parent's checkboxes**. They do not save
+parent selection, update the parent's `initialSelectedIds`, or include those
+changes in the parent's persistence delta.
+If your backend stores parent selection separately from sub-list membership,
+the child's persistence callback must also call the appropriate parent API and
+update the authoritative parent IDs for the next open. Parent checkbox updates
+do not require reseeding the whole parent picker.
+
+Choose when the child saves:
+
+- `PickerPersistence.onClose`: save the net session delta when the popup
+  closes; parent checkboxes update after that persist succeeds.
+- `PickerPersistence.immediate`: save each accepted delta, including bulk
+  header commands; parent checkboxes update after each successful persist.
+- Neither: local-only leftover changes still synchronize on close.
+
+```dart
+canChangeSelection: (change) async {
+  return change.removedItems.every((person) => !person.isLocked);
+},
+persistence: PickerPersistence.immediate(
+  persist: (delta) async {
+    await directoryApi.add(delta.added);
+    await directoryApi.remove(delta.removed);
+  },
+),
+onFinish: (result) {
+  // Optional observer of the net session. It does not persist.
+},
+```
+
+Rejected, blocked, cancelled, or failed changes never update the parent.
+Closing waits for in-flight applies to settle. `canChangeSelection` is only a
+gate: its presence does not change `onFinish` or `persistence`.
 
 ## Server-side search safety
 
@@ -207,9 +307,11 @@ update its authoritative selected IDs separately.
 
 ## Persistence APIs
 
-Prefer `onFinish(added:, removed:)` for save-on-close APIs, or `onToggle` for
-per-row persistence. `OnToggleMode.optimistic` updates a checkbox immediately and
-rolls it back if the async callback returns `false`.
+Use `PickerPersistence.onClose` to save the net session delta when the popup
+closes, or `PickerPersistence.immediate` to save each accepted delta as it
+happens. `PickerApplyMode.optimistic` updates a checkbox immediately and rolls
+it back if the gate or persist fails. `canChangeSelection` only accepts or
+rejects a proposed change; `onFinish` only observes the closed session.
 
 There is no replace-all close callback. Apply the explicit `added` and `removed`
 deltas, or use `initialSelectedIds` when the parent has a complete authoritative

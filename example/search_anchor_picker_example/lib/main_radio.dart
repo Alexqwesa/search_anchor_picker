@@ -81,7 +81,7 @@ class _RadioHomeState extends State<RadioHome> {
         child: ListView(
           children: [
             const Text(
-              'Radio Picker Demo:\nSingle selection mode with imperative control (tap again to deselect if radioToggle).',
+              'Radio Picker Demo:\nSingle selection with imperative control (tap again to deselect if singleOptional).',
             ),
             const SizedBox(height: 20),
             const Divider(),
@@ -107,15 +107,14 @@ class _RadioHomeState extends State<RadioHome> {
                       labelOf: (it) => it.label,
                       searchTermsOf: (it) => [it.label],
                     ),
-                    mode: PickerMode.radio,
+                    selectionMode: SelectionMode.single,
                     initialSelectedIds: selectedId == null ? [] : [selectedId!],
-                    onToggle: (item, next) async {
-                      if (next) {
-                        setState(() => selectedId = item.id);
-                        return true;
-                      }
-                      return false; // Cannot deselect in standard radio mode
-                    },
+                    persistence: PickerPersistence.immediate(
+                      persist: (delta) async {
+                        if (delta.added.isEmpty) return;
+                        setState(() => selectedId = delta.added.first);
+                      },
+                    ),
                     triggerBuilder: (_, open, version) {
                       final has = selectedId != null;
                       return IconButton(
@@ -163,25 +162,24 @@ class _RadioHomeState extends State<RadioHome> {
                       searchTermsOf: (it) => [it.label],
                       listenable: _refreshNotifier,
                     ),
-                    mode: PickerMode.radio,
+                    selectionMode: SelectionMode.single,
                     initialSelectedIds: _unifiedSelectedId == null
                         ? []
                         : [_unifiedSelectedId!],
-                    onToggle: (item, next) async {
-                      if (next) {
+                    persistence: PickerPersistence.immediate(
+                      persist: (delta) async {
+                        if (delta.added.isEmpty) return;
                         setState(() {
-                          _unifiedSelectedId = item.id;
-                          // If we picked a main item, clear any transient sub items
-                          // (unless this item IS the transient item, but here we assume mainItems are distinct)
-                          if (!subItems.contains(item)) {
+                          _unifiedSelectedId = delta.added.first;
+                          if (!subItems.any(
+                            (item) => item.id == _unifiedSelectedId,
+                          )) {
                             _extraItems.clear();
                             _refreshNotifier.value++;
                           }
                         });
-                        return true;
-                      }
-                      return false;
-                    },
+                      },
+                    ),
                     headerBuilder: (ctx, actions, _) => [
                       ListTile(
                         title: const Text('Open Sub Radio'),
@@ -198,19 +196,28 @@ class _RadioHomeState extends State<RadioHome> {
                           labelOf: (it) => it.label,
                           searchTermsOf: (it) => [it.label],
                         ),
-                        mode: PickerMode.radio,
-                        itemBuilder: (context, item, isSelected, onToggle) {
-                          return CheckboxListTile(
-                            value: isSelected,
-                            onChanged: (v) => onToggle(),
-                            title: Text(
-                              item.label,
-                              style: const TextStyle(color: Colors.blueAccent),
-                            ),
-                            subtitle: const Text('Custom Builder Item'),
-                            checkboxShape: const CircleBorder(),
-                          );
-                        },
+                        selectionMode: SelectionMode.single,
+                        itemBuilder:
+                            (
+                              context,
+                              item,
+                              isSelected,
+                              relatedListItemStatus,
+                              onToggle,
+                            ) {
+                              return CheckboxListTile(
+                                value: isSelected,
+                                onChanged: (v) => onToggle(),
+                                title: Text(
+                                  item.label,
+                                  style: const TextStyle(
+                                    color: Colors.blueAccent,
+                                  ),
+                                ),
+                                subtitle: const Text('Custom Builder Item'),
+                                checkboxShape: const CircleBorder(),
+                              );
+                            },
                         triggerChild: const ListTile(
                           title: Text('Sub Radio Trigger (Tile)'),
                           leading: Icon(Icons.touch_app),
@@ -218,19 +225,19 @@ class _RadioHomeState extends State<RadioHome> {
                         initialSelectedIds: _unifiedSelectedId == null
                             ? []
                             : [_unifiedSelectedId!],
-                        onToggle: (item, next) async {
-                          if (next) {
+                        persistence: PickerPersistence.immediate(
+                          persist: (delta) async {
+                            if (delta.added.isEmpty) return;
+                            final item = subItems.firstWhere(
+                              (candidate) => candidate.id == delta.added.first,
+                            );
                             setState(() {
                               _unifiedSelectedId = item.id;
-                              // Add to transient items so it shows in parent list
                               _extraItems = [item];
-                              // Force parent picker to reload immediately so it shows this new item
                               _refreshNotifier.value++;
                             });
-                            return true;
-                          }
-                          return false;
-                        },
+                          },
+                        ),
                       ),
                     ],
                     triggerBuilder: (_, open, version) {

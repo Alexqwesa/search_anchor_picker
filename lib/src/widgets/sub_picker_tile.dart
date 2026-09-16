@@ -1,174 +1,157 @@
 import 'package:flutter/material.dart';
-import 'package:search_anchor_picker/src/picker_builders.dart';
 import 'package:search_anchor_picker/src/picker_config.dart';
-import 'package:search_anchor_picker/src/search_anchor_picker.dart';
+import 'package:search_anchor_picker/src/picker_status.dart';
+import 'package:search_anchor_picker/src/raw/widgets/sub_picker_tile.dart';
+import 'package:search_anchor_picker/src/related_list_item.dart';
 
-/// Optional convenience tile for a picker nested in another picker's header.
-class GenericSubPickerTile<T, K> extends StatelessWidget {
-  const GenericSubPickerTile({
-    required this.title,
-    required this.config,
-    required this.initialSelectedIds,
-    super.key,
-    this.icon,
-    this.parentController,
-    this.onFinish,
-    this.mode = PickerMode.multi,
-    this.leading,
-    this.subtitle,
-    this.trailing,
-    this.triggerBuilder,
-    this.itemBuilder,
-    this.resultsBuilder,
-    this.searchFieldBuilder,
-    this.loadingBuilder,
-    this.emptyBuilder,
-    this.emptyText,
-    this.noResultsText,
-    this.errorBuilder,
-    this.viewBuilder,
-    this.viewSurfaceBuilder,
-    this.menuOffset = const Offset(30, 30),
-    this.menuOffsetAnimationDuration = const Duration(milliseconds: 120),
-    this.isFullScreen,
-    this.viewLeading,
-    this.viewTrailing,
-    this.viewHintText,
-    this.viewBackgroundColor,
-    this.viewElevation,
-    this.viewSurfaceTintColor,
-    this.viewSide,
-    this.viewShape,
-    this.viewBarPadding,
-    this.headerHeight,
-    this.headerTextStyle,
-    this.headerHintStyle,
-    this.dividerColor,
-    this.viewConstraints,
-    this.viewPadding,
-    this.shrinkWrap,
-  }) : assert(
-         title != null || triggerBuilder != null,
-         'Provide either title or triggerBuilder.',
-       );
+/// Optional effect that a sub-picker result applies to parent pending selection.
+///
+/// Auxiliary-list membership and parent selection are independent by default.
+/// These effects update only the currently open parent's pending checkboxes
+/// after a successfully persisted child delta, or after close when the child
+/// is local-only. They do not persist parent selection or create parent
+/// persistence deltas.
+enum SubPickerParentSelectionEffect {
+  /// Do not modify the parent picker's pending selection.
+  none,
 
-  final String? title;
-  final GenericPickerConfig<T, K> config;
-  final List<K> initialSelectedIds;
-  final GenericPickerController<T, K>? parentController;
-  final IconData? icon;
-  final Widget? leading;
-  final Widget? subtitle;
-  final Widget? trailing;
-  final PickerMode mode;
-  final GenericOnFinish<K>? onFinish;
-  final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
-  final Widget Function(BuildContext, T, bool, VoidCallback)? itemBuilder;
-  final PickerResultsBuilder? resultsBuilder;
-  final PickerSearchFieldBuilder? searchFieldBuilder;
-  final PickerLoadingBuilder? loadingBuilder;
-  final PickerEmptyBuilder? emptyBuilder;
+  /// Check IDs added to the sub-list in the open parent picker.
+  selectAdded,
 
-  /// Overrides the localized default shown when no sub-picker items load.
-  final String? emptyText;
+  /// Uncheck removed IDs in the open parent picker.
+  deselectRemoved,
 
-  /// Overrides the localized default shown when a query has no matches.
-  final String? noResultsText;
-  final PickerErrorBuilder? errorBuilder;
-  final PickerViewBuilder? viewBuilder;
-  final PickerViewSurfaceBuilder? viewSurfaceBuilder;
-  final Offset menuOffset;
-  final Duration menuOffsetAnimationDuration;
-  final bool? isFullScreen;
-  final Widget? viewLeading;
-  final Iterable<Widget>? viewTrailing;
-  final String? viewHintText;
-  final Color? viewBackgroundColor;
-  final double? viewElevation;
-  final Color? viewSurfaceTintColor;
-  final BorderSide? viewSide;
-  final OutlinedBorder? viewShape;
-  final EdgeInsetsGeometry? viewBarPadding;
-  final double? headerHeight;
-  final TextStyle? headerTextStyle;
-  final TextStyle? headerHintStyle;
-  final Color? dividerColor;
-  final BoxConstraints? viewConstraints;
-  final EdgeInsetsGeometry? viewPadding;
-  final bool? shrinkWrap;
+  /// Mirror the child's membership delta into the open parent picker.
+  ///
+  /// This does not make the parent selection equal the child selection.
+  mirror,
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return GenericSearchAnchorPicker<T, K>(
-      config: config,
-      initialSelectedIds: initialSelectedIds,
-      onFinish: ({required added, required removed}) async {
-        if (parentController != null) {
-          parentController!.syncPending(removed: removed);
-        }
-        await onFinish?.call(added: added, removed: removed);
-      },
-      mode: mode,
-      itemBuilder: itemBuilder,
-      resultsBuilder: resultsBuilder,
-      searchFieldBuilder: searchFieldBuilder,
-      loadingBuilder: loadingBuilder,
-      emptyBuilder: emptyBuilder,
-      emptyText: emptyText,
-      noResultsText: noResultsText,
-      errorBuilder: errorBuilder,
-      viewBuilder: viewBuilder,
-      viewSurfaceBuilder: viewSurfaceBuilder,
-      menuOffset: menuOffset,
-      menuOffsetAnimationDuration: menuOffsetAnimationDuration,
-      isFullScreen: isFullScreen,
-      viewLeading: viewLeading,
-      viewTrailing: viewTrailing,
-      viewHintText: viewHintText,
-      viewBackgroundColor: viewBackgroundColor,
-      viewElevation: viewElevation,
-      viewSurfaceTintColor: viewSurfaceTintColor,
-      viewSide: viewSide,
-      viewShape: viewShape,
-      viewBarPadding: viewBarPadding,
-      headerHeight: headerHeight,
-      headerTextStyle: headerTextStyle,
-      headerHintStyle: headerHintStyle,
-      dividerColor: dividerColor,
-      viewConstraints: viewConstraints,
-      viewPadding: viewPadding,
-      shrinkWrap: shrinkWrap,
-      triggerBuilder: (context, open, tick) {
-        if (triggerBuilder != null) {
-          return triggerBuilder!(context, open, tick);
-        }
-        return ListTile(
-          leading: leading ?? (icon != null ? Icon(icon) : null),
-          onTap: open,
-          title: Text(title!),
-          subtitle: subtitle,
-          trailing: trailing,
-          dense: true,
-        );
-      },
-    );
+void _applyParentEffect<T, K>(
+  GenericPickerController<T, K>? parentController,
+  SubPickerParentSelectionEffect parentSelectionEffect,
+  Set<K> added,
+  Set<K> removed,
+) {
+  switch (parentSelectionEffect) {
+    case SubPickerParentSelectionEffect.none:
+      break;
+    case SubPickerParentSelectionEffect.selectAdded:
+      if (added.isNotEmpty) parentController!.syncPending(added: added);
+    case SubPickerParentSelectionEffect.deselectRemoved:
+      if (removed.isNotEmpty) parentController!.syncPending(removed: removed);
+    case SubPickerParentSelectionEffect.mirror:
+      parentController!.syncPending(added: added, removed: removed);
   }
 }
 
+/// Optional convenience tile for a picker nested in another picker's header.
+class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
+  // `selectionMode` and `itemBuilder` are captured to wrap related-list status.
+  // ignore: use_super_parameters
+  GenericSubPickerTile({
+    required super.title,
+    required GenericPickerConfig<T, K> config,
+    required super.initialSelectedIds,
+    super.key,
+    this.parentController,
+    this.parentSelectionEffect = SubPickerParentSelectionEffect.none,
+    super.icon,
+    super.canChangeSelection,
+    super.persistence,
+    super.onFinish,
+    SelectionMode selectionMode = SelectionMode.multi,
+    super.leading,
+    super.subtitle,
+    super.trailing,
+    super.triggerBuilder,
+    super.headerBuilder,
+    Widget Function(
+      BuildContext,
+      T,
+      bool,
+      PickerRelatedListItemStatus,
+      VoidCallback,
+    )?
+    itemBuilder,
+    super.resultsBuilder,
+    super.searchFieldBuilder,
+    super.loadingBuilder,
+    super.emptyBuilder,
+    super.emptyText,
+    super.noResultsText,
+    super.errorBuilder,
+    super.viewBuilder,
+    super.viewSurfaceBuilder,
+    super.menuOffset,
+    super.menuOffsetAnimationDuration,
+    super.isFullScreen,
+    super.viewLeading,
+    super.viewTrailing,
+    super.viewHintText,
+    super.viewBackgroundColor,
+    super.viewElevation,
+    super.viewSurfaceTintColor,
+    super.viewSide,
+    super.viewShape,
+    super.viewBarPadding,
+    super.headerHeight,
+    super.headerTextStyle,
+    super.headerHintStyle,
+    super.dividerColor,
+    super.viewConstraints,
+    super.viewPadding,
+    super.shrinkWrap,
+  }) : assert(
+         parentSelectionEffect == SubPickerParentSelectionEffect.none ||
+             parentController != null,
+         'parentController is required when parentSelectionEffect modifies selection.',
+       ),
+       super(
+         config: config,
+         selectionMode: selectionMode,
+         itemBuilder: relatedListRowBuilder(config, selectionMode, itemBuilder),
+         canUnselect: (context, item) {
+           return relatedListCanUnselect(context, config, item);
+         },
+         onDeltaPersisted:
+             parentSelectionEffect == SubPickerParentSelectionEffect.none
+             ? null
+             : (delta) {
+                 _applyParentEffect(
+                   parentController,
+                   parentSelectionEffect,
+                   delta.added,
+                   delta.removed,
+                 );
+               },
+       );
+
+  /// Parent controller used only when [parentSelectionEffect] modifies selection.
+  final GenericPickerController<T, K>? parentController;
+
+  /// Explicit effect of sub-list changes on the parent pending selection.
+  final SubPickerParentSelectionEffect parentSelectionEffect;
+}
+
 class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
-  const SubPickerTile({
+  SubPickerTile({
     required super.title,
     required super.config,
     required super.initialSelectedIds,
     super.key,
     super.icon,
     super.parentController,
+    super.parentSelectionEffect,
+    super.canChangeSelection,
+    super.persistence,
     super.onFinish,
-    super.mode,
+    super.selectionMode,
     super.leading,
     super.subtitle,
     super.trailing,
     super.triggerBuilder,
+    super.headerBuilder,
     super.itemBuilder,
     super.resultsBuilder,
     super.searchFieldBuilder,

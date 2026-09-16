@@ -17,6 +17,9 @@ Preserve these properties across every change:
   be removed from selection.
 - Only row interactions and explicit controller selection commands create
   `added` or `removed` deltas. External reseeds and `syncPending` do not.
+- Item selection and auxiliary-list membership are independent. Unknown
+  membership from a partial result must never be treated as non-membership or
+  as an instruction to change selection.
 - Async loads are generation guarded. Stale or post-disposal completions must
   not update an overlay.
 - Config identity is not a reload signal. Rebind configuration on replacement,
@@ -29,21 +32,26 @@ Preserve these properties across every change:
 
 ## Repository map
 
-- `lib/src/search_anchor_picker.dart`: overlay ownership, placement, animation,
-  focus, lazy resources, load lifecycle, and close behavior.
-- `lib/src/selection_session.dart`: initial seed, pending IDs, and explicit
-  delta bookkeeping. Keep selection policy independent of rendering.
-- `lib/src/overlay_body.dart`: filtering, rows, and toggle orchestration.
+- `lib/src/search_anchor_picker.dart`: public picker wrapper: related-list
+  status, membership icons, and unselect policy on top of core overlay
+  behavior.
 - `lib/src/picker_config.dart`: public configuration and picker controller API.
-- `lib/src/picker_builders.dart`: focused visual extension points.
-- `lib/src/widgets/`: optional/default visuals and `SubPickerTile`. Core state
-  and lifecycle logic do not belong here.
+- `lib/src/picker_status.dart`: `PickerRelatedListItemStatus` and related
+  membership/unselect types.
+- `lib/src/widgets/sub_picker_tile.dart`: nested `SubPickerTile` and
+  `SubPickerParentSelectionEffect`.
+- `lib/src/widgets/picker_defaults.dart`: public default row with related-list
+  membership icons wrapping `RawDefaultPickerItemTile`.
+- `lib/widgets.dart`: optional/default visuals. Core state and lifecycle logic
+  do not belong in consumer-facing widget docs.
 - `test/`: core behavior, lifecycle, placement, selection, and visual parity.
 - `example/search_anchor_picker_example/`: demos and dependencies used only by
   demos. Its Riverpod integration test lives in its own `test/` directory.
-- `technical_overview.md`: architecture rationale.
+- `technical_overview.md`: architecture rationale for the public types.
 - `README.md`: human-facing package documentation.
 - `doc/USAGE_SKILL.md`: consumer-agent integration instructions.
+- `doc/RAW.md`: internal raw/main layering. Use it when changing package
+  internals, not when integrating the picker into an app.
 
 ## Design boundaries
 
@@ -78,11 +86,11 @@ Before changing selection behavior, test all three state channels separately:
 
 1. `initialSelectedIds`: authoritative external seed.
 2. Pending IDs: current popup checkbox state.
-3. Explicit deltas: user intent reported by `onFinish`.
+3. Explicit deltas: user intent reported by persistence and observer `onFinish`.
 
 Never derive removals by intersecting pending IDs with a loaded page. Verify
 partial server results, reloads, temporary empty external seeds, close/reopen,
-radio modes, bulk controller commands, and nested picker synchronization.
+single-selection modes, bulk controller commands, and nested picker synchronization.
 
 Keep reload invalidation explicit. Inline `PickerConfig(...)` objects are normal
 Flutter usage and may be recreated on every parent build. Such replacement must
@@ -93,8 +101,31 @@ subscription behavior.
 `syncPending(added:, removed:)` symmetrically applies an already-persisted
 external delta to the currently open picker's temporary pending IDs. It does not
 mutate `initialSelectedIds` or caller state and must not emit the same change
-again through `onFinish`. `SubPickerTile` intentionally forwards only child
-removals; that nested-list policy is separate from `syncPending` behavior.
+again through `onFinish`.
+
+`PickerRelatedListItemStatus` is external display/policy state, not a fourth
+selection channel. Keep its provider, listener, and builder argument under the
+`relatedListItemStatus` prefix. `relatedListItemStatusListenable` must repaint without
+loading and must remain an open-only subscription.
+`PickerAuxiliaryMembership.unknown` represents
+insufficient knowledge from a partial result; it must remain distinct from
+`notMember`. An authoritative per-item flag can establish membership without
+loading the whole auxiliary list.
+
+`SubPickerTile` does not modify parent selection by default. Its explicit
+`SubPickerParentSelectionEffect` choices can mirror additions, removals, or both
+into the open parent's pending checkboxes. Never infer this coupling merely
+because a `parentController` was supplied. Parent sync runs after a successfully
+persisted child delta, or after close for local-only leftover changes. Immediate
+persistence also applies bulk controller commands and does not persist the net
+session again on close. `canChangeSelection` is only a gate; its presence must
+not change `onFinish` or `persistence`. Blocked/cancelled unselects run before
+the gate. Close waits for pending applies; rejected/throwing optimistic gates
+roll back and never sync. Session bookkeeping stays core-owned and open-only.
+Guard delayed parent updates against closed or replaced sessions. `syncPending`
+applies updates on the next frame. The effect does not persist parent selection,
+update the external seed, or create a parent delta. Separate parent persistence
+is the consumer's responsibility.
 
 ## Verification
 
@@ -120,7 +151,9 @@ documented, and justified by public API compatibility rather than convenience.
 
 When public behavior changes, update the human README, technical overview,
 consumer skill, tests, example, and changelog together. Do not put maintainer or
-agent instructions in the human README.
+agent instructions in the human README. Do not document raw types in consumer
+or public API docs; use [`doc/RAW.md`](doc/RAW.md) when the internal split
+changes.
 
 For a release:
 
