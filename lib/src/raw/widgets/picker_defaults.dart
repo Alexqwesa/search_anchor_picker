@@ -727,18 +727,27 @@ class DefaultPickerCloseSaving extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final messages = _pickerDefaultMessages(context);
+    final theme = Theme.of(context);
     return Stack(
       children: [
         IgnorePointer(child: child),
         const Positioned.fill(child: ColoredBox(color: Color(0x42000000))),
         Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(strokeWidth: 2),
-              const SizedBox(height: 12),
-              Text(messages.saving),
-            ],
+          child: Material(
+            elevation: 3,
+            borderRadius: BorderRadius.circular(12),
+            color: theme.colorScheme.surface,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(strokeWidth: 2),
+                  const SizedBox(height: 12),
+                  Text(messages.saving, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
           ),
         ),
       ],

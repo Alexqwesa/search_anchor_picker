@@ -1238,7 +1238,10 @@ class _GenericRawSearchAnchorPickerState<T, K>
                     scaleY: scaleY,
                     child: Padding(
                       padding: padding,
-                      child: _buildSurface(context, style, fullScreen),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: _buildSurface(context, style, fullScreen),
+                      ),
                     ),
                   ),
                 ),

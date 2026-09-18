@@ -17,5 +17,12 @@ Run the focused bulk-actions and pending-sync demo without changing the test-imp
 flutter run -d chrome -t lib/main_pending_actions.dart
 ```
 
+Run the scenario-card gallery (chip fields, nested lists, `onClose` /
+`onChange`, per-card source):
+
+```sh
+flutter run -d chrome -t lib/main_cards.dart
+```
+
 The deployed example is available at
 https://alexqwesa.github.io/search_anchor_picker/.
