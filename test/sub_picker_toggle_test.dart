@@ -186,7 +186,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(parent.pendingIds, isEmpty);
     await tester.tap(find.byTooltip('Back').last);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    expect(find.text('Saving…'), findsOneWidget);
     parent.close();
     await tester.pumpAndSettle();
     await tester.tap(find.text('Parent'));

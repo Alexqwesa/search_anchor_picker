@@ -120,14 +120,16 @@ null is the same as always allowing.
 
 Persist in `onChange` (each accepted toggle) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
-Persist in `onClose` (whole delta of session) after close; a thrown error is
-reported and cannot restore the overlay.
+Persist in `onClose` (whole delta of session) while the overlay stays open.
+A thrown error is reported and the user is asked whether to update the
+selection or close without saving. `closeSavingBuilder` and
+`closeSaveFailedBuilder` replace the localized defaults.
 
 Apply order is unselect policy, then the gate, then pending checkboxes, then
 `onChange`. A blocked or cancelled unselect never reaches the gate. A
 rejected gate never applies and never parent-syncs. A thrown `onChange`
 restores the checkbox and does not parent-sync. Close waits for in-flight
-gates and `onChange` work.
+gates, `onChange`, and `onClose` work.
 
 `SubPickerTile` leaves parent selection unchanged unless
 `parentSelectionEffect` is set. Passing `parentController` alone does not

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:search_anchor_picker/src/raw/picker_builders.dart';
 import 'package:search_anchor_picker/src/raw/picker_config.dart';
 import 'package:search_anchor_picker/src/raw/widgets/overflow_tooltip_text.dart';
 import 'package:search_anchor_picker/src/raw/widgets/passive_tooltip.dart';
@@ -375,6 +376,11 @@ typedef _PickerDefaultMessages = ({
   String inUse,
   String removeImpact,
   String remove,
+  String saving,
+  String closeSaveFailedTitle,
+  String closeSaveFailedMessage,
+  String updateSelection,
+  String closeWithoutSaving,
 });
 
 const _PickerDefaultMessages _englishPickerDefaultMessages = (
@@ -385,6 +391,11 @@ const _PickerDefaultMessages _englishPickerDefaultMessages = (
   inUse: '{label} is currently in use.',
   removeImpact: 'Removing it might affect other data.',
   remove: 'Remove',
+  saving: 'Saving…',
+  closeSaveFailedTitle: 'Selection not saved',
+  closeSaveFailedMessage: 'The popup could not be saved because of an error.',
+  updateSelection: 'Update selection',
+  closeWithoutSaving: 'Close without saving',
 );
 
 const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
@@ -396,6 +407,11 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} قيد الاستخدام حاليًا.',
     removeImpact: 'قد تؤثر إزالته في بيانات أخرى.',
     remove: 'إزالة',
+    saving: 'جارٍ الحفظ…',
+    closeSaveFailedTitle: 'لم يتم حفظ التحديد',
+    closeSaveFailedMessage: 'تعذر حفظ النافذة المنبثقة بسبب خطأ.',
+    updateSelection: 'تحديث التحديد',
+    closeWithoutSaving: 'إغلاق بدون حفظ',
   ),
   'de': (
     empty: 'Keine Einträge',
@@ -405,6 +421,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} wird derzeit verwendet.',
     removeImpact: 'Das Entfernen kann sich auf andere Daten auswirken.',
     remove: 'Entfernen',
+    saving: 'Speichern…',
+    closeSaveFailedTitle: 'Auswahl nicht gespeichert',
+    closeSaveFailedMessage:
+        'Das Popup konnte aufgrund eines Fehlers nicht gespeichert werden.',
+    updateSelection: 'Auswahl aktualisieren',
+    closeWithoutSaving: 'Schließen ohne Speichern',
   ),
   'en': _englishPickerDefaultMessages,
   'es': (
@@ -415,6 +437,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} está actualmente en uso.',
     removeImpact: 'Quitar este elemento puede afectar a otros datos.',
     remove: 'Quitar',
+    saving: 'Guardando…',
+    closeSaveFailedTitle: 'Selección no guardada',
+    closeSaveFailedMessage:
+        'No se pudo guardar la ventana emergente por un error.',
+    updateSelection: 'Actualizar selección',
+    closeWithoutSaving: 'Cerrar sin guardar',
   ),
   'fr': (
     empty: 'Aucun élément',
@@ -424,6 +452,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} est actuellement utilisé.',
     removeImpact: 'Sa suppression peut affecter d’autres données.',
     remove: 'Supprimer',
+    saving: 'Enregistrement…',
+    closeSaveFailedTitle: 'Sélection non enregistrée',
+    closeSaveFailedMessage:
+        'La fenêtre n’a pas pu être enregistrée à cause d’une erreur.',
+    updateSelection: 'Modifier la sélection',
+    closeWithoutSaving: 'Fermer sans enregistrer',
   ),
   'it': (
     empty: 'Nessun elemento',
@@ -433,6 +467,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} è attualmente in uso.',
     removeImpact: 'La rimozione potrebbe influire su altri dati.',
     remove: 'Rimuovi',
+    saving: 'Salvataggio…',
+    closeSaveFailedTitle: 'Selezione non salvata',
+    closeSaveFailedMessage:
+        'Impossibile salvare la finestra a causa di un errore.',
+    updateSelection: 'Aggiorna selezione',
+    closeWithoutSaving: 'Chiudi senza salvare',
   ),
   'ja': (
     empty: '項目がありません',
@@ -442,6 +482,11 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} は現在使用中です。',
     removeImpact: '削除すると他のデータに影響する可能性があります。',
     remove: '削除',
+    saving: '保存しています…',
+    closeSaveFailedTitle: '選択は保存されませんでした',
+    closeSaveFailedMessage: 'エラーのためポップアップを保存できませんでした。',
+    updateSelection: '選択を更新',
+    closeWithoutSaving: '保存せずに閉じる',
   ),
   'ko': (
     empty: '항목 없음',
@@ -451,6 +496,11 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label}은(는) 현재 사용 중입니다.',
     removeImpact: '제거하면 다른 데이터에 영향을 줄 수 있습니다.',
     remove: '제거',
+    saving: '저장 중…',
+    closeSaveFailedTitle: '선택이 저장되지 않음',
+    closeSaveFailedMessage: '오류로 인해 팝업을 저장하지 못했습니다.',
+    updateSelection: '선택 업데이트',
+    closeWithoutSaving: '저장하지 않고 닫기',
   ),
   'pt': (
     empty: 'Nenhum item',
@@ -460,6 +510,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} está em uso.',
     removeImpact: 'A remoção pode afetar outros dados.',
     remove: 'Remover',
+    saving: 'Salvando…',
+    closeSaveFailedTitle: 'Seleção não salva',
+    closeSaveFailedMessage:
+        'Não foi possível salvar o pop-up devido a um erro.',
+    updateSelection: 'Atualizar seleção',
+    closeWithoutSaving: 'Fechar sem salvar',
   ),
   'ru': (
     empty: 'Нет элементов',
@@ -469,6 +525,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} сейчас используется.',
     removeImpact: 'Удаление может повлиять на другие данные.',
     remove: 'Удалить',
+    saving: 'Сохранение…',
+    closeSaveFailedTitle: 'Выбор не сохранён',
+    closeSaveFailedMessage:
+        'Не удалось сохранить всплывающее окно из‑за ошибки.',
+    updateSelection: 'Изменить выбор',
+    closeWithoutSaving: 'Закрыть без сохранения',
   ),
   'uk': (
     empty: 'Немає елементів',
@@ -478,6 +540,12 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} зараз використовується.',
     removeImpact: 'Видалення може вплинути на інші дані.',
     remove: 'Видалити',
+    saving: 'Збереження…',
+    closeSaveFailedTitle: 'Вибір не збережено',
+    closeSaveFailedMessage:
+        'Не вдалося зберегти спливаюче вікно через помилку.',
+    updateSelection: 'Оновити вибір',
+    closeWithoutSaving: 'Закрити без збереження',
   ),
   'vi': (
     empty: 'Không có mục nào',
@@ -487,6 +555,11 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} hiện đang được sử dụng.',
     removeImpact: 'Việc xóa có thể ảnh hưởng đến dữ liệu khác.',
     remove: 'Xóa',
+    saving: 'Đang lưu…',
+    closeSaveFailedTitle: 'Chưa lưu lựa chọn',
+    closeSaveFailedMessage: 'Không thể lưu cửa sổ bật lên vì có lỗi.',
+    updateSelection: 'Cập nhật lựa chọn',
+    closeWithoutSaving: 'Đóng mà không lưu',
   ),
   'zh': (
     empty: '没有项目',
@@ -496,6 +569,11 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     inUse: '{label} 当前正在使用。',
     removeImpact: '移除它可能会影响其他数据。',
     remove: '移除',
+    saving: '正在保存…',
+    closeSaveFailedTitle: '未保存选择',
+    closeSaveFailedMessage: '由于错误，无法保存弹出窗口。',
+    updateSelection: '更新选择',
+    closeWithoutSaving: '关闭且不保存',
   ),
 };
 
@@ -629,6 +707,76 @@ Future<bool> showDefaultPickerUnselectConfirmation(
               TextButton(
                 onPressed: () => close(true),
                 child: Text(messages.remove),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  overlay.insert(entry);
+  return completer.future;
+}
+
+/// Default wrap shown while `onClose` is saving.
+class DefaultPickerCloseSaving extends StatelessWidget {
+  const DefaultPickerCloseSaving({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = _pickerDefaultMessages(context);
+    return Stack(
+      children: [
+        IgnorePointer(child: child),
+        const Positioned.fill(child: ColoredBox(color: Color(0x42000000))),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(strokeWidth: 2),
+              const SizedBox(height: 12),
+              Text(messages.saving),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+Future<CloseSaveFailedAction> showDefaultPickerCloseSaveFailed(
+  BuildContext context,
+) async {
+  final overlay = Overlay.of(context, rootOverlay: true);
+  final messages = _pickerDefaultMessages(context);
+  final completer = Completer<CloseSaveFailedAction>();
+  late final OverlayEntry entry;
+
+  void close(CloseSaveFailedAction result) {
+    if (completer.isCompleted) return;
+    entry.remove();
+    completer.complete(result);
+  }
+
+  entry = OverlayEntry(
+    builder: (context) {
+      return Material(
+        color: Colors.black54,
+        child: Center(
+          child: AlertDialog(
+            title: Text(messages.closeSaveFailedTitle),
+            content: Text(messages.closeSaveFailedMessage),
+            actions: [
+              TextButton(
+                onPressed: () => close(CloseSaveFailedAction.updateSelection),
+                child: Text(messages.updateSelection),
+              ),
+              TextButton(
+                onPressed: () =>
+                    close(CloseSaveFailedAction.closeWithoutSaving),
+                child: Text(messages.closeWithoutSaving),
               ),
             ],
           ),

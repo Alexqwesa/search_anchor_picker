@@ -56,7 +56,9 @@ SearchAnchorPicker<Person>(
 
 `initialSelectedIds` is the external source of truth for the next open. While a
 picker is open, explicit row toggles are tracked independently so `onClose`
-observes only actual user add/remove intent.
+observes only actual user add/remove intent. If `onClose` throws, the popup
+stays open: a localized saving wrap is shown, then a prompt offers update
+selection or close without saving.
 
 ## Reloading items
 
@@ -302,8 +304,10 @@ succeeds. Return false on fail; the checkbox never changes.
 
 Persist in `onChange` (each accepted toggle) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox. Persist in `onClose`
-(whole delta of session) after the overlay is gone; a thrown error is
-reported and cannot restore it.
+(whole delta of session) while the overlay stays open. A thrown `onClose`
+error is reported and the user is asked whether to update the selection or
+close without saving. Default strings are localized. Override the saving wrap
+with `closeSavingBuilder`, the prompt with `closeSaveFailedBuilder`.
 
 There is no replace-all close callback. Persist `added` and `removed`.
 `initialSelectedIds` is only the seed for the next open, from your selected

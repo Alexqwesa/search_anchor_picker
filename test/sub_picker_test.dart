@@ -309,12 +309,14 @@ void main() {
     expect(parentPending.value, isEmpty);
 
     await tester.tap(find.byIcon(Icons.arrow_back));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    expect(find.text('Saving…'), findsOneWidget);
     expect(parentPending.value, isEmpty);
 
     save.complete();
     await tester.pumpAndSettle();
     expect(parentPending.value, isEmpty);
+    expect(find.byType(SearchBar), findsNothing);
   });
 
   testWidgets('failed child onClose does not roll back parent selection', (
@@ -368,6 +370,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
+    expect(parentPending.value, isEmpty);
+    expect(find.text('Selection not saved'), findsOneWidget);
+    await tester.tap(find.text('Close without saving'));
+    await tester.pumpAndSettle();
     expect(parentPending.value, isEmpty);
     expect(errors, hasLength(1));
     expect(errors.single.exception.toString(), contains('save failed'));

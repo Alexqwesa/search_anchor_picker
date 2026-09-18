@@ -50,3 +50,24 @@ typedef GenericUnselectWarningBuilder<T> =
 
 typedef GenericUnselectConfirmationBuilder<T> =
     Future<bool> Function(BuildContext context, T item);
+
+/// What to do when `onClose` throws.
+enum CloseSaveFailedAction {
+  /// Keep the popup open so the user can change selection and try again.
+  updateSelection,
+
+  /// Close the popup without persisting the session.
+  closeWithoutSaving,
+}
+
+/// Wraps the open picker view while `onClose` is running.
+typedef PickerCloseSavingBuilder =
+    Widget Function(BuildContext context, Widget child);
+
+/// Asks whether to keep editing or close after `onClose` throws.
+typedef PickerCloseSaveFailedBuilder =
+    Future<CloseSaveFailedAction> Function(
+      BuildContext context,
+      Object error,
+      StackTrace stackTrace,
+    );
