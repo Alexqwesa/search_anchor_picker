@@ -39,7 +39,8 @@ class PickerRelatedListItemStatus {
   /// Membership in an auxiliary list, or null when none applies.
   ///
   /// Use [PickerAuxiliaryMembership.unknown] when a partial result cannot prove
-  /// whether the item is absent from the full auxiliary list.
+  /// whether the item is absent from the full auxiliary list. This is display
+  /// only; `onChange` / `onClose` do not receive it.
   final PickerAuxiliaryMembership? auxiliaryMembership;
 
   /// Policy used when this item is currently selected and is being unselected.

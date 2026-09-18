@@ -69,11 +69,10 @@ The picker notifies; it does not persist. Save from `onChange` (each accepted
 toggle) or `onClose` (whole delta of session). Bulk header commands also go
 through `onChange`.
 
-`canChangeSelection` only accepts or rejects a proposed change. Checkboxes
-update after that gate succeeds. Persist from IDs, not from loaded items.
-Presence of `canChangeSelection` does not change `onChange` or `onClose`.
-Handle persistence errors in application code; a thrown observer does not
-roll back selection. `viewOnClose` is the overlay lifecycle callback, not
+Return false from `canChangeSelection` to leave checkboxes unchanged.
+Checkboxes update after that gate succeeds. Persist from IDs, not from loaded
+items. Handle persistence errors in application code; a thrown observer does
+not roll back selection. `viewOnClose` is the overlay lifecycle callback, not
 the selection result.
 
 ## Item reloads
@@ -175,10 +174,17 @@ a gate. Rejected, blocked, or cancelled changes never synchronize.
 
 ## Related-list status
 
-`PickerRelatedListItemStatus` describes related-list membership and unselect policy
-without changing selection. The related list may be a parent or an auxiliary
-sub-list. Use `relatedListItemStatusOf` to supply it and
-`relatedListItemStatusListenable` to refresh it while open.
+**Default behaviour.** Rows do not show membership in another list. Unselect is
+allowed. Membership never checks or unchecks the current picker.
+
+**What you may need to change.** Show that an item is in a parent list or
+auxiliary sub-list. Block or confirm unselect when it is still in use. Refresh
+that status while open without reloading items. This does not fire `onChange`
+or `onClose` on the related picker, so APIs you hooked there will not run. If
+you need them, handle that here.
+
+**How.** Supply `relatedListItemStatusOf` and, if the status can change while
+open, `relatedListItemStatusListenable`.
 
 ```dart
 PickerConfig<Person>(
@@ -197,20 +203,19 @@ PickerConfig<Person>(
 )
 ```
 
-- `auxiliaryMembership` describes another list, never the current checkbox.
-- `member` means known present, `notMember` means known absent, and `unknown`
-  means the available server data cannot determine membership.
-- An authoritative per-item membership flag can return `member` or `notMember`
-  without loading the whole list. Absence from a partial result is unknown;
-  finishing one page does not prove absence from the entire list.
-- The default icons are filled, outlined, and search-marked person icons. A
-  configured `iconOf` takes precedence.
-- `allow` permits unselection, `blocked` keeps selection and shows a localized
-  warning, and `confirm` asks for localized confirmation.
-- `relatedListItemStatusListenable` redraws an open picker without reloading items.
-  It is not subscribed while the picker is closed.
-- Custom warning and confirmation UX belongs in `unselectWarningBuilder` and
-  `unselectConfirmationBuilder`.
+- `auxiliaryMembership` is display only: `member`, `notMember`, or `unknown`.
+- Absence from a partial result is `unknown`. An item flag can return
+  `member` or `notMember` without loading the whole list. `unknown` is only
+  the icon. `onChange` / `onClose` do not receive this status; re-check from
+  IDs there if needed, then update the directory source so the listenable force widget to
+  redraws.
+- Default icons are filled, outlined, and search-marked person icons. `iconOf`
+  takes precedence.
+- `allow` unselects, `blocked` keeps selection and shows a warning, `confirm`
+  asks first. Replace the default warning and confirmation UI with
+  `unselectWarningBuilder` and `unselectConfirmationBuilder`.
+- `relatedListItemStatusListenable` redraws while open and does not call
+  `loadItems`. It is not subscribed while closed.
 
 Desktop submenus may use `menuOffset`. Mobile defaults to a full-screen view;
 set `isFullScreen` explicitly only when the application intentionally differs

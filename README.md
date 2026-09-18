@@ -1,7 +1,7 @@
 # Search Anchor Picker
 
 A Flutter Material 3 picker that feels like `SearchAnchor`, with multi-select,
-single selection, stable selected-first ordering, and optional nested menus.
+single selection, and optional nested menus.
 
 [Open the web example](https://alexqwesa.github.io/search_anchor_picker/)
 
@@ -11,9 +11,13 @@ single selection, stable selected-first ordering, and optional nested menus.
 - Anchored desktop popups and full-screen mobile views by default.
 - Multi, single, and single-optional selection modes.
 - Nested `SubPickerTile` menus with optional animated offsets.
+- Optional selected-first ordering, frozen at open so toggles do not reshuffle
+  the list. Default is on (`selectedFirst: true`).
 - Safe client-side and server-side search: missing loaded items are never
   interpreted as deleted selections.
-- Selection observables `onChange` and `onClose`; the app owns persistence.
+- The picker notifies; it does not persist. Save from `onChange` (each accepted
+  toggle) or `onClose` (whole delta of session).
+- Optional `canChangeSelection` gate. Return false to leave checkboxes unchanged.
 - Optional builders for every visual region; built-in widgets are only defaults.
 - No permanent trigger `GlobalKey`; popup resources are created on demand.
 
@@ -159,14 +163,36 @@ The default widgets are not built while the popup is closed.
 
 ## Related-list status and sub-list membership
 
-`relatedListItemStatusOf` returns a `PickerRelatedListItemStatus` for each item. The
-related list may be a parent list that uses the item or an auxiliary sub-list.
-Its `auxiliaryMembership` describes membership, and its `unselectPolicy`
-controls whether removing the selection is allowed, blocked, or confirmed.
+**Default behaviour.** Rows do not show membership in another list. Unselect is
+allowed. The checkbox is only this picker's selection: a checked item is not
+assumed to belong to a directory or parent list, and membership never checks
+or unchecks the row.
 
-Selection and auxiliary-list membership are separate. A checked parent item can
-still be a non-member of a sub-list, and a partial server response may leave
-membership unknown:
+**What you may need to change.** Show that an item is in another list. Block or
+confirm unselect when it is still in use. Keep that status current while the
+popup is open, without reloading search results. This does not fire `onChange`
+or `onClose` on the related picker, so APIs you hooked there will not run. If
+you need them, handle that here.
+
+**How.** Return a `PickerRelatedListItemStatus` from `relatedListItemStatusOf`.
+`auxiliaryMembership` is display only: `member`, `notMember`, or `unknown`.
+The default row uses a filled, outlined, or search-marked person icon. A
+custom `iconOf` replaces those icons. `unselectPolicy` is `allow`, `blocked`
+(keep selected, show an in-use warning), or `confirm`. Replace the default
+warning and confirmation UI with `unselectWarningBuilder` and
+`unselectConfirmationBuilder`.
+
+Use `unknown` when a paged or filtered result cannot prove absence. If the
+item has an authoritative flag such as `isInDirectory`, return `member` or
+`notMember` even when the list is paginated. Missing from one page is not
+`notMember`. `unknown` is only the icon; it does not block unselect.
+`onChange` / `onClose` do not receive this status. If you need a fresh
+membership or in-use check, do it there from the IDs, then update the
+directory source so `relatedListItemStatusListenable` redraws.
+
+`relatedListItemStatusListenable` redraws this status while the popup is open
+and does not call `loadItems`. Parent checkbox coupling is a separate
+`SubPickerParentSelectionEffect` on `SubPickerTile`.
 
 ```dart
 PickerConfig<Person>(
@@ -184,25 +210,6 @@ PickerConfig<Person>(
   // loadItems, idOf, labelOf, and searchTermsOf...
 ),
 ```
-
-`member`, `notMember`, and `unknown` describe only the auxiliary list; they
-never check or uncheck the item. The default row uses a filled, outlined, or
-search-marked person icon respectively. A custom `iconOf` overrides these
-icons. `unknown` is appropriate when a paged or filtered server result cannot
-prove membership. If each item has an authoritative `isInDirectory` flag, use
-that to return `member` or `notMember` even when the directory is paginated.
-Only infer `unknown` from absence when the full membership set is not known;
-finishing one page does not make that set complete.
-
-`PickerUnselectPolicy.blocked` keeps the checkbox selected and shows a localized
-in-use warning. `confirm` asks for localized confirmation, while `allow`
-unselects normally. Use `unselectWarningBuilder` and
-`unselectConfirmationBuilder` for application-specific feedback.
-
-`relatedListItemStatusListenable` redraws related-list status without calling
-`loadItems`. Its listener is attached only while the popup is open.
-`SubPickerParentSelectionEffect` separately controls whether an accepted child
-selection change also updates the open parent's checkboxes.
 
 ## Nested pickers
 
@@ -263,8 +270,7 @@ onClose: (result) {
 
 Rejected, blocked, or cancelled changes never update the parent.
 Closing waits for in-flight `canChangeSelection` / `onChange` work to settle.
-`canChangeSelection` is only a gate: its presence does not change `onChange`
-or `onClose`. `viewOnClose` remains the overlay-lifecycle callback.
+`viewOnClose` remains the overlay-lifecycle callback.
 
 ## Server-side search safety
 
@@ -289,10 +295,10 @@ update its authoritative selected IDs separately.
 ## Persistence
 
 The picker notifies; it does not persist. Save from `onChange` (each accepted
-toggle) or `onClose` (whole delta of session). `canChangeSelection` only
-accepts or rejects a proposed change. Checkboxes update after the gate
-succeeds. A thrown `onChange` / `onClose` error is reported and does not roll
-back selection.
+toggle) or `onClose` (whole delta of session). Return false from
+`canChangeSelection` to leave checkboxes unchanged. Checkboxes update after
+the gate succeeds. A thrown `onChange` / `onClose` error is reported and does
+not roll back selection.
 
 There is no replace-all close callback. Persist `added` and `removed`.
 `initialSelectedIds` is only the seed for the next open, from your selected
