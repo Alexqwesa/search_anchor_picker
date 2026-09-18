@@ -117,14 +117,14 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
          },
          onChange: parentSelectionEffect == SubPickerParentSelectionEffect.none
              ? onChange
-             : (delta) {
+             : (delta) async {
+                 await onChange?.call(delta);
                  _applyParentEffect(
                    parentController,
                    parentSelectionEffect,
                    delta.added,
                    delta.removed,
                  );
-                 return onChange?.call(delta);
                },
        );
 

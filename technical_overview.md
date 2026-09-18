@@ -103,9 +103,10 @@ persistence must save that change in `onChange` or `onClose` and handle failures
 `SubPickerTile` forwards `canChangeSelection`, `onChange` (`PickerDelta`),
 `onClose`, and `headerBuilder`. Accepted deltas share one apply pipeline for
 rows and bulk commands. The picker notifies; the application persists. Policies
-run before gates, pending work defers close, and a rejected gate never applies.
-Deferred controller updates are session-guarded so late child callbacks cannot
-mutate a closed or reopened parent.
+run before gates. A thrown `onChange` restores the checkbox and skips parent
+sync. A rejected gate never applies. Pending work defers close. Deferred
+controller updates are session-guarded so late child callbacks cannot mutate a
+closed or reopened parent.
 
 Nested overlays use no follower layers or permanent trigger keys. This avoids the
 paint-transform failures that can occur when editing a search field under a

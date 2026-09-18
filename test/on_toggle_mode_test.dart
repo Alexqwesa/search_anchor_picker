@@ -87,6 +87,43 @@ void main() {
     expect(addedIds, isEmpty);
   });
 
+  testWidgets('thrown onChange restores the checkbox', (tester) async {
+    final errors = <FlutterErrorDetails>[];
+    final previous = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previous);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: PickerConfig(
+              loadItems: (_) async => [1],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+            ),
+            initialSelectedIds: const [],
+            onChange: (_) {
+              throw StateError('save failed');
+            },
+            triggerBuilder: (_, open, __) =>
+                ElevatedButton(onPressed: open, child: const Text('open')),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).value,
+      false,
+    );
+    expect(errors, hasLength(1));
+  });
+
   testWidgets('accepted change remains selected and is reported on close', (
     tester,
   ) async {
