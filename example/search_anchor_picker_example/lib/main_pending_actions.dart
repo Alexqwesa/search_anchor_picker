@@ -119,7 +119,7 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
               SearchAnchorPicker<PendingActionItem>(
                 config: _config,
                 initialSelectedIds: _sorted(_selectedIds),
-                onFinish: _finish,
+                onClose: _finish,
                 triggerBuilder: (context, open, selectedCount) {
                   return FilledButton.icon(
                     onPressed: open,
@@ -150,7 +150,7 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Last onFinish delta',
+                    'Last onClose delta',
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),

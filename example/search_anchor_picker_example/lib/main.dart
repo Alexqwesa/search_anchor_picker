@@ -209,15 +209,13 @@ class _DemoHomeState extends State<DemoHome> {
                     selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        setState(() {
-                          selectedOnScreenA
-                            ..addAll(delta.added)
-                            ..removeAll(delta.removed);
-                        });
-                      },
-                    ),
+                    onChange: (change) {
+                      setState(() {
+                        selectedOnScreenA
+                          ..addAll(change.delta.added)
+                          ..removeAll(change.delta.removed);
+                      });
+                    },
 
                     // Header has two sub pickers that modify listA contents
                     headerBuilder: (ctx, actions, allItems) {
@@ -235,22 +233,21 @@ class _DemoHomeState extends State<DemoHome> {
                             listA.items,
                             subA1.items,
                           ),
-                          // Save per row; parent removal sync follows persistence.
-                          persistence: PickerPersistence.immediate(
-                            persist: (delta) async {
-                              setState(() {
-                                listA.addAll(
-                                  delta.added
-                                      .map((id) => findById(subA1.items, id))
-                                      .whereType<DemoItem>(),
-                                  same,
-                                );
-                                listA.removeWhere(
-                                  (item) => delta.removed.contains(item.id),
-                                );
-                              });
-                            },
-                          ),
+                          // Save each accepted change; parent removal sync follows.
+                          onChange: (change) {
+                            setState(() {
+                              listA.addAll(
+                                change.delta.added
+                                    .map((id) => findById(subA1.items, id))
+                                    .whereType<DemoItem>(),
+                                same,
+                              );
+                              listA.removeWhere(
+                                (item) =>
+                                    change.delta.removed.contains(item.id),
+                              );
+                            });
+                          },
                         ),
                         SubPickerTile<DemoItem>(
                           parentController: actions,
@@ -264,21 +261,19 @@ class _DemoHomeState extends State<DemoHome> {
                             listA.items,
                             subA2.items,
                           ),
-                          persistence: PickerPersistence.onClose(
-                            persist: (delta) async {
-                              final addItems = delta.added
-                                  .map((id) => findById(subA2.items, id))
-                                  .whereType<DemoItem>()
-                                  .toList();
+                          onClose: (result) {
+                            final addItems = result.added
+                                .map((id) => findById(subA2.items, id))
+                                .whereType<DemoItem>()
+                                .toList();
 
-                              setState(() {
-                                listA.addAll(addItems, same);
-                                listA.removeWhere(
-                                  (item) => delta.removed.contains(item.id),
-                                );
-                              });
-                            },
-                          ),
+                            setState(() {
+                              listA.addAll(addItems, same);
+                              listA.removeWhere(
+                                (item) => result.removed.contains(item.id),
+                              );
+                            });
+                          },
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -348,15 +343,13 @@ class _DemoHomeState extends State<DemoHome> {
                     selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        setState(() {
-                          selectedOnScreenB
-                            ..addAll(delta.added)
-                            ..removeAll(delta.removed);
-                        });
-                      },
-                    ),
+                    onChange: (change) {
+                      setState(() {
+                        selectedOnScreenB
+                          ..addAll(change.delta.added)
+                          ..removeAll(change.delta.removed);
+                      });
+                    },
 
                     headerBuilder: (ctx, actions, allItems) {
                       return [
@@ -369,15 +362,13 @@ class _DemoHomeState extends State<DemoHome> {
                           icon: Icons.person_add_alt_1,
                           config: subB1Config,
                           initialSelectedIds: _ids(selectedOnScreenB),
-                          persistence: PickerPersistence.onClose(
-                            persist: (delta) async {
-                              setState(() {
-                                selectedOnScreenB
-                                  ..addAll(delta.added)
-                                  ..removeAll(delta.removed);
-                              });
-                            },
-                          ),
+                          onClose: (result) {
+                            setState(() {
+                              selectedOnScreenB
+                                ..addAll(result.added)
+                                ..removeAll(result.removed);
+                            });
+                          },
                         ),
                         SubPickerTile<DemoItem>(
                           parentController: actions,
@@ -388,15 +379,13 @@ class _DemoHomeState extends State<DemoHome> {
                           icon: Icons.person_add_alt,
                           config: subB2Config,
                           initialSelectedIds: _ids(selectedOnScreenB),
-                          persistence: PickerPersistence.onClose(
-                            persist: (delta) async {
-                              setState(() {
-                                selectedOnScreenB
-                                  ..addAll(delta.added)
-                                  ..removeAll(delta.removed);
-                              });
-                            },
-                          ),
+                          onClose: (result) {
+                            setState(() {
+                              selectedOnScreenB
+                                ..addAll(result.added)
+                                ..removeAll(result.removed);
+                            });
+                          },
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -493,12 +482,12 @@ class _DemoHomeState extends State<DemoHome> {
                         ? const []
                         : [selectedRadioId!],
 
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        if (delta.added.isEmpty) return;
-                        setState(() => selectedRadioId = delta.added.first);
-                      },
-                    ),
+                    onChange: (change) {
+                      if (change.delta.added.isEmpty) return;
+                      setState(
+                        () => selectedRadioId = change.delta.added.first,
+                      );
+                    },
 
                     triggerBuilder: (_, open, version) {
                       final has = selectedRadioId != null;

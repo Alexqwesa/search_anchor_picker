@@ -104,7 +104,7 @@ void main() {
             parentController: parentController,
             parentSelectionEffect:
                 SubPickerParentSelectionEffect.deselectRemoved,
-            onFinish: (result) {
+            onClose: (result) {
               finishCallCount++;
               lastAdded = result.added.toList();
               lastRemoved = result.removed.toList();
@@ -263,7 +263,7 @@ void main() {
     expect(parentPending.value, {1, 2});
   });
 
-  testWidgets('parent effect waits for successful child persistence', (
+  testWidgets('parent effect applies when the child selection changes', (
     tester,
   ) async {
     final parentPending = ValueNotifier<Set<int>>({1});
@@ -296,9 +296,7 @@ void main() {
             parentController: parentController,
             parentSelectionEffect:
                 SubPickerParentSelectionEffect.deselectRemoved,
-            persistence: PickerPersistence.onClose(
-              persist: (_) => save.future,
-            ),
+            onClose: (_) => save.future,
           ),
         ),
       ),
@@ -308,16 +306,18 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('1'));
     await tester.pump();
+    expect(parentPending.value, isEmpty);
+
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
-    expect(parentPending.value, {1});
+    expect(parentPending.value, isEmpty);
 
     save.complete();
     await tester.pumpAndSettle();
     expect(parentPending.value, isEmpty);
   });
 
-  testWidgets('failed child persistence leaves parent selection unchanged', (
+  testWidgets('failed child onClose does not roll back parent selection', (
     tester,
   ) async {
     final errors = <FlutterErrorDetails>[];
@@ -353,11 +353,9 @@ void main() {
             parentController: parentController,
             parentSelectionEffect:
                 SubPickerParentSelectionEffect.deselectRemoved,
-            persistence: PickerPersistence.onClose(
-              persist: (_) async {
-                throw StateError('save failed');
-              },
-            ),
+            onClose: (_) async {
+              throw StateError('save failed');
+            },
           ),
         ),
       ),
@@ -370,7 +368,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(parentPending.value, {1});
+    expect(parentPending.value, isEmpty);
     expect(errors, hasLength(1));
     expect(errors.single.exception.toString(), contains('save failed'));
   });

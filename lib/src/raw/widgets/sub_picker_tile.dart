@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:search_anchor_picker/src/raw/picker_builders.dart';
 import 'package:search_anchor_picker/src/raw/picker_config.dart';
@@ -15,9 +17,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     super.key,
     this.icon,
     this.canChangeSelection,
-    this.persistence,
-    this.onFinish,
-    this.onDeltaPersisted,
+    this.onChange,
+    this.onClose,
     this.selectionMode = SelectionMode.multi,
     this.leading,
     this.subtitle,
@@ -69,9 +70,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   final SelectionMode selectionMode;
   final Future<bool> Function(PickerSelectionChange<T, K> change)?
   canChangeSelection;
-  final PickerPersistence<K>? persistence;
-  final void Function(PickerSelectionResult<K> result)? onFinish;
-  final void Function(PickerDelta<K> delta)? onDeltaPersisted;
+  final FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange;
+  final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final List<Widget> Function(
     BuildContext,
@@ -118,9 +118,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
       config: config,
       initialSelectedIds: initialSelectedIds,
       canChangeSelection: canChangeSelection,
-      persistence: persistence,
-      onFinish: onFinish,
-      onDeltaPersisted: onDeltaPersisted,
+      onChange: onChange,
+      onClose: onClose,
       headerBuilder: headerBuilder,
       selectionMode: selectionMode,
       itemBuilder: itemBuilder,
@@ -184,10 +183,9 @@ class RawSubPickerTile<T> extends GenericRawSubPickerTile<T, int> {
     required super.initialSelectedIds,
     super.key,
     super.icon,
-    super.onFinish,
+    super.onClose,
     super.canChangeSelection,
-    super.persistence,
-    super.onDeltaPersisted,
+    super.onChange,
     super.selectionMode,
     super.leading,
     super.subtitle,

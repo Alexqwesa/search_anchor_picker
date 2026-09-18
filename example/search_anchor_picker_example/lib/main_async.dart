@@ -328,15 +328,13 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
                     ),
                     initialSelectedIds: _ids(selectedOnScreenA),
                     selectionMode: SelectionMode.multi,
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        final current = ref.read(selectedScreenAProvider);
-                        final next = Set<int>.from(current)
-                          ..addAll(delta.added)
-                          ..removeAll(delta.removed);
-                        ref.read(selectedScreenAProvider.notifier).set(next);
-                      },
-                    ),
+                    onChange: (change) {
+                      final current = ref.read(selectedScreenAProvider);
+                      final next = Set<int>.from(current)
+                        ..addAll(change.delta.added)
+                        ..removeAll(change.delta.removed);
+                      ref.read(selectedScreenAProvider.notifier).set(next);
+                    },
                     headerBuilder: (ctx, actions, allItems) {
                       final lA =
                           ref.watch(itemsProvider('listA')).asData?.value ?? [];
@@ -361,44 +359,42 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
                                 ),
                           ),
                           seedIds: _intersectionIds(lA, sA1),
-                          persistence: PickerPersistence.onClose(
-                            persist: (delta) async {
-                              final addItems = delta.added
-                                  .map((id) => findById(sA1, id))
-                                  .whereType<DemoItem>();
+                          onClose: (result) async {
+                            final addItems = result.added
+                                .map((id) => findById(sA1, id))
+                                .whereType<DemoItem>();
+                            await ref
+                                .read(itemsProvider('listA').notifier)
+                                .addAll(addItems);
+
+                            if (result.removed.isNotEmpty) {
                               await ref
                                   .read(itemsProvider('listA').notifier)
-                                  .addAll(addItems);
+                                  .removeWhere(
+                                    (item) => result.removed.contains(item.id),
+                                  );
+                            }
 
-                              if (delta.removed.isNotEmpty) {
-                                await ref
-                                    .read(itemsProvider('listA').notifier)
-                                    .removeWhere(
-                                      (item) => delta.removed.contains(item.id),
-                                    );
-                              }
+                            final validIds =
+                                (ref
+                                            .read(itemsProvider('listA'))
+                                            .asData
+                                            ?.value ??
+                                        [])
+                                    .map((item) => item.id)
+                                    .toSet();
+                            final currentScreen = Set<int>.from(
+                              ref.read(selectedScreenAProvider),
+                            );
+                            currentScreen.removeWhere(
+                              (id) => !validIds.contains(id),
+                            );
+                            ref
+                                .read(selectedScreenAProvider.notifier)
+                                .set(currentScreen);
 
-                              final validIds =
-                                  (ref
-                                              .read(itemsProvider('listA'))
-                                              .asData
-                                              ?.value ??
-                                          [])
-                                      .map((item) => item.id)
-                                      .toSet();
-                              final currentScreen = Set<int>.from(
-                                ref.read(selectedScreenAProvider),
-                              );
-                              currentScreen.removeWhere(
-                                (id) => !validIds.contains(id),
-                              );
-                              ref
-                                  .read(selectedScreenAProvider.notifier)
-                                  .set(currentScreen);
-
-                              actions.syncPending(removed: delta.removed);
-                            },
-                          ),
+                            actions.syncPending(removed: result.removed);
+                          },
                         ),
                       ];
                     },
@@ -489,14 +485,14 @@ class _SubPickerTile extends StatelessWidget {
     required this.icon,
     required this.config,
     required this.seedIds,
-    required this.persistence,
+    required this.onClose,
   });
 
   final String title;
   final IconData icon;
   final PickerConfig<DemoItem> config;
   final List<int> seedIds;
-  final PickerPersistence<int> persistence;
+  final Future<void> Function(PickerSelectionResult<int> result) onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -505,7 +501,7 @@ class _SubPickerTile extends StatelessWidget {
       initialSelectedIds: seedIds,
       selectionMode: SelectionMode.multi,
       triggerChild: ListTile(leading: Icon(icon), title: Text(title)),
-      persistence: persistence,
+      onClose: onClose,
       viewConstraints: const BoxConstraints(minWidth: 300, maxHeight: 400),
     );
   }

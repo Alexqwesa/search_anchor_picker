@@ -86,7 +86,7 @@ Before changing selection behavior, test all three state channels separately:
 
 1. `initialSelectedIds`: authoritative external seed.
 2. Pending IDs: current popup checkbox state.
-3. Explicit deltas: user intent reported by persistence and observer `onFinish`.
+3. Explicit deltas: user intent reported by `onChange` and `onClose`.
 
 Never derive removals by intersecting pending IDs with a loaded page. Verify
 partial server results, reloads, temporary empty external seeds, close/reopen,
@@ -101,7 +101,7 @@ subscription behavior.
 `syncPending(added:, removed:)` symmetrically applies an already-persisted
 external delta to the currently open picker's temporary pending IDs. It does not
 mutate `initialSelectedIds` or caller state and must not emit the same change
-again through `onFinish`.
+again through `onChange` or `onClose`.
 
 `PickerRelatedListItemStatus` is external display/policy state, not a fourth
 selection channel. Keep its provider, listener, and builder argument under the
@@ -112,20 +112,26 @@ insufficient knowledge from a partial result; it must remain distinct from
 `notMember`. An authoritative per-item flag can establish membership without
 loading the whole auxiliary list.
 
-`SubPickerTile` does not modify parent selection by default. Its explicit
-`SubPickerParentSelectionEffect` choices can mirror additions, removals, or both
-into the open parent's pending checkboxes. Never infer this coupling merely
-because a `parentController` was supplied. Parent sync runs after a successfully
-persisted child delta, or after close for local-only leftover changes. Immediate
-persistence also applies bulk controller commands and does not persist the net
-session again on close. `canChangeSelection` is only a gate; its presence must
-not change `onFinish` or `persistence`. Blocked/cancelled unselects run before
-the gate. Close waits for pending applies; rejected/throwing optimistic gates
-roll back and never sync. Session bookkeeping stays core-owned and open-only.
-Guard delayed parent updates against closed or replaced sessions. `syncPending`
-applies updates on the next frame. The effect does not persist parent selection,
-update the external seed, or create a parent delta. Separate parent persistence
-is the consumer's responsibility.
+The picker notifies; it does not persist. Save from `onChange` (each accepted
+delta) or `onClose` (net session). `canChangeSelection` only accepts or
+rejects a proposed change. Leaving it null is the same as always allowing.
+It does not change when `onChange` or `onClose` fire for accepted work.
+
+Apply order is unselect policy, then the gate, then pending checkboxes, then
+`onChange`. A blocked or cancelled unselect never reaches the gate. A
+rejected gate never applies and never parent-syncs. Close waits for in-flight
+gates and `onChange` work. A thrown `onChange` / `onClose` is reported and
+does not roll back selection.
+
+`SubPickerTile` leaves parent selection unchanged unless
+`parentSelectionEffect` is set. Passing `parentController` alone does not
+enable coupling. Opt-in effects (`selectAdded`, `deselectRemoved`, `mirror`)
+copy the matching side of an accepted child delta into the open parent's
+pending checkboxes, including bulk child commands. They call `syncPending`,
+which lands on the next frame, so ignore that update if the parent session
+has closed or been replaced. The effect does not persist parent selection,
+reseed `initialSelectedIds`, or emit a parent `onChange` / `onClose` delta.
+Session bookkeeping stays core-owned and open-only.
 
 ## Verification
 

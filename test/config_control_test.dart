@@ -75,7 +75,7 @@ void main() {
                   initialSelectedIds: const [],
                   selectionMode:
                       SelectionMode.single, // Closes itself on select
-                  onFinish: (result) {
+                  onClose: (result) {
                     if (result.added.isNotEmpty) {
                       // If selection made in sub-picker, CLOSE MAIN PICKER too.
                       mainConfig.close();
@@ -101,7 +101,7 @@ void main() {
 
     // 3. Select Item in Sub (Radio mode)
     await tester.tap(find.text('Sub 100'));
-    // Radio mode closes, then our onFinish closes Main.
+    // Radio mode closes, then our onClose closes Main.
     await tester.pumpAndSettle();
 
     // 4. Verify BOTH are closed

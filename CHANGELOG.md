@@ -6,12 +6,11 @@
 * Added `PickerAuxiliaryMembership`: `member`, `notMember`, and `unknown`.
   Absence from a partial page stays unknown unless independently established.
 * Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
-* Breaking: persistence is `PickerPersistence.onClose` or
-  `PickerPersistence.immediate`. `canChangeSelection` is only a gate.
-  `onFinish` observes the net session and does not persist.
+* Breaking: the picker notifies through `onChange` and `onClose`. Applications
+  persist. `canChangeSelection` is only a gate.
+* Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
-  `selectAddedAndDeselectRemoved` is `mirror`. Parent sync runs after a
-  successful persist, or after close for local-only leftover changes.
+  Parent sync runs after an accepted child selection change.
 * Row toggles and bulk header commands share the same apply pipeline.
 
 ## 0.1.2

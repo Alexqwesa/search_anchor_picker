@@ -19,9 +19,8 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     super.key,
     this.selectionMode = SelectionMode.multi,
     this.canChangeSelection,
-    this.persistence,
-    this.onFinish,
-    this.onDeltaPersisted,
+    this.onChange,
+    this.onClose,
     this.searchController,
     this.triggerBuilder,
     this.triggerChild,
@@ -81,19 +80,22 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// Optional gate for a proposed selection mutation.
   ///
   /// Return `false` to reject it. Presence of this callback does not change
-  /// [persistence] or [onFinish] behavior.
+  /// [onChange] or [onClose] behavior.
   final Future<bool> Function(PickerSelectionChange<T, K> change)?
   canChangeSelection;
 
-  /// How accepted deltas are saved. When null, selection is local-only.
-  final PickerPersistence<K>? persistence;
+  /// Observes each accepted selection delta after pending checkboxes update.
+  ///
+  /// Persistence belongs in application code. If this returns a [Future], the
+  /// picker awaits it so close waits for in-flight work. A thrown error is
+  /// reported and does not roll back the applied selection.
+  final FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange;
 
   /// Observes the net result of one closed session.
-  final void Function(PickerSelectionResult<K> result)? onFinish;
-
-  /// Called after a delta is successfully persisted, or after close for
-  /// local-only leftover changes.
-  final void Function(PickerDelta<K> delta)? onDeltaPersisted;
+  ///
+  /// This is not overlay-lifecycle [viewOnClose]. Persistence belongs in
+  /// application code. If this returns a [Future], the picker awaits it.
+  final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
   final SearchController? searchController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget? triggerChild;
@@ -182,9 +184,8 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     super.key,
     super.selectionMode,
     super.canChangeSelection,
-    super.persistence,
-    super.onFinish,
-    super.onDeltaPersisted,
+    super.onChange,
+    super.onClose,
     super.searchController,
     super.triggerBuilder,
     super.triggerChild,
@@ -559,9 +560,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     final queryAtClose = _controller.text;
     final externalController = widget.searchController;
     final result = _selection.result();
-    final persistence = widget.persistence;
-    final onFinish = widget.onFinish;
-    final onDeltaPersisted = widget.onDeltaPersisted;
+    final onClose = widget.onClose;
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
@@ -591,9 +590,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           externalController.text = queryAtClose;
         }
       }
-      unawaited(
-        _runCloseCallback(result, persistence, onFinish, onDeltaPersisted),
-      );
+      unawaited(_runCloseCallback(result, onClose));
     });
   }
 
@@ -608,27 +605,12 @@ class _GenericRawSearchAnchorPickerState<T, K>
 
   Future<void> _runCloseCallback(
     PickerSelectionResult<K> result,
-    PickerPersistence<K>? persistence,
-    void Function(PickerSelectionResult<K> result)? onFinish,
-    void Function(PickerDelta<K> delta)? onDeltaPersisted,
+    FutureOr<void> Function(PickerSelectionResult<K> result)? onClose,
   ) async {
     try {
-      switch (persistence) {
-        case PickerPersistOnClose(:final persist):
-          if (!result.delta.isEmpty) {
-            await persist(result.delta);
-            onDeltaPersisted?.call(result.delta);
-          }
-        case PickerPersistImmediately():
-          break;
-        case null:
-          if (!result.delta.isEmpty) {
-            onDeltaPersisted?.call(result.delta);
-          }
-      }
-      onFinish?.call(result);
+      await onClose?.call(result);
     } on Object catch (error, stackTrace) {
-      _reportCallbackError('persist', error, stackTrace);
+      _reportCallbackError('onClose', error, stackTrace);
     } finally {
       if (mounted) setState(() => _tick++);
     }
@@ -800,76 +782,18 @@ class _GenericRawSearchAnchorPickerState<T, K>
         addedItems: addedItems,
         removedItems: removedItems,
       );
-      final delta = change.delta;
-      final before = {..._pendingN.value};
-      final after = {...before, ...added}..removeAll(removed);
-      final persistence = widget.persistence;
-      final optimistic =
-          persistence is PickerPersistImmediately<K> &&
-          persistence.applyMode == PickerApplyMode.optimistic;
-
-      Future<bool> gate() async {
-        if (widget.canChangeSelection == null) return true;
-        return _runCanChangeSelection(change);
+      if (widget.canChangeSelection != null &&
+          !await _runCanChangeSelection(change)) {
+        return false;
       }
-
-      if (!optimistic && !await gate()) return false;
       if (!mounted || !_open) return false;
 
-      void applyPending() {
-        _selection.recordExplicitChange(before, after);
-        _pendingN.value = after;
-      }
-
-      void revertPending() {
-        final latest = {..._pendingN.value};
-        final reverted = {...latest}
-          ..removeAll(added)
-          ..addAll(removed.where(before.contains));
-        _selection.recordExplicitChange(latest, reverted);
-        _pendingN.value = reverted;
-      }
-
-      Future<bool> persistImmediate(
-        Future<void> Function(PickerDelta<K> delta) persist,
-      ) async {
-        try {
-          await persist(delta);
-          return true;
-        } on Object catch (error, stackTrace) {
-          _reportCallbackError('persist', error, stackTrace);
-          return false;
-        }
-      }
-
-      switch (persistence) {
-        case PickerPersistImmediately(:final persist, :final applyMode):
-          if (applyMode == PickerApplyMode.optimistic) {
-            applyPending();
-            if (!await gate()) {
-              if (mounted && _open) revertPending();
-              return false;
-            }
-            if (!mounted || !_open) return false;
-            final saved = await persistImmediate(persist);
-            if (!saved) {
-              if (mounted && _open) revertPending();
-              return false;
-            }
-            if (!mounted || !_open) return false;
-            widget.onDeltaPersisted?.call(delta);
-            return true;
-          }
-          final saved = await persistImmediate(persist);
-          if (!saved || !mounted || !_open) return false;
-          applyPending();
-          widget.onDeltaPersisted?.call(delta);
-          return true;
-        case PickerPersistOnClose():
-        case null:
-          applyPending();
-          return true;
-      }
+      final before = {..._pendingN.value};
+      final after = {...before, ...added}..removeAll(removed);
+      _selection.recordExplicitChange(before, after);
+      _pendingN.value = after;
+      await _runOnChange(change);
+      return true;
     } finally {
       _pendingToggles--;
       if (_pendingToggles == 0 && _closeAfterToggle && mounted) {
@@ -888,6 +812,15 @@ class _GenericRawSearchAnchorPickerState<T, K>
       item,
       widget.config.unselectPolicy,
     );
+  }
+
+  Future<void> _runOnChange(PickerSelectionChange<T, K> change) async {
+    if (widget.onChange == null) return;
+    try {
+      await widget.onChange!(change);
+    } on Object catch (error, stack) {
+      _reportCallbackError('onChange', error, stack);
+    }
   }
 
   Future<bool> _runCanChangeSelection(

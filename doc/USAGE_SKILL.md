@@ -12,15 +12,14 @@ application. Import the primary API with:
 import 'package:search_anchor_picker/search_anchor_picker.dart';
 ```
 
-## Choose persistence first
+## Choose when to persist
 
 | Use case | API |
 | --- | --- |
-| Save changes when the popup closes | `PickerPersistence.onClose` |
-| Persist every accepted delta as it happens | `PickerPersistence.immediate` |
-| Validate a proposed change without persisting | `canChangeSelection` |
-| Observe the net result of a closed session | `onFinish` |
-| Nested sublist membership | `SubPickerTile` + `PickerPersistence` |
+| Save the net session when the popup closes | `onClose` |
+| Save each accepted delta as it happens | `onChange` |
+| Validate a proposed change | `canChangeSelection` |
+| Nested sublist membership | `SubPickerTile` + `onChange` / `onClose` |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
 
@@ -40,12 +39,10 @@ SearchAnchorPicker<Person>(
     searchTermsOf: (person) => [person.name, person.email],
   ),
   initialSelectedIds: selectedIds.toList(),
-  persistence: PickerPersistence.onClose(
-    persist: (delta) async {
-      await api.addPeople(delta.added);
-      await api.removePeople(delta.removed);
-    },
-  ),
+  onClose: (result) async {
+    await api.addPeople(result.added);
+    await api.removePeople(result.removed);
+  },
 );
 ```
 
@@ -66,21 +63,17 @@ Follow these invariants:
   not create `added` or `removed` intent.
 - Hidden selected IDs remain selected during server-side search and pagination.
 
-## Persistence
+## Observables
 
-Use `PickerPersistence.onClose` when changes should be batched until close.
-`onFinish` then observes the same net session; it does not persist.
+The picker does not persist. Save in `onChange` when each accepted delta should
+be written as it happens, including bulk header commands. Save in `onClose`
+when changes should be batched until the popup closes.
 
-Use `PickerPersistence.immediate` when each accepted delta should be saved as
-it happens, including bulk header commands:
-
-- `PickerApplyMode.pessimistic` waits for persist before changing the checkbox.
-- `PickerApplyMode.optimistic` changes immediately and rolls back when the gate
-  or persist fails.
-
-Handle persistence errors in application code. Return `false` from
-`canChangeSelection` when the requested change must not remain selected.
-Presence of `canChangeSelection` does not change `persistence` or `onFinish`.
+`canChangeSelection` only accepts or rejects a proposed change. Checkboxes
+update after that gate succeeds. Presence of `canChangeSelection` does not
+change `onChange` or `onClose`. Handle persistence errors in application code;
+a thrown observer does not roll back selection. `viewOnClose` is the overlay
+lifecycle callback, not the selection result.
 
 ## Item reloads
 
@@ -131,8 +124,8 @@ headerBuilder: (context, controller, items) => [
   delta to this controller's currently open picker: it adds `added` IDs to the
   temporary pending set and removes `removed` IDs from that set. It does not
   mutate `initialSelectedIds` or any parent/application state. The caller must
-  update that authoritative state separately. No `onFinish` delta is created
-  because this method only mirrors a change that was already persisted. If the
+  update that authoritative state separately. No `onChange` or `onClose` delta
+  is created because this method only mirrors a change that was already persisted. If the
   same ID is supplied in both arguments, removal wins as conflict resolution.
 
 Loaded and filtered commands never touch hidden server-side selections.
@@ -148,12 +141,10 @@ headerBuilder: (context, controller, items) => [
     config: directoryConfig,
     initialSelectedIds: directoryIds,
     menuOffset: const Offset(30, 12),
-    persistence: PickerPersistence.onClose(
-      persist: (delta) async {
-        await directoryApi.add(delta.added);
-        await directoryApi.remove(delta.removed);
-      },
-    ),
+    onClose: (result) async {
+      await directoryApi.add(result.added);
+      await directoryApi.remove(result.removed);
+    },
   ),
 ];
 ```
@@ -166,27 +157,20 @@ update the open parent's checkboxes:
 SubPickerTile<Person>(
   parentController: controller,
   parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  // title, config, initialSelectedIds, and persistence...
+  // title, config, initialSelectedIds, and onChange/onClose...
 )
 ```
 
 Choose `selectAdded` to check additions, `deselectRemoved` to uncheck removals,
 or `mirror` to do both. `none` is the default. These effects only change the
 open parent's pending checkboxes. They do not persist parent selection, change
-the parent's `initialSelectedIds`, or create a parent persistence delta. If
-parent selection and sub-list membership are separate backend records, the
-child persistence callback must save both changes and update the authoritative
-parent IDs for the next open. The package updates open parent checkboxes
-without a full reseed:
-
-- `PickerPersistence.onClose`: synchronize after successful close-time persist.
-- `PickerPersistence.immediate`: synchronize each successfully persisted delta,
-  including bulk header commands. Optimistic mode waits for persist before
-  touching the parent. Close waits for pending applies and does not persist the
-  net session again.
-- Neither: local-only leftover changes still synchronize on close.
-- `canChangeSelection` is only a gate. Rejected, blocked, cancelled, or failed
-  changes never synchronize.
+the parent's `initialSelectedIds`, or create a parent `onChange` / `onClose`
+delta. If parent selection and sub-list membership are separate backend
+records, the child's `onChange` or `onClose` callback must save both changes
+and update the authoritative parent IDs for the next open. The package updates
+open parent checkboxes without a full reseed after each accepted child
+selection change, including bulk header commands. `canChangeSelection` is only
+a gate. Rejected, blocked, or cancelled changes never synchronize.
 
 ## Related-list status
 

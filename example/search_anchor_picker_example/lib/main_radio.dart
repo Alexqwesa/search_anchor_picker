@@ -109,12 +109,10 @@ class _RadioHomeState extends State<RadioHome> {
                     ),
                     selectionMode: SelectionMode.single,
                     initialSelectedIds: selectedId == null ? [] : [selectedId!],
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        if (delta.added.isEmpty) return;
-                        setState(() => selectedId = delta.added.first);
-                      },
-                    ),
+                    onChange: (change) {
+                      if (change.delta.added.isEmpty) return;
+                      setState(() => selectedId = change.delta.added.first);
+                    },
                     triggerBuilder: (_, open, version) {
                       final has = selectedId != null;
                       return IconButton(
@@ -166,20 +164,18 @@ class _RadioHomeState extends State<RadioHome> {
                     initialSelectedIds: _unifiedSelectedId == null
                         ? []
                         : [_unifiedSelectedId!],
-                    persistence: PickerPersistence.immediate(
-                      persist: (delta) async {
-                        if (delta.added.isEmpty) return;
-                        setState(() {
-                          _unifiedSelectedId = delta.added.first;
-                          if (!subItems.any(
-                            (item) => item.id == _unifiedSelectedId,
-                          )) {
-                            _extraItems.clear();
-                            _refreshNotifier.value++;
-                          }
-                        });
-                      },
-                    ),
+                    onChange: (change) {
+                      if (change.delta.added.isEmpty) return;
+                      setState(() {
+                        _unifiedSelectedId = change.delta.added.first;
+                        if (!subItems.any(
+                          (item) => item.id == _unifiedSelectedId,
+                        )) {
+                          _extraItems.clear();
+                          _refreshNotifier.value++;
+                        }
+                      });
+                    },
                     headerBuilder: (ctx, actions, _) => [
                       ListTile(
                         title: const Text('Open Sub Radio'),
@@ -225,19 +221,18 @@ class _RadioHomeState extends State<RadioHome> {
                         initialSelectedIds: _unifiedSelectedId == null
                             ? []
                             : [_unifiedSelectedId!],
-                        persistence: PickerPersistence.immediate(
-                          persist: (delta) async {
-                            if (delta.added.isEmpty) return;
-                            final item = subItems.firstWhere(
-                              (candidate) => candidate.id == delta.added.first,
-                            );
-                            setState(() {
-                              _unifiedSelectedId = item.id;
-                              _extraItems = [item];
-                              _refreshNotifier.value++;
-                            });
-                          },
-                        ),
+                        onChange: (change) {
+                          if (change.delta.added.isEmpty) return;
+                          final item = subItems.firstWhere(
+                            (candidate) =>
+                                candidate.id == change.delta.added.first,
+                          );
+                          setState(() {
+                            _unifiedSelectedId = item.id;
+                            _extraItems = [item];
+                            _refreshNotifier.value++;
+                          });
+                        },
                       ),
                     ],
                     triggerBuilder: (_, open, version) {

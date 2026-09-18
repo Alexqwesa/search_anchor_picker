@@ -8,7 +8,7 @@ import 'package:search_anchor_picker/src/raw/search_anchor_picker.dart'
 import 'package:search_anchor_picker/src/raw/widgets/sub_picker_tile.dart'
     show RawSubPickerTile;
 
-export 'package:search_anchor_picker/src/raw/picker_persistence.dart';
+export 'package:search_anchor_picker/src/raw/picker_selection.dart';
 
 typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
 
@@ -339,8 +339,9 @@ class GenericRawPickerController<T, K> {
   /// This symmetrically adds [added] and removes [removed] from the temporary
   /// pending set. It does not mutate `initialSelectedIds` or caller state. It is
   /// intended for changes already persisted by a nested picker or another
-  /// external owner, so it does not report the same intent through persistence
-  /// or [GenericRawSearchAnchorPicker.onFinish].
+  /// external owner, so it does not report the same intent through
+  /// [GenericRawSearchAnchorPicker.onChange] or
+  /// [GenericRawSearchAnchorPicker.onClose].
   /// If an ID appears in both collections, [removed] wins.
   /// Controllers supplied by a picker ignore deferred updates after that popup
   /// session closes; a late save cannot change a newly opened session.
