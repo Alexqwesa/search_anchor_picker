@@ -10,8 +10,9 @@ import 'package:search_anchor_picker/src/related_list_item.dart';
 ///
 /// Auxiliary-list membership and parent selection are independent by default.
 /// These effects update only the currently open parent's pending checkboxes
-/// after an accepted child selection change. They do not persist parent
-/// selection or create parent `onChange` / `onClose` deltas.
+/// after an accepted child selection change, and only while the child tile is
+/// still mounted. A save that completes after disposal is ignored. They do
+/// not persist parent selection or create parent `onChange` / `onClose` deltas.
 enum SubPickerParentSelectionEffect {
   /// Do not modify the parent picker's pending selection.
   none,
@@ -117,17 +118,7 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
          canUnselect: (context, item) {
            return relatedListCanUnselect(context, config, item);
          },
-         onChange: parentSelectionEffect == SubPickerParentSelectionEffect.none
-             ? onChange
-             : (delta) async {
-                 await onChange?.call(delta);
-                 _applyParentEffect(
-                   parentController,
-                   parentSelectionEffect,
-                   delta.added,
-                   delta.removed,
-                 );
-               },
+         onChange: onChange,
        );
 
   /// Parent controller used only when [parentSelectionEffect] modifies selection.
@@ -135,6 +126,57 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
 
   /// Explicit effect of sub-list changes on the parent pending selection.
   final SubPickerParentSelectionEffect parentSelectionEffect;
+
+  @override
+  Widget createPicker({
+    FutureOr<void> Function(PickerDelta<K> delta)? onChange,
+  }) {
+    if (parentSelectionEffect == SubPickerParentSelectionEffect.none) {
+      return super.createPicker(onChange: onChange);
+    }
+    return _ParentEffectHost<T, K>(
+      parentController: parentController!,
+      parentSelectionEffect: parentSelectionEffect,
+      userOnChange: onChange ?? this.onChange,
+      builder: (wrapped) => super.createPicker(onChange: wrapped),
+    );
+  }
+}
+
+/// Applies [SubPickerParentSelectionEffect] only while the child tile is mounted.
+class _ParentEffectHost<T, K> extends StatefulWidget {
+  const _ParentEffectHost({
+    required this.parentController,
+    required this.parentSelectionEffect,
+    required this.userOnChange,
+    required this.builder,
+  });
+
+  final GenericPickerController<T, K> parentController;
+  final SubPickerParentSelectionEffect parentSelectionEffect;
+  final FutureOr<void> Function(PickerDelta<K> delta)? userOnChange;
+  final Widget Function(Future<void> Function(PickerDelta<K> delta) onChange)
+  builder;
+
+  @override
+  State<_ParentEffectHost<T, K>> createState() =>
+      _ParentEffectHostState<T, K>();
+}
+
+class _ParentEffectHostState<T, K> extends State<_ParentEffectHost<T, K>> {
+  Future<void> _onChange(PickerDelta<K> delta) async {
+    await widget.userOnChange?.call(delta);
+    if (!mounted) return;
+    _applyParentEffect(
+      widget.parentController,
+      widget.parentSelectionEffect,
+      delta.added,
+      delta.removed,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_onChange);
 }
 
 class SubPickerTile<T> extends GenericSubPickerTile<T, int> {

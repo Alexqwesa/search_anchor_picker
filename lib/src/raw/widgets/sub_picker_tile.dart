@@ -116,12 +116,14 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   /// Nested picker. Public tiles pass related-list and parent-sync hooks into
   /// the constructor instead of replacing this method.
   @protected
-  Widget createPicker() {
+  Widget createPicker({
+    FutureOr<void> Function(PickerDelta<K> delta)? onChange,
+  }) {
     return GenericRawSearchAnchorPicker<T, K>(
       config: config,
       initialSelectedIds: initialSelectedIds,
       isSelectable: isSelectable,
-      onChange: onChange,
+      onChange: onChange ?? this.onChange,
       onClose: onClose,
       closeSavingBuilder: closeSavingBuilder,
       closeSaveFailedBuilder: closeSaveFailedBuilder,
