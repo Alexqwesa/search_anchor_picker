@@ -18,7 +18,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     required this.initialSelectedIds,
     super.key,
     this.selectionMode = SelectionMode.multi,
-    this.canChangeSelection,
+    this.isSelectable,
     this.onChange,
     this.onClose,
     this.closeSavingBuilder,
@@ -79,26 +79,49 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   final List<K> initialSelectedIds;
   final SelectionMode selectionMode;
 
-  /// Optional gate for a proposed selection mutation.
+  /// Optional per-item rule that makes a row inert.
   ///
-  /// Return `false` to leave checkboxes unchanged.
-  final Future<bool> Function(PickerSelectionChange<T, K> change)?
-  canChangeSelection;
+  /// Return `false` and the row cannot be changed by the user in either
+  /// direction: the default row is rendered disabled, taps on it do nothing,
+  /// and bulk commands skip the ID. Rules the user cannot satisfy belong here,
+  /// where they read as an inactive row, instead of in a save that lets the
+  /// checkbox move and then springs it back.
+  ///
+  /// It is a synchronous rule on a loaded item, so an ID that is selected but
+  /// absent from the current `loadItems` result is not filtered.
+  ///
+  /// Leaving this null is the same as always returning `true`.
+  final bool Function(T item)? isSelectable;
 
-  /// Observes each accepted selection delta after pending checkboxes update.
+  /// Immediate save, run on each accepted delta once the checkboxes moved.
   ///
-  /// Persistence belongs in application code. Persist from IDs; loaded items
-  /// can be missing from the current `loadItems` result. If this returns a
-  /// [Future], the picker awaits it so close waits for in-flight work. A
-  /// thrown error is reported and restores the checkbox and session intent.
+  /// The picker owns the pending IDs and notifies; the application saves.
+  /// Save from IDs: loaded items can be missing from the current `loadItems`
+  /// result. If this returns a [Future] the picker awaits it, so close waits
+  /// for in-flight work.
+  ///
+  /// This is where the application reacts to the tap: validate, save, and
+  /// throw to refuse. A thrown error is reported and restores the checkbox
+  /// and the session intent, so the pending set never keeps a change the save
+  /// rejected. Rules that are known up front belong in [isSelectable], which
+  /// shows the row as inactive instead of letting the checkbox move first.
+  ///
+  /// A bulk command takes this same path and arrives as one delta over every
+  /// loaded or filtered ID, so send it as one request: a save that loops
+  /// [PickerDelta.added] turns a single tap into a burst of calls. [onClose]
+  /// sidesteps that, since a whole session collapses into one net delta.
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
 
-  /// Observes the net result of one closed session.
+  /// Deferred save, run once when the session closes, with its net result.
   ///
-  /// This is not overlay-lifecycle [viewOnClose]. Persistence belongs in
-  /// application code. If this returns a [Future], the picker awaits it while
-  /// the overlay stays open. A thrown error is reported and the user is asked
-  /// whether to keep editing or close without saving.
+  /// This is not overlay-lifecycle [viewOnClose].
+  /// Toggling and bulk commands inside one session collapse into a single
+  /// [PickerSelectionResult], which is what makes this the cheap place to
+  /// save a picker where the user explores before settling.
+  ///
+  /// If this returns a [Future], the picker awaits it while the overlay stays
+  /// open. A thrown error is reported and the user is asked whether to keep
+  /// editing or close without saving.
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
 
   /// Optional wrap for the open view while [onClose] is saving.
@@ -197,7 +220,7 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     required super.initialSelectedIds,
     super.key,
     super.selectionMode,
-    super.canChangeSelection,
+    super.isSelectable,
     super.onChange,
     super.onClose,
     super.closeSavingBuilder,
@@ -835,12 +858,18 @@ class _GenericRawSearchAnchorPickerState<T, K>
       final byId = <K, T>{
         for (final item in items) widget.config.idOf(item): item,
       };
-      final addedItems = [
-        for (final id in added)
-          if (byId[id] != null) byId[id]!,
-      ];
+      final selectableAdded = _withoutInertIds(added, byId);
+      final selectableRemoved = _withoutInertIds(removed, byId);
+      if (selectableAdded.isEmpty && selectableRemoved.isEmpty) return false;
+      if (widget.selectionMode != SelectionMode.multi &&
+          selectableRemoved.length != removed.length) {
+        // The displaced selection is inert, so the replacement cannot happen
+        // without leaving two IDs selected in a single-selection picker.
+        return false;
+      }
+
       final removedItems = [
-        for (final id in removed)
+        for (final id in selectableRemoved)
           if (byId[id] != null) byId[id]!,
       ];
       for (final item in removedItems) {
@@ -848,22 +877,16 @@ class _GenericRawSearchAnchorPickerState<T, K>
       }
       if (!mounted || !_open) return false;
 
-      final change = PickerSelectionChange<T, K>(
-        delta: PickerDelta(added: added, removed: removed),
-        addedItems: addedItems,
-        removedItems: removedItems,
+      final delta = PickerDelta(
+        added: selectableAdded,
+        removed: selectableRemoved,
       );
-      if (widget.canChangeSelection != null &&
-          !await _runCanChangeSelection(change)) {
-        return false;
-      }
-      if (!mounted || !_open) return false;
-
       final before = {..._pendingN.value};
-      final after = {...before, ...added}..removeAll(removed);
+      final after = {...before, ...selectableAdded}
+        ..removeAll(selectableRemoved);
       _selection.recordExplicitChange(before, after);
       _pendingN.value = after;
-      if (!await _runOnChange(change.delta)) {
+      if (!await _runOnChange(delta)) {
         _selection.recordExplicitChange(after, before);
         if (_pendingN.value.length == after.length &&
             _pendingN.value.containsAll(after)) {
@@ -878,6 +901,15 @@ class _GenericRawSearchAnchorPickerState<T, K>
         _close('toggleSettled');
       }
     }
+  }
+
+  Set<K> _withoutInertIds(Set<K> ids, Map<K, T> byId) {
+    final isSelectable = widget.isSelectable;
+    if (isSelectable == null) return ids;
+    return {
+      for (final id in ids)
+        if (byId[id] == null || isSelectable(byId[id] as T)) id,
+    };
   }
 
   Future<bool> _canUnselect(BuildContext context, T item) async {
@@ -899,24 +931,6 @@ class _GenericRawSearchAnchorPickerState<T, K>
       return true;
     } on Object catch (error, stack) {
       _reportCallbackError('onChange', error, stack);
-      return false;
-    }
-  }
-
-  Future<bool> _runCanChangeSelection(
-    PickerSelectionChange<T, K> change,
-  ) async {
-    try {
-      return await widget.canChangeSelection!(change);
-    } on Object catch (error, stack) {
-      FlutterError.reportError(
-        FlutterErrorDetails(
-          exception: error,
-          stack: stack,
-          library: 'search_anchor_picker',
-          context: ErrorDescription('while calling canChangeSelection'),
-        ),
-      );
       return false;
     }
   }
@@ -982,6 +996,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           selectionMode: widget.selectionMode,
           config: widget.config,
           applySelectionDelta: _applySelectionDelta,
+          isSelectable: widget.isSelectable,
           close: _close,
           shrinkWrap: style.shrinkWrap,
           itemBuilder: widget.itemBuilder,

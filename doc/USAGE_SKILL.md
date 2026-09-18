@@ -18,7 +18,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 | --- | --- |
 | Save the whole session delta when the popup closes | `onClose` |
 | Save each accepted delta as it happens | `onChange` |
-| Validate a proposed change | `canChangeSelection` |
+| Reject a change before checkboxes move | `canChangeSelection` |
 | Nested sublist membership | `SubPickerTile` + `onChange` / `onClose` |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
@@ -67,17 +67,24 @@ Follow these invariants:
 
 The picker notifies; it does not persist.
 
-Persist in `canChangeSelection` if the checkbox must not move until save
-succeeds. Return false on fail; the checkbox never changes.
+`onChange` is the immediate save, run on each accepted delta once the
+checkboxes moved; a thrown error restores them. `onClose` is the deferred
+save, run on the net result of the session while the overlay stays open; a
+thrown error is reported and the user is asked whether to update the selection
+or close without saving. Override with `closeSavingBuilder` and
+`closeSaveFailedBuilder`. Save from IDs, not from loaded items. `viewOnClose`
+is the overlay lifecycle callback, not the selection result.
 
-Persist in `onChange` (each accepted toggle) if the checkbox should move
-first. Bulk header commands also go through `onChange`. A thrown `onChange`
-error restores the checkbox. Persist in `onClose` (whole delta of session)
-while the overlay stays open. A thrown error is reported and the user is
-asked whether to update the selection or close without saving. Override with
-`closeSavingBuilder` and `closeSaveFailedBuilder`. Persist from IDs, not from
-loaded items. `viewOnClose` is the overlay lifecycle callback, not the
-selection result.
+`canChangeSelection` runs before either save, on every mutation, so
+pre-checks belong there. Return false and the checkbox never moves and no save
+runs. Use it for rules on already-loaded item fields; await a backend only
+when the checkbox must not move until that answer arrives. It runs once per
+command, not per ID, so awaiting costs no extra calls, but every tap then
+waits for a round trip and nothing coalesces the way `onClose` does.
+
+A bulk command is an ordinary mutation with a bigger delta. Save the delta in
+one write: a save that loops the IDs turns one Select-all tap into a request
+per ID.
 
 ## Item reloads
 
@@ -118,6 +125,8 @@ headerBuilder: (context, controller, items) => [
   result and record explicit deltas.
 - `selectFiltered()` and `clearFiltered()` affect loaded IDs matching the current
   query and record explicit deltas. With an empty query, filtered equals loaded.
+- A bulk command reaches `onChange` as one delta over every affected ID, not
+  one delta per row, so write it as a single request.
 - `setSelected(id, selected)` changes one ID and records an explicit delta.
 - `pendingIds` is an immutable snapshot; `pendingIdsListenable` supports reactive
   custom header UI.

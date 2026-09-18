@@ -1,57 +1,11 @@
 // ignore_for_file: unnecessary_underscores
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 void main() {
-  testWidgets('canChangeSelection blocks checkbox until gate returns true', (
-    tester,
-  ) async {
-    final gate = Completer<bool>();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: SearchAnchorPicker<int>(
-            config: PickerConfig(
-              loadItems: (_) async => [1, 2],
-              idOf: (i) => i,
-              labelOf: (i) => '$i',
-              searchTermsOf: (_) => [],
-            ),
-            initialSelectedIds: const [],
-            canChangeSelection: (_) => gate.future,
-            triggerBuilder: (_, open, __) =>
-                ElevatedButton(onPressed: open, child: const Text('open')),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('open'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('1'));
-    await tester.pump();
-
-    var checkbox = tester.widget<CheckboxListTile>(
-      find.byType(CheckboxListTile).first,
-    );
-    expect(checkbox.value, false);
-
-    gate.complete(true);
-    await tester.pumpAndSettle();
-
-    checkbox = tester.widget<CheckboxListTile>(
-      find.byType(CheckboxListTile).first,
-    );
-    expect(checkbox.value, true);
-  });
-
-  testWidgets('rejected gate leaves selection and close delta unchanged', (
+  testWidgets('an unselectable row is disabled and ignores taps', (
     tester,
   ) async {
     var addedIds = <int>[];
@@ -64,9 +18,10 @@ void main() {
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
+              relatedListItemStatusOf: (_) =>
+                  const PickerRelatedListItemStatus(selectable: false),
             ),
             initialSelectedIds: const [],
-            canChangeSelection: (_) async => false,
             onClose: (result) {
               addedIds = result.added.toList();
             },
@@ -76,6 +31,10 @@ void main() {
     );
     await tester.tap(find.byIcon(Icons.search));
     await tester.pumpAndSettle();
+    expect(
+      tester.widget<CheckboxListTile>(find.byType(CheckboxListTile)).onChanged,
+      isNull,
+    );
     await tester.tap(find.text('1'));
     await tester.pumpAndSettle();
     expect(
@@ -85,6 +44,43 @@ void main() {
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     expect(addedIds, isEmpty);
+  });
+
+  testWidgets('bulk commands skip unselectable rows', (tester) async {
+    var addedIds = <int>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SearchAnchorPicker<int>(
+            config: PickerConfig(
+              loadItems: (_) async => [1, 2],
+              idOf: (item) => item,
+              labelOf: (item) => '$item',
+              searchTermsOf: (_) => const [],
+              relatedListItemStatusOf: (item) =>
+                  PickerRelatedListItemStatus(selectable: item != 1),
+            ),
+            initialSelectedIds: const [],
+            headerBuilder: (context, controller, items) => [
+              TextButton(
+                onPressed: controller.selectLoaded,
+                child: const Text('Select all'),
+              ),
+            ],
+            onClose: (result) {
+              addedIds = result.added.toList();
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Select all'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(addedIds, [2]);
   });
 
   testWidgets('thrown onChange restores the checkbox', (tester) async {
@@ -139,7 +135,6 @@ void main() {
               searchTermsOf: (_) => const [],
             ),
             initialSelectedIds: const [],
-            canChangeSelection: (_) async => true,
             onClose: (result) {
               addedIds = result.added.toList();
             },

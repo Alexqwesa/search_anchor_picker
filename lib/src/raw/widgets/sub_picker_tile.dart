@@ -16,7 +16,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     required this.initialSelectedIds,
     super.key,
     this.icon,
-    this.canChangeSelection,
+    this.isSelectable,
     this.onChange,
     this.onClose,
     this.closeSavingBuilder,
@@ -70,8 +70,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   final Widget? subtitle;
   final Widget? trailing;
   final SelectionMode selectionMode;
-  final Future<bool> Function(PickerSelectionChange<T, K> change)?
-  canChangeSelection;
+  final bool Function(T item)? isSelectable;
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
   final PickerCloseSavingBuilder? closeSavingBuilder;
@@ -121,7 +120,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     return GenericRawSearchAnchorPicker<T, K>(
       config: config,
       initialSelectedIds: initialSelectedIds,
-      canChangeSelection: canChangeSelection,
+      isSelectable: isSelectable,
       onChange: onChange,
       onClose: onClose,
       closeSavingBuilder: closeSavingBuilder,
@@ -192,7 +191,7 @@ class RawSubPickerTile<T> extends GenericRawSubPickerTile<T, int> {
     super.onClose,
     super.closeSavingBuilder,
     super.closeSaveFailedBuilder,
-    super.canChangeSelection,
+    super.isSelectable,
     super.onChange,
     super.selectionMode,
     super.leading,

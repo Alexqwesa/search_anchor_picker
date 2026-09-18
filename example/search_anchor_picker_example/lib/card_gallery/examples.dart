@@ -44,19 +44,18 @@ SearchAnchorPicker<Person>(
     persist: Persist.change,
   ),
   const SimpleCard(
-    title: 'Gate before checkbox',
-    persistLabel: 'canChangeSelection',
+    title: 'Inactive rows',
+    persistLabel: 'onClose',
     difference:
-        'Alan is locked. The checkbox waits for the gate and does not move when the gate returns false.',
+        'Alan is locked, so his row is greyed out and cannot be tapped. A rule known up front reads as an inactive row instead of a checkbox that moves and springs back.',
     source: r'''
 SearchAnchorPicker<Person>(
-  config: peopleConfig(title: 'Gate before checkbox'),
+  config: peopleConfig(
+    title: 'Inactive rows',
+    relatedListItemStatusOf: (person) =>
+        PickerRelatedListItemStatus(selectable: !person.locked),
+  ),
   initialSelectedIds: selected.toList(),
-  canChangeSelection: (change) async {
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return change.addedItems.every((person) => !person.locked) &&
-        change.removedItems.every((person) => !person.locked);
-  },
   onClose: (result) {
     selected
       ..clear()
@@ -65,8 +64,7 @@ SearchAnchorPicker<Person>(
 );
 ''',
     seed: {1, 2, 3},
-    delayGate: true,
-    rejectLocked: true,
+    related: RelatedStatus.lockedInactive,
   ),
   const SimpleCard(
     title: 'Close save can fail',
@@ -374,13 +372,13 @@ SubPickerTile<Person>(
     title: 'Nested child bulk commands',
     persistLabel: 'child onChange, parent onClose',
     difference:
-        'The directory sublist has Select results / Clear results. Those bulk deltas persist immediately and do not parent-sync unless an effect is set.',
+        'The directory sublist has Select results / Clear results. Each command is one delta that the child saves immediately, and it does not parent-sync unless an effect is set.',
     source: r'''
 SubPickerTile<Person>(
   title: 'Directory membership',
   config: directoryConfig,
   initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta) { /* write the whole delta once */ },
   headerBuilder: (context, controller, items) => [
     TextButton(
       onPressed: controller.selectFiltered,
@@ -396,23 +394,23 @@ SubPickerTile<Person>(
     childBulk: true,
   ),
   const NestedCard(
-    title: 'Nested child gate',
+    title: 'Nested child with inactive rows',
     persistLabel: 'child onChange, parent onClose',
     difference:
-        'The directory rejects locked people (Alan). The parent picker has no gate.',
+        'Locked people (Alan) are inactive inside the directory sublist only. The parent list still allows them.',
     source: r'''
 SubPickerTile<Person>(
   title: 'Directory membership',
-  config: directoryConfig,
+  config: peopleConfig(
+    title: 'Directory',
+    relatedListItemStatusOf: (person) =>
+        PickerRelatedListItemStatus(selectable: !person.locked),
+  ),
   initialSelectedIds: directory.toList(),
-  canChangeSelection: (change) async {
-    return change.addedItems.every((person) => !person.locked) &&
-        change.removedItems.every((person) => !person.locked);
-  },
   onChange: (delta) { /* write directory */ },
 );
 ''',
-    childRejectLocked: true,
+    childLockedInactive: true,
   ),
   const NestedCard(
     title: 'Nested directory inside directory',
@@ -569,10 +567,13 @@ PickerConfig<Person>(
     title: 'Bulk header commands',
     persistLabel: 'onChange',
     difference:
-        'Select results / Clear results go through the same apply path as row toggles and persist immediately.',
+        'Select results / Clear results take the same path as a row toggle and arrive as one delta over the loaded results. Save that delta as one write; a save that loops the ids would send one request per person. onClose avoids the question, since the session collapses into one net delta.',
     source: r'''
 SearchAnchorPicker<Person>(
-  onChange: (delta) { /* write selected */ },
+  onChange: (delta) async {
+    // One write for the whole delta, not one per id.
+    await api.updateMembers(added: delta.added, removed: delta.removed);
+  },
   headerBuilder: (context, controller, items) => [
     TextButton(
       onPressed: controller.selectFiltered,
@@ -692,22 +693,22 @@ SearchAnchorPicker<Person>(
     noResultsText: 'No person matches that query',
   ),
   const SimpleCard(
-    title: 'Gate plus onChange',
-    persistLabel: 'canChangeSelection + onChange',
+    title: 'Inactive rows plus onChange',
+    persistLabel: 'selectable + onChange',
     difference:
-        'Locked people never move. Allowed toggles persist immediately. Combines the gate card with the change-save card.',
+        'Locked people stay inactive and are skipped by bulk commands. Every other toggle saves immediately.',
     source: r'''
 SearchAnchorPicker<Person>(
-  canChangeSelection: (change) async {
-    return change.addedItems.every((person) => !person.locked) &&
-        change.removedItems.every((person) => !person.locked);
-  },
+  config: peopleConfig(
+    relatedListItemStatusOf: (person) =>
+        PickerRelatedListItemStatus(selectable: !person.locked),
+  ),
   onChange: (delta) { /* write selected */ },
 );
 ''',
     seed: {1, 3},
     persist: Persist.change,
-    rejectLocked: true,
+    related: RelatedStatus.lockedInactive,
   ),
   const SimpleCard(
     title: 'Multiline field',

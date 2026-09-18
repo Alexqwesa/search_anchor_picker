@@ -20,6 +20,7 @@ class OverlayBody<T, K> extends StatefulWidget {
     required this.close,
     required this.shrinkWrap,
     super.key,
+    this.isSelectable,
     this.itemBuilder,
     this.resultsBuilder,
     this.emptyBuilder,
@@ -41,6 +42,9 @@ class OverlayBody<T, K> extends StatefulWidget {
   applySelectionDelta;
   final void Function([String? reason]) close;
   final bool shrinkWrap;
+
+  /// Per-item rule that makes a row inert. Null means every row is selectable.
+  final bool Function(T item)? isSelectable;
   final Widget Function(
     BuildContext context,
     T item,
@@ -76,6 +80,7 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
 
   Future<void> _toggle(T item, K id, bool next) async {
     PickerDebug.log('OverlayBody: User toggle item=$item, next=$next');
+    if (widget.isSelectable?.call(item) == false) return;
     if (_toggling.contains(id) ||
         (widget.selectionMode != SelectionMode.multi && _toggling.isNotEmpty) ||
         (!next && widget.selectionMode == SelectionMode.single)) {
@@ -144,6 +149,7 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
                         tooltip: widget.config.tooltipOf?.call(item),
                         leading: widget.config.iconOf?.call(item),
                         selectionMode: widget.selectionMode,
+                        enabled: widget.isSelectable?.call(item) ?? true,
                       ),
                 );
               }

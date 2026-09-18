@@ -293,7 +293,10 @@ enum SelectionMode {
 
 /// Controller exposed to headerBuilder for selection state and commands.
 ///
-/// Bulk and single-item selection methods record explicit user intent.
+/// Bulk and single-item selection methods record explicit user intent and take
+/// the same path as a row toggle: one gate call, then one delta to the
+/// picker's `onChange` and, at close, `onClose`. A bulk command is that delta
+/// over many IDs, so save it as one write.
 /// Use [syncPending] to copy an already-persisted external change into this
 /// open picker's pending selection without producing another `added` or
 /// `removed` delta.
@@ -356,12 +359,16 @@ class GenericRawPickerController<T, K> {
     });
   }
 
+  /// Selects every loaded ID as one delta.
   void selectLoaded() => _addIds(_loadedIds());
 
+  /// Deselects every loaded ID as one delta.
   void clearLoaded() => _removeIds(_loadedIds());
 
+  /// Selects the loaded IDs matching the current query as one delta.
   void selectFiltered() => _addIds(_filteredIds());
 
+  /// Deselects the loaded IDs matching the current query as one delta.
   void clearFiltered() => _removeIds(_filteredIds());
 
   void setSelected(K id, bool selected) {

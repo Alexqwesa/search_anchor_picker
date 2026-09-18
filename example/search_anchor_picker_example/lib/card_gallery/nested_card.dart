@@ -19,7 +19,7 @@ class NestedCard extends StatefulWidget {
     this.relatedOnParent = false,
     this.childMode = SelectionMode.multi,
     this.childBulk = false,
-    this.childRejectLocked = false,
+    this.childLockedInactive = false,
     this.childUnselect = PickerUnselectPolicy.allow,
   });
 
@@ -35,7 +35,7 @@ class NestedCard extends StatefulWidget {
   final bool relatedOnParent;
   final SelectionMode childMode;
   final bool childBulk;
-  final bool childRejectLocked;
+  final bool childLockedInactive;
   final PickerUnselectPolicy childUnselect;
 
   @override
@@ -114,12 +114,6 @@ class _NestedCardState extends State<NestedCard> {
           ? null
           : parent,
       parentSelectionEffect: widget.effect,
-      canChangeSelection: widget.childRejectLocked
-          ? (change) async {
-              return change.addedItems.every((person) => !person.locked) &&
-                  change.removedItems.every((person) => !person.locked);
-            }
-          : null,
       onChange: widget.childPersist == Persist.change
           ? (delta) => setState(() => applyDelta(_directory, delta))
           : null,
@@ -182,12 +176,15 @@ class _NestedCardState extends State<NestedCard> {
   }
 
   PickerConfig<Person> _childConfig(String title) {
+    final plainRows =
+        widget.childUnselect == PickerUnselectPolicy.allow &&
+        !widget.childLockedInactive;
     return peopleConfig(
       title: title,
-      relatedListItemStatusOf:
-          widget.childUnselect == PickerUnselectPolicy.allow
+      relatedListItemStatusOf: plainRows
           ? null
           : (person) => PickerRelatedListItemStatus(
+              selectable: !(widget.childLockedInactive && person.locked),
               unselectPolicy: person.inUse
                   ? widget.childUnselect
                   : PickerUnselectPolicy.allow,

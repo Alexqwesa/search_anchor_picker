@@ -17,7 +17,6 @@ class GenericSearchAnchorPicker<T, K>
     required super.initialSelectedIds,
     super.key,
     SelectionMode selectionMode = SelectionMode.multi,
-    super.canChangeSelection,
     super.onChange,
     super.onClose,
     super.closeSavingBuilder,
@@ -81,6 +80,7 @@ class GenericSearchAnchorPicker<T, K>
   }) : super(
          config: config,
          selectionMode: selectionMode,
+         isSelectable: (item) => relatedListIsSelectable(config, item),
          canUnselect: (context, item) {
            return relatedListCanUnselect(context, config, item);
          },
@@ -94,7 +94,6 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     required super.initialSelectedIds,
     super.key,
     super.selectionMode,
-    super.canChangeSelection,
     super.onChange,
     super.onClose,
     super.closeSavingBuilder,

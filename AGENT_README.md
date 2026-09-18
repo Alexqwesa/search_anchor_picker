@@ -114,16 +114,27 @@ loading the whole auxiliary list.
 
 The picker notifies; it does not persist.
 
-Persist in `canChangeSelection` if the checkbox must not move until save
-succeeds. Return false on fail; the checkbox never changes. Leaving the gate
-null is the same as always allowing.
+`onChange` is the immediate save, `onClose` the deferred one; the picker owns
+pending IDs in both cases. `canChangeSelection` runs before either, on every
+mutation, and is where pre-checks belong. Return false and nothing moves, so
+no save runs. Use it for rules on already-loaded item fields; await a backend
+here only when the checkbox must not move until that answer arrives: it runs
+once per command, not per ID, so it adds no calls, but it puts a round trip
+behind every tap and coalesces nothing. A thrown gate is reported and counted
+as a rejection. Leaving the gate null is the same as always allowing.
 
-Persist in `onChange` (each accepted toggle) if the checkbox should move
+Save in `onChange` (each accepted delta) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
-Persist in `onClose` (whole delta of session) while the overlay stays open.
+Save in `onClose` (net delta of session) while the overlay stays open.
 A thrown error is reported and the user is asked whether to update the
 selection or close without saving. `closeSavingBuilder` and
 `closeSaveFailedBuilder` replace the localized defaults.
+
+Controller bulk commands are not special-cased: `selectLoaded`, `clearLoaded`,
+`selectFiltered`, and `clearFiltered` run the same apply pipeline as a row
+toggle and produce one delta over every affected ID. The only caveat is on the
+application side, documented on `onChange`: a save that loops the delta turns
+one command into a request per ID.
 
 Apply order is unselect policy, then the gate, then pending checkboxes, then
 `onChange`. A blocked or cancelled unselect never reaches the gate. A

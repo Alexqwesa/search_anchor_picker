@@ -12,6 +12,7 @@ enum RelatedStatus {
   pagedDirectory,
   blockedInUse,
   confirmMember,
+  lockedInactive,
 }
 
 PickerRelatedListItemStatus? relatedStatus(
@@ -42,6 +43,8 @@ PickerRelatedListItemStatus? relatedStatus(
             ? PickerUnselectPolicy.blocked
             : PickerUnselectPolicy.allow,
       );
+    case RelatedStatus.lockedInactive:
+      return PickerRelatedListItemStatus(selectable: !person.locked);
     case RelatedStatus.confirmMember:
       return PickerRelatedListItemStatus(
         auxiliaryMembership: knownDirectoryIds.contains(person.id)
@@ -71,8 +74,6 @@ class SimpleCard extends StatefulWidget {
     this.customFail = false,
     this.customSaving = false,
     this.bulkHeader = false,
-    this.delayGate = false,
-    this.rejectLocked = false,
     this.saveDelay,
     this.loadItems,
     this.related = RelatedStatus.none,
@@ -94,8 +95,6 @@ class SimpleCard extends StatefulWidget {
   final bool customFail;
   final bool customSaving;
   final bool bulkHeader;
-  final bool delayGate;
-  final bool rejectLocked;
   final Duration? saveDelay;
   final Future<List<Person>> Function(BuildContext context)? loadItems;
   final RelatedStatus related;
@@ -161,19 +160,6 @@ class _SimpleCardState extends State<SimpleCard> {
               emptyText: widget.emptyText,
               noResultsText: widget.noResultsText,
               viewConstraints: popupConstraints,
-              canChangeSelection: widget.rejectLocked
-                  ? (change) async {
-                      if (widget.delayGate) {
-                        await Future<void>.delayed(
-                          const Duration(milliseconds: 400),
-                        );
-                      }
-                      return change.addedItems.every(
-                            (person) => !person.locked,
-                          ) &&
-                          change.removedItems.every((person) => !person.locked);
-                    }
-                  : null,
               onChange: widget.persist == Persist.change
                   ? (delta) async {
                       if (widget.failChange && _fail) {

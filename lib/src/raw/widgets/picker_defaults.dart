@@ -246,6 +246,7 @@ class RawDefaultPickerItemTile extends StatelessWidget {
     super.key,
     this.leading,
     this.tooltip,
+    this.enabled = true,
   });
 
   final bool selected;
@@ -254,6 +255,9 @@ class RawDefaultPickerItemTile extends StatelessWidget {
   final Widget? leading;
   final SelectionMode selectionMode;
   final String? tooltip;
+
+  /// Whether the row accepts taps. A disabled row is greyed out.
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +272,7 @@ class RawDefaultPickerItemTile extends StatelessWidget {
           ? null
           : const CircleBorder(),
       value: selected,
-      onChanged: (value) => onToggle(value ?? false),
+      onChanged: enabled ? (value) => onToggle(value ?? false) : null,
       title: Row(
         children: [
           leading ?? const Icon(Icons.person),

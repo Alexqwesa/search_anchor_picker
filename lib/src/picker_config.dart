@@ -9,7 +9,6 @@ export 'package:search_anchor_picker/src/raw/picker_config.dart'
         GenericRawPickerController,
         LoadItems,
         PickerDelta,
-        PickerSelectionChange,
         PickerSelectionResult,
         PickerUnselectPolicy,
         RawPickerController,
