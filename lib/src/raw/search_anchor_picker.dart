@@ -112,17 +112,21 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// sidesteps that, since a whole session collapses into one net delta.
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
 
-  /// Deferred save, run once when the session closes, with its net result.
+  /// Deferred save, run once when the session closes, with its net [PickerDelta].
   ///
   /// This is not overlay-lifecycle [viewOnClose].
-  /// Toggling and bulk commands inside one session collapse into a single
-  /// [PickerSelectionResult], which is what makes this the cheap place to
-  /// save a picker where the user explores before settling.
+  /// Toggling and bulk commands inside one session collapse into one delta,
+  /// which is what makes this the cheap place to save a picker where the user
+  /// explores before settling.
+  ///
+  /// Persist [PickerDelta.added] and [PickerDelta.removed]. Apply that to the
+  /// seed you already hold. A failed or empty `loadItems` is not "the list is
+  /// empty".
   ///
   /// If this returns a [Future], the picker awaits it while the overlay stays
   /// open. A thrown error is reported and the user is asked whether to keep
   /// editing or close without saving.
-  final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
+  final FutureOr<void> Function(PickerDelta<K> delta)? onClose;
 
   /// Optional wrap for the open view while [onClose] is saving.
   ///

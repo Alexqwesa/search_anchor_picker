@@ -23,9 +23,6 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
 
-There is no replace-all close callback. Persist `added` and `removed`.
-`initialSelectedIds` is only the seed for the next open, from your selected
-IDs.
 
 ## Basic integration
 
@@ -62,6 +59,7 @@ Follow these invariants:
 - An external `initialSelectedIds` update may reseed an open picker, but it does
   not create `added` or `removed` intent.
 - Hidden selected IDs remain selected during server-side search and pagination.
+- Persist `added` and `removed` from `onClose`. 
 
 ## Observables
 

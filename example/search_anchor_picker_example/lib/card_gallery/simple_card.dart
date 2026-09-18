@@ -175,11 +175,7 @@ class _SimpleCardState extends State<SimpleCard> {
                       if (widget.failClose && _fail) {
                         throw StateError('simulated onClose failure');
                       }
-                      setState(() {
-                        _selected
-                          ..clear()
-                          ..addAll(result.finalIds);
-                      });
+                      setState(() => applyDelta(_selected, result));
                     }
                   : null,
               closeSavingBuilder: widget.customSaving

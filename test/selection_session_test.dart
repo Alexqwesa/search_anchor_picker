@@ -44,7 +44,7 @@ void main() {
       ..reseed([1]);
 
     final result = session.result();
-    expect(result.finalIds, {1});
+    expect(session.pendingN.value, {1});
     expect(result.added, isEmpty);
     expect(result.removed, isEmpty);
   });
@@ -63,7 +63,7 @@ void main() {
       ..pendingN.value = {1, 2, 3};
 
     final result = session.result();
-    expect(result.finalIds, {1, 2, 3});
+    expect(session.pendingN.value, {1, 2, 3});
     expect(result.added, {3});
     expect(result.removed, isEmpty);
   });
@@ -78,7 +78,7 @@ void main() {
       ..pendingN.value = <int>{}
       ..open([2]);
     final result = session.result();
-    expect(result.finalIds, {2});
+    expect(session.pendingN.value, {2});
     expect(result.added, isEmpty);
     expect(result.removed, isEmpty);
   });

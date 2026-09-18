@@ -127,7 +127,8 @@ Save in `onChange` (each accepted delta) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
 Save in `onClose` (net delta of session) while the overlay stays open.
 A thrown error is reported and the user is asked whether to update the
-selection or close without saving. `closeSavingBuilder` and
+selection or close without saving. Persist `added` and `removed`; there is no
+final snapshot. `closeSavingBuilder` and
 `closeSaveFailedBuilder` replace the localized defaults.
 
 Controller bulk commands are not special-cased: `selectLoaded`, `clearLoaded`,

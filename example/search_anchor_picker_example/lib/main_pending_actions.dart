@@ -80,7 +80,7 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
     });
   }
 
-  void _finish(PickerSelectionResult<int> result) {
+  void _finish(PickerDelta<int> result) {
     setState(() {
       _selectedIds
         ..addAll(result.added)
