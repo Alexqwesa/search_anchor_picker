@@ -1,20 +1,18 @@
 import 'package:flutter/foundation.dart';
 
-/// Added and removed IDs for one accepted mutation, or the net of one session.
+/// Added and removed IDs.
 ///
-/// `onChange` receives this after the checkboxes moved: one row toggle, one
-/// `setSelected`, or one bulk command. Persist [added] and [removed] together;
-/// a bulk command arrives as a single delta over many IDs, not one delta per
-/// row.
+/// `onChange` gets one mutation (a row, `setSelected`, or one bulk command)
+/// each time it is accepted. Toggling the same ID on and off is two calls.
+/// `onClose` gets the net of the session versus `initialSelectedIds`: an ID
+/// selected and deselected again is omitted. Empty means do not write.
 ///
-/// `onClose` receives the same type: the net of the session versus
-/// `initialSelectedIds`. A row selected and deselected again appears in
-/// neither. An empty delta means the user changed nothing; do not write.
-/// Apply it to the seed you already hold. There is no final snapshot.
+/// Persist both sets together, by ID. An ID can stay selected while missing
+/// from the current `loadItems` page. A load error or empty search is not a
+/// deletion.
 ///
-/// Both sets can hold IDs that are not in the current `loadItems` result, so
-/// persist by ID rather than by loaded item. `loadItems` is search and display
-/// data; a failed load, empty page, or filter is not "the list is empty".
+/// Both callbacks may be set. `onChange` does not consume session intent, so
+/// `onClose` still reports the same net. Persist in only one of them.
 @immutable
 class PickerDelta<K> {
   const PickerDelta({

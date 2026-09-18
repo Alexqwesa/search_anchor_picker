@@ -125,10 +125,14 @@ as a rejection. Leaving the gate null is the same as always allowing.
 
 Save in `onChange` (each accepted delta) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
-Save in `onClose` (net delta of session) while the overlay stays open.
-A thrown error is reported and the user is asked whether to update the
-selection or close without saving. Persist `added` and `removed`; there is no
-final snapshot. `closeSavingBuilder` and
+Toggling the same ID on and off is two `onChange` calls. Save in `onClose`
+(net of session versus `initialSelectedIds`) while the overlay stays open.
+Select then deselect is omitted; empty means do not write. A thrown error is
+reported and the user is asked whether to update the
+selection or close without saving. Persist `added` and `removed`. A load
+error or empty search is not a deletion. Both may be set; `onChange` does not
+consume session intent, so if both persist the API is called per mutation and
+again at close. Persist in only one of them. `closeSavingBuilder` and
 `closeSaveFailedBuilder` replace the localized defaults.
 
 Controller bulk commands are not special-cased: `selectLoaded`, `clearLoaded`,

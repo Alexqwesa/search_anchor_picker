@@ -18,10 +18,15 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 | --- | --- |
 | Save the whole session delta when the popup closes | `onClose` |
 | Save each accepted delta as it happens | `onChange` |
-| Reject a change before checkboxes move | `canChangeSelection` |
 | Nested sublist membership | `SubPickerTile` + `onChange` / `onClose` |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
+
+Both may be set. `onChange` does not consume session intent, so `onClose`
+still reports the same net. Persist in only one of them. `onChange` fires on
+every accepted mutation (select then deselect is two calls). `onClose` nets
+against `initialSelectedIds` (select then deselect is omitted; empty means
+do not write).
 
 
 ## Basic integration
@@ -66,12 +71,18 @@ Follow these invariants:
 The picker notifies; it does not persist.
 
 `onChange` is the immediate save, run on each accepted delta once the
-checkboxes moved; a thrown error restores them. `onClose` is the deferred
-save, run on the net result of the session while the overlay stays open; a
-thrown error is reported and the user is asked whether to update the selection
-or close without saving. Override with `closeSavingBuilder` and
+checkboxes moved; a thrown error restores them. Toggling the same ID on and
+off is two calls. `onClose` is the deferred save, run on the net of the
+session versus `initialSelectedIds` while the overlay stays open; select then
+deselect is omitted, and an empty delta means do not write. A thrown error is
+reported and the user is asked whether to update the selection or close
+without saving. Override with `closeSavingBuilder` and
 `closeSaveFailedBuilder`. Save from IDs, not from loaded items. `viewOnClose`
 is the overlay lifecycle callback, not the selection result.
+
+Both may be set. `onChange` does not consume session intent, so `onClose`
+still reports the same net. If both persist, the API is called for each
+mutation and again at close. Persist in only one of them.
 
 `canChangeSelection` runs before either save, on every mutation, so
 pre-checks belong there. Return false and the checkbox never moves and no save

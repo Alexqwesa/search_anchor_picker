@@ -110,18 +110,24 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// loaded or filtered ID, so send it as one request: a save that loops
   /// [PickerDelta.added] turns a single tap into a burst of calls. [onClose]
   /// sidesteps that, since a whole session collapses into one net delta.
+  ///
+  /// This does not clear session intent. If [onClose] also persists, the same
+  /// IDs are written again. Persist in only one of them.
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
 
   /// Deferred save, run once when the session closes, with its net [PickerDelta].
   ///
   /// This is not overlay-lifecycle [viewOnClose].
-  /// Toggling and bulk commands inside one session collapse into one delta,
-  /// which is what makes this the cheap place to save a picker where the user
-  /// explores before settling.
+  /// Toggling and bulk commands inside one session collapse into one delta
+  /// versus `initialSelectedIds`. Select then deselect the same ID, any number
+  /// of times, and it appears in neither set. Empty means do not write.
   ///
   /// Persist [PickerDelta.added] and [PickerDelta.removed]. Apply that to the
-  /// seed you already hold. A failed or empty `loadItems` is not "the list is
-  /// empty".
+  /// seed you already hold. A load error or empty search is not a deletion.
+  ///
+  /// [onChange] does not consume this net. If both persist, the API is called
+  /// for each mutation and again at close with the same IDs. Persist in only
+  /// one of them.
   ///
   /// If this returns a [Future], the picker awaits it while the overlay stays
   /// open. A thrown error is reported and the user is asked whether to keep

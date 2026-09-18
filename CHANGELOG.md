@@ -11,7 +11,9 @@
   A thrown `onChange` restores the checkbox. A thrown `onClose` keeps the
   overlay open, shows a localized saving wrap, then asks whether to keep
   editing or close without saving. Override with `closeSavingBuilder` and
-  `closeSaveFailedBuilder`.
+  `closeSaveFailedBuilder`. Both may persist; `onChange` does not consume
+  session intent, so persist in only one of them. `onClose` nets select then
+  deselect; `onChange` does not.
 * Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
   Parent sync runs after a successful child `onChange`.

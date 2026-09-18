@@ -24,8 +24,9 @@ export 'package:search_anchor_picker/src/raw/picker_selection.dart'
 /// which resets snapshot and intent.
 ///
 /// [result] is the `onClose` payload: the net explicit delta versus
-/// [openedIds]. Select then unselect (or the reverse)
-/// nets to empty `added` / `removed`. Close deltas come only from those
+/// [openedIds]. Select then unselect (or the reverse) any number of times
+/// nets to empty `added` / `removed`. `onChange` does not consume this intent,
+/// so close still reports the same net. Close deltas come only from those
 /// explicit toggles, not from comparing pending IDs to the current
 /// `loadItems` result. A selected ID that is not in that list stays
 /// selected; it is not treated as removed.
