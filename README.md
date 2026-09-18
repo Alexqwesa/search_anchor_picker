@@ -13,7 +13,7 @@ single selection, stable selected-first ordering, and optional nested menus.
 - Nested `SubPickerTile` menus with optional animated offsets.
 - Safe client-side and server-side search: missing loaded items are never
   interpreted as deleted selections.
-- Delta persistence through `PickerPersistence` (`onClose` or `immediate`).
+- Selection observables `onChange` and `onClose`; the app owns persistence.
 - Optional builders for every visual region; built-in widgets are only defaults.
 - No permanent trigger `GlobalKey`; popup resources are created on demand.
 
@@ -48,12 +48,10 @@ SearchAnchorPicker<Person>(
     searchTermsOf: (person) => [person.name, person.email],
   ),
   initialSelectedIds: selectedIds.toList(),
-  persistence: PickerPersistence.onClose(
-    persist: (delta) async {
-      await api.addPeople(delta.added);
-      await api.removePeople(delta.removed);
-    },
-  ),
+  onClose: (result) async {
+    await api.addPeople(result.added);
+    await api.removePeople(result.removed);
+  },
   triggerBuilder: (context, open, version) => IconButton(
     tooltip: 'Pick people',
     onPressed: open,
@@ -63,7 +61,7 @@ SearchAnchorPicker<Person>(
 ```
 
 `initialSelectedIds` is the external source of truth for the next open. While a
-picker is open, explicit row toggles are tracked independently so `onFinish`
+picker is open, explicit row toggles are tracked independently so `onClose`
 observes only actual user add/remove intent.
 
 ## Reloading items
@@ -213,8 +211,8 @@ unselects normally. Use `unselectWarningBuilder` and
 
 `relatedListItemStatusListenable` redraws related-list status without calling
 `loadItems`. Its listener is attached only while the popup is open.
-`SubPickerParentSelectionEffect` separately controls whether a successfully
-persisted child delta also updates the open parent's checkboxes.
+`SubPickerParentSelectionEffect` separately controls whether an accepted child
+selection change also updates the open parent's checkboxes.
 
 ## Nested pickers
 
@@ -227,12 +225,10 @@ headerBuilder: (context, controller, items) => [
     config: directoryConfig,
     initialSelectedIds: directoryIds,
     menuOffset: const Offset(30, 12),
-    persistence: PickerPersistence.onClose(
-      persist: (delta) async {
-        await directoryApi.add(delta.added);
-        await directoryApi.remove(delta.removed);
-      },
-    ),
+    onClose: (result) async {
+      await directoryApi.add(result.added);
+      await directoryApi.remove(result.removed);
+    },
   ),
 ],
 ```
@@ -244,7 +240,7 @@ child changes should update the open parent's checkboxes:
 SubPickerTile<Person>(
   parentController: controller,
   parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  // title, config, initialSelectedIds, and persistence...
+  // title, config, initialSelectedIds, and onChange/onClose...
 )
 ```
 
@@ -252,38 +248,33 @@ Choose `selectAdded` to check added items, `deselectRemoved` to uncheck removed
 items, or `mirror` for both. `none` is the default.
 These effects **only update the open parent's checkboxes**. They do not save
 parent selection, update the parent's `initialSelectedIds`, or include those
-changes in the parent's persistence delta.
+changes in the parent's `onChange` / `onClose` deltas.
 If your backend stores parent selection separately from sub-list membership,
-the child's persistence callback must also call the appropriate parent API and
-update the authoritative parent IDs for the next open. Parent checkbox updates
-do not require reseeding the whole parent picker.
+the child's `onChange` or `onClose` callback must also call the appropriate
+parent API and update the authoritative parent IDs for the next open. Parent
+checkbox updates do not require reseeding the whole parent picker.
 
-Choose when the child saves:
-
-- `PickerPersistence.onClose`: save the net session delta when the popup
-  closes; parent checkboxes update after that persist succeeds.
-- `PickerPersistence.immediate`: save each accepted delta, including bulk
-  header commands; parent checkboxes update after each successful persist.
-- Neither: local-only leftover changes still synchronize on close.
+The picker does not persist. Save in `onChange` for each accepted delta, or in
+`onClose` for the net session. Parent checkboxes follow accepted child
+selection changes, including bulk header commands.
 
 ```dart
 canChangeSelection: (change) async {
   return change.removedItems.every((person) => !person.isLocked);
 },
-persistence: PickerPersistence.immediate(
-  persist: (delta) async {
-    await directoryApi.add(delta.added);
-    await directoryApi.remove(delta.removed);
-  },
-),
-onFinish: (result) {
-  // Optional observer of the net session. It does not persist.
+onChange: (change) async {
+  await directoryApi.add(change.delta.added);
+  await directoryApi.remove(change.delta.removed);
+},
+onClose: (result) {
+  // Optional observer of the net session.
 },
 ```
 
-Rejected, blocked, cancelled, or failed changes never update the parent.
-Closing waits for in-flight applies to settle. `canChangeSelection` is only a
-gate: its presence does not change `onFinish` or `persistence`.
+Rejected, blocked, or cancelled changes never update the parent.
+Closing waits for in-flight `canChangeSelection` / `onChange` work to settle.
+`canChangeSelection` is only a gate: its presence does not change `onChange`
+or `onClose`. `viewOnClose` remains the overlay-lifecycle callback.
 
 ## Server-side search safety
 
@@ -302,16 +293,16 @@ are untouched.
 Use `syncPending(added:, removed:)` to apply an already-persisted external delta
 to the currently open picker's temporary pending set. It processes additions
 and removals symmetrically, but does not mutate `initialSelectedIds` or caller
-state and does not report the change again through `onFinish`. The caller must
+state and does not report the change again through `onChange` or `onClose`. The caller must
 update its authoritative selected IDs separately.
 
-## Persistence APIs
+## Persistence
 
-Use `PickerPersistence.onClose` to save the net session delta when the popup
-closes, or `PickerPersistence.immediate` to save each accepted delta as it
-happens. `PickerApplyMode.optimistic` updates a checkbox immediately and rolls
-it back if the gate or persist fails. `canChangeSelection` only accepts or
-rejects a proposed change; `onFinish` only observes the closed session.
+The picker notifies; the application persists. Save each accepted delta in
+`onChange`, or save the net session in `onClose`. `canChangeSelection` only
+accepts or rejects a proposed change. Checkboxes update after the gate
+succeeds. A thrown `onChange` / `onClose` error is reported and does not roll
+back selection.
 
 There is no replace-all close callback. Apply the explicit `added` and `removed`
 deltas, or use `initialSelectedIds` when the parent has a complete authoritative

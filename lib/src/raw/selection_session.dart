@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:search_anchor_picker/src/raw/picker_persistence.dart';
+import 'package:search_anchor_picker/src/raw/picker_selection.dart';
 
-export 'package:search_anchor_picker/src/raw/picker_persistence.dart'
+export 'package:search_anchor_picker/src/raw/picker_selection.dart'
     show PickerSelectionResult;
 
 /// Owns one open picker's selection snapshot and explicit user intent.

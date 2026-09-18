@@ -14,14 +14,12 @@ class _Harness {
   Future<void> open(
     WidgetTester tester, {
     required Future<bool> Function(int, bool) gate,
-    PickerApplyMode applyMode = PickerApplyMode.pessimistic,
     SelectionMode selectionMode = SelectionMode.multi,
     PickerUnselectPolicy policy = PickerUnselectPolicy.allow,
     SubPickerParentSelectionEffect effect =
         SubPickerParentSelectionEffect.mirror,
-    Future<void> Function(PickerDelta<int> delta)? persist,
-    bool persistImmediate = true,
-    bool withFinish = true,
+    Future<void> Function(PickerDelta<int> delta)? onChange,
+    bool withClose = true,
   }) async {
     addTearDown(parent.dispose);
     parent.addListener(() => notifications++);
@@ -37,14 +35,6 @@ class _Harness {
       applyDelta: (_, _) =>
           throw StateError('Parent sync must not create a delta'),
     );
-    final persistence = persistImmediate
-        ? PickerPersistence<int>.immediate(
-            persist: persist ?? ((_) async {}),
-            applyMode: applyMode,
-          )
-        : persist == null
-        ? null
-        : PickerPersistence<int>.onClose(persist: persist);
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -73,8 +63,10 @@ class _Harness {
               }
               return Future<bool>.value(true);
             },
-            persistence: persistence,
-            onFinish: withFinish
+            onChange: onChange == null
+                ? null
+                : (change) => onChange(change.delta),
+            onClose: withClose
                 ? (result) {
                     finishes.add((
                       result.added.toList(),
@@ -101,47 +93,45 @@ class _Harness {
 }
 
 void main() {
-  testWidgets('failed bulk save does not undo or replay an accepted row', (
-    tester,
-  ) async {
+  testWidgets('failed onChange does not undo an accepted row', (tester) async {
     final errors = <FlutterErrorDetails>[];
     final previous = FlutterError.onError;
     FlutterError.onError = errors.add;
     addTearDown(() => FlutterError.onError = previous);
     final h = _Harness();
-    var persists = 0;
+    var changes = 0;
     await h.open(
       tester,
       gate: (_, _) async => true,
-      persist: (delta) async {
-        persists++;
-        if (persists > 1) throw StateError('bulk failed');
+      onChange: (delta) async {
+        changes++;
+        if (changes > 1) throw StateError('bulk failed');
       },
     );
     await tester.tap(find.text('Item 2'));
     await tester.pumpAndSettle();
     h.child.clearLoaded();
     await tester.pumpAndSettle();
-    expect(h.parent.value, {1, 2, 9});
-    expect(h.notifications, 1);
+    expect(h.child.pendingIds, isEmpty);
+    expect(h.parent.value, {9});
+    expect(h.notifications, 2);
     expect(errors, hasLength(1));
     await h.close(tester);
   });
 
-  testWidgets('independent optimistic gates may complete out of order', (
-    tester,
-  ) async {
+  testWidgets('independent gates may complete out of order', (tester) async {
     final h = _Harness();
     final gates = {1: Completer<bool>(), 2: Completer<bool>()};
     await h.open(
       tester,
-      applyMode: PickerApplyMode.optimistic,
       gate: (item, _) => gates[item]!.future,
     );
     await tester.tap(find.text('Item 1'));
     await tester.pump();
     await tester.tap(find.text('Item 2'));
     await tester.pump();
+    expect(h.child.pendingIds, {1});
+    expect(h.parent.value, {1, 9});
     gates[2]!.complete(true);
     await tester.pumpAndSettle();
     expect(h.parent.value, {1, 2, 9});
@@ -154,7 +144,7 @@ void main() {
     expect(h.parent.value, {1, 2, 9});
   });
 
-  testWidgets('late child save cannot change a closed or reopened parent', (
+  testWidgets('late child onClose cannot change a closed or reopened parent', (
     tester,
   ) async {
     final save = Completer<void>();
@@ -182,9 +172,7 @@ void main() {
                   parentController: controller,
                   parentSelectionEffect:
                       SubPickerParentSelectionEffect.deselectRemoved,
-                  persistence: PickerPersistence.onClose(
-                    persist: (_) => save.future,
-                  ),
+                  onClose: (_) => save.future,
                 ),
               ];
             },
@@ -198,6 +186,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Row 1').last);
     await tester.pumpAndSettle();
+    expect(parent.pendingIds, isEmpty);
     await tester.tap(find.byTooltip('Back').last);
     await tester.pumpAndSettle();
     parent.close();
@@ -210,102 +199,93 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final mode in PickerApplyMode.values) {
-    testWidgets('$mode syncs only after success and never replays on close', (
+  testWidgets('syncs only after gate success and never replays on close', (
+    tester,
+  ) async {
+    final h = _Harness();
+    final accepted = Completer<bool>();
+    await h.open(tester, gate: (_, _) => accepted.future);
+    await tester.tap(find.text('Item 2'));
+    await tester.pump();
+    expect(h.parent.value, {1, 9});
+    expect(h.child.pendingIds.contains(2), isFalse);
+    await tester.tap(find.text('Item 2'));
+    await tester.pump();
+    expect(h.gates, 1);
+    accepted.complete(true);
+    await tester.pumpAndSettle();
+    expect(h.parent.value, {1, 2, 9});
+    expect(h.notifications, 1);
+    await h.close(tester);
+    expect(h.finishes.single.$1, unorderedEquals([2]));
+    expect(h.finishes.single.$2, isEmpty);
+    expect(h.notifications, 1);
+  });
+
+  for (final throws in [false, true]) {
+    testWidgets('rejection (throws=$throws) leaves no parent delta', (
       tester,
     ) async {
+      final errors = <FlutterErrorDetails>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previous);
       final h = _Harness();
-      final accepted = Completer<bool>();
-      await h.open(tester, applyMode: mode, gate: (_, _) => accepted.future);
-      await tester.tap(find.text('Item 2'));
-      await tester.pump();
-      expect(h.parent.value, {1, 9});
-      expect(
-        h.child.pendingIds.contains(2),
-        mode == PickerApplyMode.optimistic,
-      );
-      // A second tap while the same request is pending must not submit twice.
-      await tester.tap(find.text('Item 2'));
-      await tester.pump();
-      expect(h.gates, 1);
-      accepted.complete(true);
-      await tester.pumpAndSettle();
-      expect(h.parent.value, {1, 2, 9});
-      expect(h.notifications, 1);
-      await h.close(tester);
-      expect(h.finishes.single.$1, unorderedEquals([2]));
-      expect(h.finishes.single.$2, isEmpty);
-      expect(h.notifications, 1);
-    });
-
-    for (final throws in [false, true]) {
-      testWidgets('$mode rejection (throws=$throws) leaves no parent delta', (
+      await h.open(
         tester,
-      ) async {
-        final errors = <FlutterErrorDetails>[];
-        final previous = FlutterError.onError;
-        FlutterError.onError = errors.add;
-        addTearDown(() => FlutterError.onError = previous);
-        final h = _Harness();
-        await h.open(
-          tester,
-          applyMode: mode,
-          gate: (_, _) async {
-            if (throws) throw StateError('save failed');
-            return false;
-          },
-        );
-        await tester.tap(find.text('Item 1'));
-        await tester.pumpAndSettle();
-        expect(h.child.pendingIds, {1});
-        expect(h.parent.value, {1, 9});
-        await h.close(tester);
-        expect(h.finishes.single.$1, isEmpty);
-        expect(h.finishes.single.$2, isEmpty);
-        expect(h.notifications, 0);
-        expect(errors, hasLength(throws ? 1 : 0));
-      });
-    }
-
-    testWidgets('$mode defers close until the pending toggle settles', (
-      tester,
-    ) async {
-      final h = _Harness();
-      final accepted = Completer<bool>();
-      await h.open(tester, applyMode: mode, gate: (_, _) => accepted.future);
-      await tester.tap(find.text('Item 2'));
-      await tester.pump();
-      await h.close(tester);
-      expect(h.finishes, isEmpty);
-      expect(find.byType(SearchBar), findsOneWidget);
-      accepted.complete(true);
+        gate: (_, _) async {
+          if (throws) throw StateError('save failed');
+          return false;
+        },
+      );
+      await tester.tap(find.text('Item 1'));
       await tester.pumpAndSettle();
-      expect(find.byType(SearchBar), findsNothing);
-      expect(h.parent.value, {1, 2, 9});
-      expect(h.finishes.single.$1, unorderedEquals([2]));
-      expect(h.finishes.single.$2, isEmpty);
-    });
-
-    testWidgets('$mode ignores gate completion after disposal', (tester) async {
-      final h = _Harness();
-      final accepted = Completer<bool>();
-      await h.open(tester, applyMode: mode, gate: (_, _) => accepted.future);
-      await tester.tap(find.text('Item 2'));
-      await tester.pump();
-      await tester.pumpWidget(const SizedBox());
-      accepted.complete(true);
-      await tester.pumpAndSettle();
+      expect(h.child.pendingIds, {1});
       expect(h.parent.value, {1, 9});
-      expect(h.finishes, isEmpty);
-      expect(tester.takeException(), isNull);
+      await h.close(tester);
+      expect(h.finishes.single.$1, isEmpty);
+      expect(h.finishes.single.$2, isEmpty);
+      expect(h.notifications, 0);
+      expect(errors, hasLength(throws ? 1 : 0));
     });
   }
+
+  testWidgets('defers close until the pending gate settles', (tester) async {
+    final h = _Harness();
+    final accepted = Completer<bool>();
+    await h.open(tester, gate: (_, _) => accepted.future);
+    await tester.tap(find.text('Item 2'));
+    await tester.pump();
+    await h.close(tester);
+    expect(h.finishes, isEmpty);
+    expect(find.byType(SearchBar), findsOneWidget);
+    accepted.complete(true);
+    await tester.pumpAndSettle();
+    expect(find.byType(SearchBar), findsNothing);
+    expect(h.parent.value, {1, 2, 9});
+    expect(h.finishes.single.$1, unorderedEquals([2]));
+    expect(h.finishes.single.$2, isEmpty);
+  });
+
+  testWidgets('ignores gate completion after disposal', (tester) async {
+    final h = _Harness();
+    final accepted = Completer<bool>();
+    await h.open(tester, gate: (_, _) => accepted.future);
+    await tester.tap(find.text('Item 2'));
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox());
+    accepted.complete(true);
+    await tester.pumpAndSettle();
+    expect(h.parent.value, {1, 9});
+    expect(h.finishes, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final policy in [
     PickerUnselectPolicy.blocked,
     PickerUnselectPolicy.confirm,
   ]) {
-    testWidgets('$policy stops removal before persistence or parent sync', (
+    testWidgets('$policy stops removal before onChange or parent sync', (
       tester,
     ) async {
       final h = _Harness();
@@ -320,7 +300,7 @@ void main() {
     });
   }
 
-  testWidgets('bulk reversal of a saved row waits for persist then syncs', (
+  testWidgets('bulk reversal syncs parent when the child selection changes', (
     tester,
   ) async {
     final h = _Harness();
@@ -328,7 +308,7 @@ void main() {
     await h.open(
       tester,
       gate: (_, _) async => true,
-      persist: (delta) async {
+      onChange: (delta) async {
         if (delta.removed.isNotEmpty && delta.added.isEmpty) {
           await saved.future;
         }
@@ -338,20 +318,19 @@ void main() {
     await tester.pumpAndSettle();
     expect(h.parent.value, {1, 2, 9});
     h.child.clearLoaded();
-    await tester.pumpAndSettle();
-    expect(h.child.pendingIds, {1, 2});
-    expect(h.parent.value, {1, 2, 9});
-    saved.complete();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
     expect(h.child.pendingIds, isEmpty);
     expect(h.parent.value, {9});
+    saved.complete();
+    await tester.pumpAndSettle();
     await h.close(tester);
     expect(h.finishes.single.$1, isEmpty);
     expect(h.finishes.single.$2, unorderedEquals([1]));
     expect(h.gates, 2);
   });
 
-  testWidgets('bulk selection after a saved removal is persisted immediately', (
+  testWidgets('bulk selection after a saved removal is applied immediately', (
     tester,
   ) async {
     final h = _Harness();
@@ -367,9 +346,9 @@ void main() {
     expect(h.parent.value, {1, 2, 3, 9});
   });
 
-  testWidgets('immediate persistence also syncs bulk commands', (tester) async {
+  testWidgets('bulk commands also sync the parent', (tester) async {
     final h = _Harness();
-    await h.open(tester, gate: (_, _) async => true, withFinish: false);
+    await h.open(tester, gate: (_, _) async => true, withClose: false);
     h.child.clearLoaded();
     await tester.pumpAndSettle();
     await h.close(tester);

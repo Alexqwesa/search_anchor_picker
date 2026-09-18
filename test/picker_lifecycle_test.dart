@@ -617,7 +617,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: config,
           initialSelectedIds: const [],
-          onFinish: (_) {
+          onClose: (_) {
             finishCount++;
           },
         ),
@@ -775,7 +775,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: config,
           initialSelectedIds: const [],
-          onFinish: (_) {
+          onClose: (_) {
             throw StateError('save failed');
           },
         ),

@@ -94,20 +94,18 @@ parent with a complete authoritative snapshot can reseed `initialSelectedIds`.
 options. Parent selection and sub-list membership are independent by default.
 `SubPickerParentSelectionEffect` defaults to `none`. Its opt-in `selectAdded`,
 `deselectRemoved`, and `mirror` values apply either or
-both sides of a successfully persisted child delta into the open parent's pending set.
+both sides of an accepted child delta into the open parent's pending set.
 `syncPending` applies the update on the next frame. These effects do not persist
 parent selection, update the external parent seed, or create a parent
-persistence delta. Consumers with separate parent-selection persistence must
-save that change in the child persist callback and handle failures.
+`onChange` / `onClose` delta. Consumers with separate parent-selection
+persistence must save that change in `onChange` or `onClose` and handle failures.
 
-`SubPickerTile` forwards `canChangeSelection`, `persistence`, `onFinish`, and
+`SubPickerTile` forwards `canChangeSelection`, `onChange`, `onClose`, and
 `headerBuilder`. Accepted deltas share one apply pipeline for rows and bulk
-commands. Immediate persistence syncs after each successful persist and does
-not replay the net session on close. On-close persistence and local-only
-sessions sync leftover changes after close. Root and nested pickers use the
-same contracts. Policies run before gates, pending applies defer close, and
-rejected/throwing optimistic gates roll back. Deferred controller updates are
-session-guarded so late child saves cannot mutate a closed or reopened parent.
+commands. The picker notifies; the application persists. Policies run before
+gates, pending work defers close, and a rejected gate never applies. Deferred
+controller updates are session-guarded so late child callbacks cannot mutate a
+closed or reopened parent.
 
 Nested overlays use no follower layers or permanent trigger keys. This avoids the
 paint-transform failures that can occur when editing a search field under a

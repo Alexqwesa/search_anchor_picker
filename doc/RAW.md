@@ -13,7 +13,7 @@ from `package:search_anchor_picker/search_anchor_picker.dart` and
 - `SubPickerTile` / `GenericSubPickerTile`
 - `PickerRelatedListItemStatus`, `PickerUnselectPolicy`,
   `PickerAuxiliaryMembership`, `SubPickerParentSelectionEffect`,
-  `PickerPersistence`, `PickerSelectionResult`
+  `PickerSelectionResult`, `PickerDelta`, `PickerSelectionChange`
 - default widgets exported by `widgets.dart`
 
 Do not tell application code to import `package:search_anchor_picker/raw.dart`.
@@ -30,7 +30,7 @@ effects.
 | Overlay, search, selection, load/close | Raw | `GenericRawSearchAnchorPicker`, `GenericRawPickerConfig`, `OverlayBody`, `PickerSelectionSession` |
 | Related-list status and unselect policy | Main | `PickerRelatedListItemStatus`, `GenericPickerConfig`, `GenericSearchAnchorPicker` |
 | Parent/child checkbox sync | Main | `SubPickerParentSelectionEffect`, `GenericSubPickerTile` |
-| Persistence policy | Raw | `PickerPersistence`, `canChangeSelection`, observer `onFinish` |
+| Selection observables | Raw | `canChangeSelection`, `onChange`, `onClose` |
 | Nested tile without parent sync | Raw | `GenericRawSubPickerTile` |
 
 ## Libraries
@@ -48,8 +48,8 @@ effects.
 - `lib/src/raw/selection_session.dart`: initial seed, pending IDs, and explicit
   delta bookkeeping.
 - `lib/src/raw/overlay_body.dart`: filtering, rows, and toggle orchestration.
-- `lib/src/raw/picker_persistence.dart`: `PickerDelta`, `PickerPersistence`,
-  apply mode, and session result types.
+- `lib/src/raw/picker_selection.dart`: `PickerDelta`, `PickerSelectionChange`,
+  and session result types.
 - `lib/src/raw/picker_config.dart`: raw config, controller, `PickerUnselectPolicy`.
 - `lib/src/picker_status.dart`: related-list membership and unselect policy.
 - `lib/src/picker_config.dart`: public config wrapping the raw config.
@@ -70,9 +70,9 @@ effects.
   then confirm the main wrappers still forward the public API.
 - Related-list status, membership icons, unselect policy: edit main wrappers
   and `lib/src/picker_status.dart`. Do not teach raw about auxiliary membership.
-- Parent/child sync (`SubPickerParentSelectionEffect` via `onDeltaPersisted`):
+- Parent/child sync (`SubPickerParentSelectionEffect` via composed `onChange`):
   edit `lib/src/widgets/sub_picker_tile.dart`. Raw tiles must not apply parent
-  effects. Persistence, gates, and observer `onFinish` belong on the raw picker.
+  effects. Gates and observables `onChange` / `onClose` belong on the raw picker.
 
 When public behavior changes, update README, `doc/USAGE_SKILL.md`, tests,
 example, and changelog. Update this file only when the raw/main split changes.

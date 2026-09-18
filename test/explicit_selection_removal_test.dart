@@ -35,7 +35,7 @@ void main() {
               initialSelectedIds: const [1, 2, 3],
               triggerBuilder: (_, open, __) =>
                   ElevatedButton(onPressed: open, child: const Text('Open')),
-              onFinish: (result) {
+              onClose: (result) {
                 final added = result.added.toList();
                 final removed = result.removed.toList();
                 addedIds = added;
@@ -81,7 +81,7 @@ void main() {
             initialSelectedIds: const [1, 2, 3],
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               addedIds = added;
@@ -127,7 +127,7 @@ void main() {
               initialSelectedIds: const [1, 2, 3],
               triggerBuilder: (_, open, __) =>
                   ElevatedButton(onPressed: open, child: const Text('Open')),
-              onFinish: (result) {
+              onClose: (result) {
                 final added = result.added.toList();
                 final removed = result.removed.toList();
                 removedIds = removed;
@@ -172,7 +172,7 @@ void main() {
               initialSelectedIds: const [1, 2],
               triggerBuilder: (_, open, __) =>
                   ElevatedButton(onPressed: open, child: const Text('Open')),
-              onFinish: (result) {
+              onClose: (result) {
                 final added = result.added.toList();
                 final removed = result.removed.toList();
                 removedIds = removed;
@@ -223,7 +223,7 @@ void main() {
                     onPressed: open,
                     child: const Text('Open'),
                   ),
-                  onFinish: (result) {
+                  onClose: (result) {
                     removedIds = result.removed.toList();
                   },
                 );
@@ -292,7 +292,7 @@ void main() {
                     onPressed: open,
                     child: const Text('Open'),
                   ),
-                  onFinish: (result) {
+                  onClose: (result) {
                     removedIds = result.removed.toList();
                   },
                 );
@@ -342,7 +342,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               removedIds = result.removed.toList();
             },
           ),
@@ -388,7 +388,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               removedIds = result.removed.toList();
             },
           ),
@@ -434,7 +434,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               removedIds = result.removed.toList();
             },
           ),
@@ -480,7 +480,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               removedIds = removed;
@@ -531,7 +531,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               addedIds = added;
@@ -582,7 +582,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               removedIds = removed;
@@ -635,7 +635,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               addedIds = added;
@@ -697,7 +697,7 @@ void main() {
             },
             triggerBuilder: (_, open, __) =>
                 ElevatedButton(onPressed: open, child: const Text('Open')),
-            onFinish: (result) {
+            onClose: (result) {
               final added = result.added.toList();
               final removed = result.removed.toList();
               addedIds = added;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:search_anchor_picker/src/picker_config.dart';
 import 'package:search_anchor_picker/src/picker_status.dart';
@@ -8,9 +10,8 @@ import 'package:search_anchor_picker/src/related_list_item.dart';
 ///
 /// Auxiliary-list membership and parent selection are independent by default.
 /// These effects update only the currently open parent's pending checkboxes
-/// after a successfully persisted child delta, or after close when the child
-/// is local-only. They do not persist parent selection or create parent
-/// persistence deltas.
+/// after an accepted child selection change. They do not persist parent
+/// selection or create parent `onChange` / `onClose` deltas.
 enum SubPickerParentSelectionEffect {
   /// Do not modify the parent picker's pending selection.
   none,
@@ -58,8 +59,8 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
     this.parentSelectionEffect = SubPickerParentSelectionEffect.none,
     super.icon,
     super.canChangeSelection,
-    super.persistence,
-    super.onFinish,
+    FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange,
+    super.onClose,
     SelectionMode selectionMode = SelectionMode.multi,
     super.leading,
     super.subtitle,
@@ -114,16 +115,16 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
          canUnselect: (context, item) {
            return relatedListCanUnselect(context, config, item);
          },
-         onDeltaPersisted:
-             parentSelectionEffect == SubPickerParentSelectionEffect.none
-             ? null
-             : (delta) {
+         onChange: parentSelectionEffect == SubPickerParentSelectionEffect.none
+             ? onChange
+             : (change) {
                  _applyParentEffect(
                    parentController,
                    parentSelectionEffect,
-                   delta.added,
-                   delta.removed,
+                   change.delta.added,
+                   change.delta.removed,
                  );
+                 return onChange?.call(change);
                },
        );
 
@@ -144,8 +145,8 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     super.parentController,
     super.parentSelectionEffect,
     super.canChangeSelection,
-    super.persistence,
-    super.onFinish,
+    super.onChange,
+    super.onClose,
     super.selectionMode,
     super.leading,
     super.subtitle,

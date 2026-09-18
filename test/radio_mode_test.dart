@@ -25,7 +25,7 @@ void main() {
                 config: config,
                 initialSelectedIds: currentSelection,
                 selectionMode: SelectionMode.singleOptional,
-                onFinish: (result) {
+                onClose: (result) {
                   setState(() {
                     currentSelection = [
                       ...currentSelection.where(
@@ -91,7 +91,7 @@ void main() {
                 config: config,
                 initialSelectedIds: currentSelection,
                 selectionMode: SelectionMode.single,
-                onFinish: (result) {
+                onClose: (result) {
                   setState(() {
                     currentSelection = [
                       ...currentSelection.where(

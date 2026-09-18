@@ -29,7 +29,7 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinish: (result) {
+              onClose: (result) {
                 finishCount++;
                 selected
                   ..addAll(result.added)
@@ -97,7 +97,7 @@ void main() {
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
               ),
-              onFinish: (result) {
+              onClose: (result) {
                 finishCount++;
                 selected
                   ..addAll(result.added)
