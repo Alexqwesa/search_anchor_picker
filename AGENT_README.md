@@ -112,16 +112,22 @@ insufficient knowledge from a partial result; it must remain distinct from
 `notMember`. An authoritative per-item flag can establish membership without
 loading the whole auxiliary list.
 
-The picker notifies; it does not persist. Save from `onChange` (each accepted
-toggle) or `onClose` (whole delta of session). Return false from
-`canChangeSelection` to leave checkboxes unchanged. Leaving it null is the
-same as always allowing.
+The picker notifies; it does not persist.
+
+Persist in `canChangeSelection` if the checkbox must not move until save
+succeeds. Return false on fail; the checkbox never changes. Leaving the gate
+null is the same as always allowing.
+
+Persist in `onChange` (each accepted toggle) if the checkbox should move
+first. A thrown `onChange` error restores the checkbox and session intent.
+Persist in `onClose` (whole delta of session) after close; a thrown error is
+reported and cannot restore the overlay.
 
 Apply order is unselect policy, then the gate, then pending checkboxes, then
 `onChange`. A blocked or cancelled unselect never reaches the gate. A
-rejected gate never applies and never parent-syncs. Close waits for in-flight
-gates and `onChange` work. A thrown `onChange` / `onClose` is reported and
-does not roll back selection.
+rejected gate never applies and never parent-syncs. A thrown `onChange`
+restores the checkbox and does not parent-sync. Close waits for in-flight
+gates and `onChange` work.
 
 `SubPickerTile` leaves parent selection unchanged unless
 `parentSelectionEffect` is set. Passing `parentController` alone does not

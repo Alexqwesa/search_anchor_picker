@@ -65,15 +65,17 @@ Follow these invariants:
 
 ## Observables
 
-The picker notifies; it does not persist. Save from `onChange` (each accepted
-toggle) or `onClose` (whole delta of session). Bulk header commands also go
-through `onChange`.
+The picker notifies; it does not persist.
 
-Return false from `canChangeSelection` to leave checkboxes unchanged.
-Checkboxes update after that gate succeeds. Persist from IDs, not from loaded
-items. Handle persistence errors in application code; a thrown observer does
-not roll back selection. `viewOnClose` is the overlay lifecycle callback, not
-the selection result.
+Persist in `canChangeSelection` if the checkbox must not move until save
+succeeds. Return false on fail; the checkbox never changes.
+
+Persist in `onChange` (each accepted toggle) if the checkbox should move
+first. Bulk header commands also go through `onChange`. A thrown `onChange`
+error restores the checkbox. Persist in `onClose` (whole delta of session)
+after the overlay is gone; a thrown error is reported and cannot restore it.
+Persist from IDs, not from loaded items. `viewOnClose` is the overlay
+lifecycle callback, not the selection result.
 
 ## Item reloads
 
@@ -168,9 +170,9 @@ the parent's `initialSelectedIds`, or create a parent `onChange` / `onClose`
 delta. If parent selection and sub-list membership are separate backend
 records, the child's `onChange` or `onClose` callback must save both changes
 and update the authoritative parent IDs for the next open. The package updates
-open parent checkboxes without a full reseed after each accepted child
-selection change, including bulk header commands. `canChangeSelection` is only
-a gate. Rejected, blocked, or cancelled changes never synchronize.
+open parent checkboxes without a full reseed after each successful child
+`onChange`, including bulk header commands. Rejected, blocked, cancelled, or
+thrown-`onChange` changes never synchronize.
 
 ## Related-list status
 

@@ -8,9 +8,11 @@
 * Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
 * Breaking: the picker notifies through `onChange` (`PickerDelta`) and `onClose`.
   Applications persist. `canChangeSelection` receives `PickerSelectionChange`.
+  A thrown `onChange` restores the checkbox. A thrown `onClose` cannot; the
+  overlay is already closed.
 * Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
-  Parent sync runs after an accepted child selection change.
+  Parent sync runs after a successful child `onChange`.
 * Row toggles and bulk header commands share the same apply pipeline.
 
 ## 0.1.2

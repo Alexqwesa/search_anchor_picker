@@ -268,7 +268,8 @@ onClose: (result) {
 },
 ```
 
-Rejected, blocked, or cancelled changes never update the parent.
+Rejected, blocked, cancelled, or thrown-`onChange` changes never update the
+parent.
 Closing waits for in-flight `canChangeSelection` / `onChange` work to settle.
 `viewOnClose` remains the overlay-lifecycle callback.
 
@@ -294,11 +295,15 @@ update its authoritative selected IDs separately.
 
 ## Persistence
 
-The picker notifies; it does not persist. Save from `onChange` (each accepted
-toggle) or `onClose` (whole delta of session). Return false from
-`canChangeSelection` to leave checkboxes unchanged. Checkboxes update after
-the gate succeeds. A thrown `onChange` / `onClose` error is reported and does
-not roll back selection.
+The picker notifies; it does not persist.
+
+Persist in `canChangeSelection` if the checkbox must not move until save
+succeeds. Return false on fail; the checkbox never changes.
+
+Persist in `onChange` (each accepted toggle) if the checkbox should move
+first. A thrown `onChange` error restores the checkbox. Persist in `onClose`
+(whole delta of session) after the overlay is gone; a thrown error is
+reported and cannot restore it.
 
 There is no replace-all close callback. Persist `added` and `removed`.
 `initialSelectedIds` is only the seed for the next open, from your selected

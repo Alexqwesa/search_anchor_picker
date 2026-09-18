@@ -88,13 +88,15 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// Persistence belongs in application code. Persist from IDs; loaded items
   /// can be missing from the current `loadItems` result. If this returns a
   /// [Future], the picker awaits it so close waits for in-flight work. A
-  /// thrown error is reported and does not roll back the applied selection.
+  /// thrown error is reported and restores the checkbox and session intent.
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
 
   /// Observes the net result of one closed session.
   ///
   /// This is not overlay-lifecycle [viewOnClose]. Persistence belongs in
-  /// application code. If this returns a [Future], the picker awaits it.
+  /// application code. If this returns a [Future], the picker awaits it. A
+  /// thrown error is reported; the overlay is already closed so selection
+  /// cannot be restored.
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
   final SearchController? searchController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
@@ -792,7 +794,14 @@ class _GenericRawSearchAnchorPickerState<T, K>
       final after = {...before, ...added}..removeAll(removed);
       _selection.recordExplicitChange(before, after);
       _pendingN.value = after;
-      await _runOnChange(change.delta);
+      if (!await _runOnChange(change.delta)) {
+        _selection.recordExplicitChange(after, before);
+        if (_pendingN.value.length == after.length &&
+            _pendingN.value.containsAll(after)) {
+          _pendingN.value = before;
+        }
+        return false;
+      }
       return true;
     } finally {
       _pendingToggles--;
@@ -814,12 +823,14 @@ class _GenericRawSearchAnchorPickerState<T, K>
     );
   }
 
-  Future<void> _runOnChange(PickerDelta<K> delta) async {
-    if (widget.onChange == null) return;
+  Future<bool> _runOnChange(PickerDelta<K> delta) async {
+    if (widget.onChange == null) return true;
     try {
       await widget.onChange!(delta);
+      return true;
     } on Object catch (error, stack) {
       _reportCallbackError('onChange', error, stack);
+      return false;
     }
   }
 

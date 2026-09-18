@@ -91,7 +91,7 @@ class _Harness {
 }
 
 void main() {
-  testWidgets('failed onChange does not undo an accepted row', (tester) async {
+  testWidgets('failed onChange restores the checkbox', (tester) async {
     final errors = <FlutterErrorDetails>[];
     final previous = FlutterError.onError;
     FlutterError.onError = errors.add;
@@ -110,9 +110,9 @@ void main() {
     await tester.pumpAndSettle();
     h.child.clearLoaded();
     await tester.pumpAndSettle();
-    expect(h.child.pendingIds, isEmpty);
-    expect(h.parent.value, {9});
-    expect(h.notifications, 2);
+    expect(h.child.pendingIds, {1, 2});
+    expect(h.parent.value, {1, 2, 9});
+    expect(h.notifications, 1);
     expect(errors, hasLength(1));
     await h.close(tester);
   });
@@ -319,9 +319,10 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(h.child.pendingIds, isEmpty);
-    expect(h.parent.value, {9});
+    expect(h.parent.value, {1, 2, 9});
     saved.complete();
     await tester.pumpAndSettle();
+    expect(h.parent.value, {9});
     await h.close(tester);
     expect(h.finishes.single.$1, isEmpty);
     expect(h.finishes.single.$2, unorderedEquals([1]));
