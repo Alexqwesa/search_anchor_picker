@@ -19,6 +19,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     this.canChangeSelection,
     this.onChange,
     this.onClose,
+    this.closeSavingBuilder,
+    this.closeSaveFailedBuilder,
     this.selectionMode = SelectionMode.multi,
     this.leading,
     this.subtitle,
@@ -72,6 +74,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   canChangeSelection;
   final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
+  final PickerCloseSavingBuilder? closeSavingBuilder;
+  final PickerCloseSaveFailedBuilder? closeSaveFailedBuilder;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final List<Widget> Function(
     BuildContext,
@@ -120,6 +124,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
       canChangeSelection: canChangeSelection,
       onChange: onChange,
       onClose: onClose,
+      closeSavingBuilder: closeSavingBuilder,
+      closeSaveFailedBuilder: closeSaveFailedBuilder,
       headerBuilder: headerBuilder,
       selectionMode: selectionMode,
       itemBuilder: itemBuilder,
@@ -184,6 +190,8 @@ class RawSubPickerTile<T> extends GenericRawSubPickerTile<T, int> {
     super.key,
     super.icon,
     super.onClose,
+    super.closeSavingBuilder,
+    super.closeSaveFailedBuilder,
     super.canChangeSelection,
     super.onChange,
     super.selectionMode,

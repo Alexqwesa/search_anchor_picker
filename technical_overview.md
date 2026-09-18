@@ -101,10 +101,12 @@ parent selection, update the external parent seed, or create a parent
 persistence must save that change in `onChange` or `onClose` and handle failures.
 
 `SubPickerTile` forwards `canChangeSelection`, `onChange` (`PickerDelta`),
-`onClose`, and `headerBuilder`. Accepted deltas share one apply pipeline for
-rows and bulk commands. The picker notifies; the application persists. Policies
-run before gates. A thrown `onChange` restores the checkbox and skips parent
-sync. A rejected gate never applies. Pending work defers close. Deferred
+`onClose`, `closeSavingBuilder`, `closeSaveFailedBuilder`, and `headerBuilder`.
+Accepted deltas share one apply pipeline for rows and bulk commands. The picker
+notifies; the application persists. Policies run before gates. A thrown
+`onChange` restores the checkbox and skips parent sync. A rejected gate never
+applies. Close waits for `onClose`; a thrown `onClose` keeps the overlay open
+and asks whether to keep editing. Pending work defers close. Deferred
 controller updates are session-guarded so late child callbacks cannot mutate a
 closed or reopened parent.
 

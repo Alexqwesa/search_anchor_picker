@@ -21,6 +21,8 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     this.canChangeSelection,
     this.onChange,
     this.onClose,
+    this.closeSavingBuilder,
+    this.closeSaveFailedBuilder,
     this.searchController,
     this.triggerBuilder,
     this.triggerChild,
@@ -94,10 +96,20 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// Observes the net result of one closed session.
   ///
   /// This is not overlay-lifecycle [viewOnClose]. Persistence belongs in
-  /// application code. If this returns a [Future], the picker awaits it. A
-  /// thrown error is reported; the overlay is already closed so selection
-  /// cannot be restored.
+  /// application code. If this returns a [Future], the picker awaits it while
+  /// the overlay stays open. A thrown error is reported and the user is asked
+  /// whether to keep editing or close without saving.
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
+
+  /// Optional wrap for the open view while [onClose] is saving.
+  ///
+  /// When null, a localized saving overlay is shown.
+  final PickerCloseSavingBuilder? closeSavingBuilder;
+
+  /// Optional prompt after [onClose] throws.
+  ///
+  /// When null, a localized dialog offers update-selection or close-without-saving.
+  final PickerCloseSaveFailedBuilder? closeSaveFailedBuilder;
   final SearchController? searchController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget? triggerChild;
@@ -188,6 +200,8 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     super.canChangeSelection,
     super.onChange,
     super.onClose,
+    super.closeSavingBuilder,
+    super.closeSaveFailedBuilder,
     super.searchController,
     super.triggerBuilder,
     super.triggerChild,
@@ -262,6 +276,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
   PickerSelectionSession<K>? _selectionSession;
   int _pendingToggles = 0;
   bool _closeAfterToggle = false;
+  bool _savingClose = false;
+  bool _saveFailedPromptOpen = false;
+  ValueNotifier<bool>? _savingNotifier;
 
   SearchController get _controller {
     if (widget.searchController case final external?) return external;
@@ -309,6 +326,13 @@ class _GenericRawSearchAnchorPickerState<T, K>
     final notifier = ValueNotifier<int>(0);
     PickerResourceTracker.register(notifier);
     return _viewTickNotifier = notifier;
+  }
+
+  ValueNotifier<bool> get _savingN {
+    if (_savingNotifier case final notifier?) return notifier;
+    final notifier = ValueNotifier<bool>(false);
+    PickerResourceTracker.register(notifier);
+    return _savingNotifier = notifier;
   }
 
   Map<Object, GlobalKey>? _headerKeys;
@@ -397,6 +421,14 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _viewTickNotifier = null;
   }
 
+  void _disposeSavingNotifier() {
+    final notifier = _savingNotifier;
+    if (notifier == null) return;
+    PickerResourceTracker.unregister(notifier);
+    notifier.dispose();
+    _savingNotifier = null;
+  }
+
   void _disposeOpenController() {
     final controller = _openController;
     if (controller == null) return;
@@ -470,6 +502,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _clearHeaderKeys();
     _disposeSelectionSession();
     _disposeViewTickNotifier();
+    _disposeSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
     _disposeOwnedController();
@@ -523,6 +556,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _selection.open(widget.initialSelectedIds);
     _pendingToggles = 0;
     _closeAfterToggle = false;
+    _savingClose = false;
+    _saveFailedPromptOpen = false;
+    if (_savingNotifier != null) _savingN.value = false;
     _stableIds = <K>[];
     _itemsSnapshot = null;
     _loadError = null;
@@ -548,12 +584,59 @@ class _GenericRawSearchAnchorPickerState<T, K>
   }
 
   void _close([String? reason]) {
-    if (!_open) return;
+    if (!_open || _savingClose || _saveFailedPromptOpen) return;
     if (_pendingToggles > 0) {
       _closeAfterToggle = true;
       return;
     }
+    if (widget.onClose == null) {
+      _finishClose(reason);
+      return;
+    }
+    unawaited(_saveThenClose(reason));
+  }
+
+  Future<void> _saveThenClose(String? reason) async {
+    _savingClose = true;
+    _savingN.value = true;
+    _overlayEntry?.markNeedsBuild();
+    final result = _selection.result();
+    try {
+      await widget.onClose!(result);
+      if (!mounted) return;
+      _finishClose(reason);
+    } on Object catch (error, stackTrace) {
+      _reportCallbackError('onClose', error, stackTrace);
+      if (!mounted || !_open) return;
+      _savingN.value = false;
+      _savingClose = false;
+      _overlayEntry?.markNeedsBuild();
+      _saveFailedPromptOpen = true;
+      try {
+        final action =
+            await (widget.closeSaveFailedBuilder?.call(
+                  context,
+                  error,
+                  stackTrace,
+                ) ??
+                showDefaultPickerCloseSaveFailed(context));
+        if (!mounted) return;
+        if (action == CloseSaveFailedAction.closeWithoutSaving) {
+          _finishClose(reason);
+        }
+      } on Object catch (dialogError, dialogStack) {
+        _reportCallbackError('closeSaveFailedBuilder', dialogError, dialogStack);
+      } finally {
+        _saveFailedPromptOpen = false;
+      }
+    }
+  }
+
+  void _finishClose([String? reason]) {
+    if (!_open) return;
     PickerDebug.log('RawSearchAnchorPicker: Closing picker. Reason=$reason');
+    _savingClose = false;
+    _saveFailedPromptOpen = false;
     setState(() => _open = false);
     WidgetsBinding.instance.removeObserver(this);
     _openPickerStack.remove(this);
@@ -561,8 +644,6 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _cancelScheduledReload();
     final queryAtClose = _controller.text;
     final externalController = widget.searchController;
-    final result = _selection.result();
-    final onClose = widget.onClose;
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
@@ -573,6 +654,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _stableIds = <K>[];
     _disposeSelectionSession();
     _disposeViewTickNotifier();
+    _disposeSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
     if (externalController == null) {
@@ -592,7 +674,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           externalController.text = queryAtClose;
         }
       }
-      unawaited(_runCloseCallback(result, onClose));
+      setState(() => _tick++);
     });
   }
 
@@ -603,19 +685,6 @@ class _GenericRawSearchAnchorPickerState<T, K>
         _searchFocusNode?.requestFocus();
       }
     });
-  }
-
-  Future<void> _runCloseCallback(
-    PickerSelectionResult<K> result,
-    FutureOr<void> Function(PickerSelectionResult<K> result)? onClose,
-  ) async {
-    try {
-      await onClose?.call(result);
-    } on Object catch (error, stackTrace) {
-      _reportCallbackError('onClose', error, stackTrace);
-    } finally {
-      if (mounted) setState(() => _tick++);
-    }
   }
 
   void _callLifecycleCallback(String name, VoidCallback? callback) {
@@ -980,8 +1049,18 @@ class _GenericRawSearchAnchorPickerState<T, K>
     bool fullScreen,
   ) {
     final child = _buildView(context, style, fullScreen);
-    return widget.viewSurfaceBuilder?.call(context, child, fullScreen) ??
+    final surface =
+        widget.viewSurfaceBuilder?.call(context, child, fullScreen) ??
         DefaultPickerViewSurface(style: style, child: child);
+    if (widget.onClose == null) return surface;
+    return ValueListenableBuilder<bool>(
+      valueListenable: _savingN,
+      builder: (context, saving, _) {
+        if (!saving) return surface;
+        return widget.closeSavingBuilder?.call(context, surface) ??
+            DefaultPickerCloseSaving(child: surface);
+      },
+    );
   }
 
   bool _isFullScreen(BuildContext context) {

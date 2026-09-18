@@ -73,9 +73,11 @@ succeeds. Return false on fail; the checkbox never changes.
 Persist in `onChange` (each accepted toggle) if the checkbox should move
 first. Bulk header commands also go through `onChange`. A thrown `onChange`
 error restores the checkbox. Persist in `onClose` (whole delta of session)
-after the overlay is gone; a thrown error is reported and cannot restore it.
-Persist from IDs, not from loaded items. `viewOnClose` is the overlay
-lifecycle callback, not the selection result.
+while the overlay stays open. A thrown error is reported and the user is
+asked whether to update the selection or close without saving. Override with
+`closeSavingBuilder` and `closeSaveFailedBuilder`. Persist from IDs, not from
+loaded items. `viewOnClose` is the overlay lifecycle callback, not the
+selection result.
 
 ## Item reloads
 

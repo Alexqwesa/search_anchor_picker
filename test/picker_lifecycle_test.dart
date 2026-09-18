@@ -786,9 +786,117 @@ void main() {
     config.close();
     await tester.pumpAndSettle();
     expect(errors.single.exception, isA<StateError>());
+    expect(find.text('Selection not saved'), findsOneWidget);
+    await tester.tap(find.text('Close without saving'));
+    await tester.pumpAndSettle();
 
     config.open();
     await tester.pumpAndSettle();
     expect(find.text('Item 1'), findsOneWidget);
+  });
+
+  testWidgets('onClose keeps the overlay open while saving', (tester) async {
+    final save = Completer<void>();
+    final config = _config(() async => [1]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+          onClose: (_) => save.future,
+        ),
+      ),
+    );
+    config.open();
+    await tester.pumpAndSettle();
+    config.close();
+    await tester.pump();
+    expect(find.text('Saving…'), findsOneWidget);
+    expect(find.text('Item 1'), findsOneWidget);
+    save.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Item 1'), findsNothing);
+  });
+
+  testWidgets('failed onClose can keep editing or close without saving', (
+    tester,
+  ) async {
+    final errors = <FlutterErrorDetails>[];
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previousOnError);
+    var shouldFail = true;
+    final config = _config(() async => [1, 2]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+          onClose: (_) {
+            if (shouldFail) throw StateError('save failed');
+          },
+        ),
+      ),
+    );
+    config.open();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 1'));
+    await tester.pump();
+    config.close();
+    await tester.pumpAndSettle();
+    expect(find.text('Selection not saved'), findsOneWidget);
+    expect(
+      find.text('The popup could not be saved because of an error.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Update selection'));
+    await tester.pumpAndSettle();
+    expect(find.text('Item 1'), findsOneWidget);
+    expect(find.text('Item 2'), findsOneWidget);
+    shouldFail = false;
+    config.close();
+    await tester.pumpAndSettle();
+    expect(find.text('Item 1'), findsNothing);
+    expect(errors, hasLength(1));
+  });
+
+  testWidgets('close-save builders replace the default saving wrap and prompt', (
+    tester,
+  ) async {
+    final errors = <FlutterErrorDetails>[];
+    final previousOnError = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previousOnError);
+    final save = Completer<void>();
+    final config = _config(() async => [1]);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+          onClose: (_) => save.future,
+          closeSavingBuilder: (context, child) => Stack(
+            children: [
+              child,
+              const Center(child: Text('Custom saving')),
+            ],
+          ),
+          closeSaveFailedBuilder: (context, error, stackTrace) async {
+            return CloseSaveFailedAction.closeWithoutSaving;
+          },
+        ),
+      ),
+    );
+    config.open();
+    await tester.pumpAndSettle();
+    config.close();
+    await tester.pump();
+    expect(find.text('Custom saving'), findsOneWidget);
+    expect(find.text('Saving…'), findsNothing);
+    save.completeError(StateError('save failed'), StackTrace.current);
+    await tester.pumpAndSettle();
+    expect(find.text('Selection not saved'), findsNothing);
+    expect(find.text('Item 1'), findsNothing);
+    expect(errors, hasLength(1));
   });
 }

@@ -8,14 +8,16 @@
 * Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
 * Breaking: the picker notifies through `onChange` (`PickerDelta`) and `onClose`.
   Applications persist. `canChangeSelection` receives `PickerSelectionChange`.
-  A thrown `onChange` restores the checkbox. A thrown `onClose` cannot; the
-  overlay is already closed.
+  A thrown `onChange` restores the checkbox. A thrown `onClose` keeps the
+  overlay open, shows a localized saving wrap, then asks whether to keep
+  editing or close without saving. Override with `closeSavingBuilder` and
+  `closeSaveFailedBuilder`.
 * Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
   Parent sync runs after a successful child `onChange`.
 * Row toggles and bulk header commands share the same apply pipeline.
 
-## 0.1.2
+## 0.1.2 (git only)
 
 * Added API documentation for the public libraries and query-close behavior.
 * Added localized default empty/no-results messages with `emptyText` and
