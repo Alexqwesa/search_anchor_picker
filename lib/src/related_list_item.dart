@@ -11,6 +11,13 @@ PickerRelatedListItemStatus relatedListStatusOf<T, K>(
       const PickerRelatedListItemStatus();
 }
 
+bool relatedListIsSelectable<T, K>(
+  GenericPickerConfig<T, K> config,
+  T item,
+) {
+  return relatedListStatusOf(config, item).selectable;
+}
+
 Future<bool> relatedListCanUnselect<T, K>(
   BuildContext context,
   GenericPickerConfig<T, K> config,
@@ -48,6 +55,7 @@ relatedListRowBuilder<T, K>(
           leading: config.iconOf?.call(item),
           auxiliaryMembership: status.auxiliaryMembership,
           selectionMode: selectionMode,
+          enabled: status.selectable,
         );
   };
 }

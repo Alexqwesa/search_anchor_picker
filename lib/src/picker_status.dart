@@ -22,17 +22,19 @@ enum PickerAuxiliaryMembership {
   unknown,
 }
 
-/// An item's membership and unselect rules involving a related list.
+/// An item's membership and selection rules involving a related list.
 ///
 /// The related list may be a parent list or an auxiliary sub-list.
 /// [auxiliaryMembership] describes membership in that auxiliary list.
-/// [unselectPolicy] controls unselect attempts, for example when the item is
-/// still used by a parent list.
-/// Neither field changes the picker's pending selection by itself.
+/// [selectable] makes the row inert. [unselectPolicy] controls unselect
+/// attempts on a selectable row, for example when the item is still used by a
+/// parent list.
+/// None of these fields change the picker's pending selection by itself.
 class PickerRelatedListItemStatus {
   /// Creates related-list status with optional auxiliary-list membership.
   const PickerRelatedListItemStatus({
     this.auxiliaryMembership,
+    this.selectable = true,
     this.unselectPolicy = PickerUnselectPolicy.allow,
   });
 
@@ -42,6 +44,18 @@ class PickerRelatedListItemStatus {
   /// whether the item is absent from the full auxiliary list. This is display
   /// only; `onChange` / `onClose` do not receive it.
   final PickerAuxiliaryMembership? auxiliaryMembership;
+
+  /// Whether the user may change this item's checkbox at all.
+  ///
+  /// `false` renders the default row disabled, ignores taps on it, and leaves
+  /// the item out of bulk commands in both directions, so a rule the user
+  /// cannot satisfy reads as an inactive row instead of a checkbox that moves
+  /// and springs back. An item absent from the current `loadItems` result has
+  /// no status and is not filtered.
+  ///
+  /// Use [unselectPolicy] instead when the row stays usable and only removal
+  /// needs a warning or a confirmation.
+  final bool selectable;
 
   /// Policy used when this item is currently selected and is being unselected.
   final PickerUnselectPolicy unselectPolicy;

@@ -78,7 +78,11 @@ the whole auxiliary list. The optional `relatedListItemStatusListenable`
 subscription exists only while open and repaints rows without loading data.
 
 Row toggles, `setSelected`, and loaded/filtered bulk controller commands record
-only IDs they actually change as `added` or `removed`. Parent updates to
+only IDs they actually change as `added` or `removed`. A bulk command is one
+delta over every loaded or filtered ID and takes the row-toggle pipeline
+unchanged: gate, pending update, `onChange`, and the session's `onClose`. The
+per-ID request risk lives in the application's `onChange`, which is where it
+is documented. Parent updates to
 `initialSelectedIds` may reseed pending state. `syncPending` symmetrically applies
 an external add/remove delta to only the currently open picker's pending IDs; it
 does not mutate the external seed. Neither operation creates a new persistence

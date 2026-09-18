@@ -1,7 +1,12 @@
 import 'package:flutter/foundation.dart';
 
-/// Added and removed IDs for one accepted `onChange` mutation or a session
-/// result.
+/// The IDs of one accepted selection mutation.
+///
+/// This is what `onChange` receives after the checkboxes moved: one row
+/// toggle, one `setSelected`, or one bulk command. Persist [added] and
+/// [removed] together; a bulk command arrives as a single delta over many IDs,
+/// not one delta per row. Both sets can hold IDs that are not in the current
+/// `loadItems` result, so persist by ID rather than by loaded item.
 @immutable
 class PickerDelta<K> {
   const PickerDelta({
@@ -15,7 +20,13 @@ class PickerDelta<K> {
   bool get isEmpty => added.isEmpty && removed.isEmpty;
 }
 
-/// Net user result of one picker session.
+/// What one picker session changed, from open to close.
+///
+/// This is what `onClose` receives. [finalIds] is the selection the user ended
+/// with; [added] and [removed] are its net difference from
+/// `initialSelectedIds`, so a row selected and deselected again in the same
+/// session appears in neither. Send [finalIds] to an API that replaces a whole
+/// list, or [delta] to one that takes changes.
 @immutable
 class PickerSelectionResult<K> {
   const PickerSelectionResult({
@@ -29,22 +40,4 @@ class PickerSelectionResult<K> {
   final Set<K> removed;
 
   PickerDelta<K> get delta => PickerDelta(added: added, removed: removed);
-}
-
-/// A proposed selection mutation for `canChangeSelection`.
-///
-/// [addedItems] / [removedItems] are loaded objects from the current
-/// `loadItems` result when those IDs are present. Persist from [delta], not
-/// from these lists.
-@immutable
-class PickerSelectionChange<T, K> {
-  const PickerSelectionChange({
-    required this.delta,
-    required this.addedItems,
-    required this.removedItems,
-  });
-
-  final PickerDelta<K> delta;
-  final List<T> addedItems;
-  final List<T> removedItems;
 }

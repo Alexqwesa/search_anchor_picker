@@ -15,7 +15,9 @@
 * Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
   Parent sync runs after a successful child `onChange`.
-* Row toggles and bulk header commands share the same apply pipeline.
+* Row toggles and bulk header commands share the same apply pipeline. A bulk
+  command reports one delta over every affected ID, so an `onChange` that
+  saves per ID turns one command into a request per ID.
 
 ## 0.1.2 (git only)
 

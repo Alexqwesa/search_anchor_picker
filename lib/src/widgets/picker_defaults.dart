@@ -17,6 +17,7 @@ class DefaultPickerItemTile extends StatelessWidget {
     this.leading,
     this.auxiliaryMembership,
     this.tooltip,
+    this.enabled = true,
   });
 
   final bool selected;
@@ -33,6 +34,10 @@ class DefaultPickerItemTile extends StatelessWidget {
   final SelectionMode selectionMode;
   final String? tooltip;
 
+  /// Whether the row accepts taps, from
+  /// [PickerRelatedListItemStatus.selectable].
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
     return RawDefaultPickerItemTile(
@@ -41,6 +46,7 @@ class DefaultPickerItemTile extends StatelessWidget {
       label: label,
       selectionMode: selectionMode,
       tooltip: tooltip,
+      enabled: enabled,
       leading:
           leading ??
           Icon(

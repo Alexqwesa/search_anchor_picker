@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,11 +9,10 @@ class _Harness {
   final finishes = <(List<int>, List<int>)>[];
   late GenericPickerController<int, int> child;
   int notifications = 0;
-  int gates = 0;
+  final saves = <PickerDelta<int>>[];
 
   Future<void> open(
     WidgetTester tester, {
-    required Future<bool> Function(int, bool) gate,
     SelectionMode selectionMode = SelectionMode.multi,
     PickerUnselectPolicy policy = PickerUnselectPolicy.allow,
     SubPickerParentSelectionEffect effect =
@@ -53,17 +52,10 @@ class _Harness {
             parentController: controller,
             parentSelectionEffect: effect,
             selectionMode: selectionMode,
-            canChangeSelection: (change) {
-              gates++;
-              if (change.delta.added.isNotEmpty) {
-                return gate(change.delta.added.first, true);
-              }
-              if (change.delta.removed.isNotEmpty) {
-                return gate(change.delta.removed.first, false);
-              }
-              return Future<bool>.value(true);
+            onChange: (delta) async {
+              saves.add(delta);
+              await onChange?.call(delta);
             },
-            onChange: onChange,
             onClose: withClose
                 ? (result) {
                     finishes.add((
@@ -100,7 +92,6 @@ void main() {
     var changes = 0;
     await h.open(
       tester,
-      gate: (_, _) async => true,
       onChange: (delta) async {
         changes++;
         if (changes > 1) throw StateError('bulk failed');
@@ -117,29 +108,28 @@ void main() {
     await h.close(tester);
   });
 
-  testWidgets('independent gates may complete out of order', (tester) async {
+  testWidgets('independent saves may complete out of order', (tester) async {
     final h = _Harness();
-    final gates = {1: Completer<bool>(), 2: Completer<bool>()};
+    final saves = {2: Completer<void>(), 3: Completer<void>()};
     await h.open(
       tester,
-      gate: (item, _) => gates[item]!.future,
+      onChange: (delta) => saves[delta.added.first]!.future,
     );
-    await tester.tap(find.text('Item 1'));
-    await tester.pump();
     await tester.tap(find.text('Item 2'));
     await tester.pump();
-    expect(h.child.pendingIds, {1});
+    await tester.tap(find.text('Item 3'));
+    await tester.pump();
+    expect(h.child.pendingIds, {1, 2, 3});
     expect(h.parent.value, {1, 9});
-    gates[2]!.complete(true);
+    saves[3]!.complete();
     await tester.pumpAndSettle();
-    expect(h.parent.value, {1, 2, 9});
-    gates[1]!.complete(false);
+    expect(h.parent.value, {1, 3, 9});
+    saves[2]!.complete();
     await tester.pumpAndSettle();
-    expect(h.child.pendingIds, {1, 2});
+    expect(h.parent.value, {1, 2, 3, 9});
     await h.close(tester);
-    expect(h.finishes.single.$1, unorderedEquals([2]));
+    expect(h.finishes.single.$1, unorderedEquals([2, 3]));
     expect(h.finishes.single.$2, isEmpty);
-    expect(h.parent.value, {1, 2, 9});
   });
 
   testWidgets('late child onClose cannot change a closed or reopened parent', (
@@ -198,20 +188,20 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('syncs only after gate success and never replays on close', (
+  testWidgets('syncs only after the save succeeds and never replays on close', (
     tester,
   ) async {
     final h = _Harness();
-    final accepted = Completer<bool>();
-    await h.open(tester, gate: (_, _) => accepted.future);
+    final saved = Completer<void>();
+    await h.open(tester, onChange: (_) => saved.future);
     await tester.tap(find.text('Item 2'));
     await tester.pump();
     expect(h.parent.value, {1, 9});
-    expect(h.child.pendingIds.contains(2), isFalse);
+    expect(h.child.pendingIds, {1, 2});
     await tester.tap(find.text('Item 2'));
     await tester.pump();
-    expect(h.gates, 1);
-    accepted.complete(true);
+    expect(h.saves, hasLength(1));
+    saved.complete();
     await tester.pumpAndSettle();
     expect(h.parent.value, {1, 2, 9});
     expect(h.notifications, 1);
@@ -221,44 +211,37 @@ void main() {
     expect(h.notifications, 1);
   });
 
-  for (final throws in [false, true]) {
-    testWidgets('rejection (throws=$throws) leaves no parent delta', (
-      tester,
-    ) async {
-      final errors = <FlutterErrorDetails>[];
-      final previous = FlutterError.onError;
-      FlutterError.onError = errors.add;
-      addTearDown(() => FlutterError.onError = previous);
-      final h = _Harness();
-      await h.open(
-        tester,
-        gate: (_, _) async {
-          if (throws) throw StateError('save failed');
-          return false;
-        },
-      );
-      await tester.tap(find.text('Item 1'));
-      await tester.pumpAndSettle();
-      expect(h.child.pendingIds, {1});
-      expect(h.parent.value, {1, 9});
-      await h.close(tester);
-      expect(h.finishes.single.$1, isEmpty);
-      expect(h.finishes.single.$2, isEmpty);
-      expect(h.notifications, 0);
-      expect(errors, hasLength(throws ? 1 : 0));
-    });
-  }
-
-  testWidgets('defers close until the pending gate settles', (tester) async {
+  testWidgets('a thrown save leaves no parent delta', (tester) async {
+    final errors = <FlutterErrorDetails>[];
+    final previous = FlutterError.onError;
+    FlutterError.onError = errors.add;
+    addTearDown(() => FlutterError.onError = previous);
     final h = _Harness();
-    final accepted = Completer<bool>();
-    await h.open(tester, gate: (_, _) => accepted.future);
+    await h.open(
+      tester,
+      onChange: (_) async => throw StateError('save failed'),
+    );
+    await tester.tap(find.text('Item 1'));
+    await tester.pumpAndSettle();
+    expect(h.child.pendingIds, {1});
+    expect(h.parent.value, {1, 9});
+    await h.close(tester);
+    expect(h.finishes.single.$1, isEmpty);
+    expect(h.finishes.single.$2, isEmpty);
+    expect(h.notifications, 0);
+    expect(errors, hasLength(1));
+  });
+
+  testWidgets('defers close until the pending save settles', (tester) async {
+    final h = _Harness();
+    final saved = Completer<void>();
+    await h.open(tester, onChange: (_) => saved.future);
     await tester.tap(find.text('Item 2'));
     await tester.pump();
     await h.close(tester);
     expect(h.finishes, isEmpty);
     expect(find.byType(SearchBar), findsOneWidget);
-    accepted.complete(true);
+    saved.complete();
     await tester.pumpAndSettle();
     expect(find.byType(SearchBar), findsNothing);
     expect(h.parent.value, {1, 2, 9});
@@ -266,14 +249,14 @@ void main() {
     expect(h.finishes.single.$2, isEmpty);
   });
 
-  testWidgets('ignores gate completion after disposal', (tester) async {
+  testWidgets('ignores save completion after disposal', (tester) async {
     final h = _Harness();
-    final accepted = Completer<bool>();
-    await h.open(tester, gate: (_, _) => accepted.future);
+    final saved = Completer<void>();
+    await h.open(tester, onChange: (_) => saved.future);
     await tester.tap(find.text('Item 2'));
     await tester.pump();
     await tester.pumpWidget(const SizedBox());
-    accepted.complete(true);
+    saved.complete();
     await tester.pumpAndSettle();
     expect(h.parent.value, {1, 9});
     expect(h.finishes, isEmpty);
@@ -288,10 +271,10 @@ void main() {
       tester,
     ) async {
       final h = _Harness();
-      await h.open(tester, policy: policy, gate: (_, _) async => true);
+      await h.open(tester, policy: policy);
       await tester.tap(find.text('Item 1'));
       await tester.pumpAndSettle();
-      expect(h.gates, 0);
+      expect(h.saves, isEmpty);
       expect(h.parent.value, {1, 9});
       await h.close(tester);
       expect(h.finishes.single.$1, isEmpty);
@@ -306,7 +289,6 @@ void main() {
     final saved = Completer<void>();
     await h.open(
       tester,
-      gate: (_, _) async => true,
       onChange: (delta) async {
         if (delta.removed.isNotEmpty && delta.added.isEmpty) {
           await saved.future;
@@ -327,14 +309,14 @@ void main() {
     await h.close(tester);
     expect(h.finishes.single.$1, isEmpty);
     expect(h.finishes.single.$2, unorderedEquals([1]));
-    expect(h.gates, 2);
+    expect(h.saves, hasLength(2));
   });
 
   testWidgets('bulk selection after a saved removal is applied immediately', (
     tester,
   ) async {
     final h = _Harness();
-    await h.open(tester, gate: (_, _) async => true);
+    await h.open(tester);
     await tester.tap(find.text('Item 1'));
     await tester.pumpAndSettle();
     expect(h.parent.value, {9});
@@ -348,12 +330,28 @@ void main() {
 
   testWidgets('bulk commands also sync the parent', (tester) async {
     final h = _Harness();
-    await h.open(tester, gate: (_, _) async => true, withClose: false);
+    await h.open(tester, withClose: false);
     h.child.clearLoaded();
     await tester.pumpAndSettle();
     await h.close(tester);
     expect(h.parent.value, {9});
     expect(h.notifications, 1);
+  });
+
+  testWidgets('a bulk command reaches onChange as one delta', (tester) async {
+    final h = _Harness();
+    final deltas = <PickerDelta<int>>[];
+    await h.open(
+      tester,
+      onChange: (delta) async => deltas.add(delta),
+      withClose: false,
+    );
+    h.child.selectLoaded();
+    await tester.pumpAndSettle();
+    expect(deltas, hasLength(1));
+    expect(deltas.single.added, unorderedEquals([2, 3]));
+    expect(deltas.single.removed, isEmpty);
+    await h.close(tester);
   });
 
   for (final (effect, expected) in [
@@ -366,7 +364,7 @@ void main() {
       tester,
     ) async {
       final h = _Harness();
-      await h.open(tester, effect: effect, gate: (_, _) async => true);
+      await h.open(tester, effect: effect);
       await tester.tap(find.text('Item 2'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Item 1'));
@@ -389,7 +387,6 @@ void main() {
       await h.open(
         tester,
         selectionMode: SelectionMode.single,
-        gate: (_, _) async => true,
       );
       await tester.tap(find.text('Item 2'));
       await tester.pumpAndSettle();
@@ -404,7 +401,7 @@ void main() {
     tester,
   ) async {
     final h = _Harness();
-    await h.open(tester, gate: (_, _) async => true);
+    await h.open(tester);
     await tester.tap(find.text('Item 2'));
     await tester.pumpAndSettle();
     await h.close(tester);

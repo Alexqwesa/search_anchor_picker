@@ -58,7 +58,6 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
     this.parentController,
     this.parentSelectionEffect = SubPickerParentSelectionEffect.none,
     super.icon,
-    super.canChangeSelection,
     FutureOr<void> Function(PickerDelta<K> delta)? onChange,
     super.onClose,
     super.closeSavingBuilder,
@@ -114,6 +113,7 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
          config: config,
          selectionMode: selectionMode,
          itemBuilder: relatedListRowBuilder(config, selectionMode, itemBuilder),
+         isSelectable: (item) => relatedListIsSelectable(config, item),
          canUnselect: (context, item) {
            return relatedListCanUnselect(context, config, item);
          },
@@ -146,7 +146,6 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     super.icon,
     super.parentController,
     super.parentSelectionEffect,
-    super.canChangeSelection,
     super.onChange,
     super.onClose,
     super.closeSavingBuilder,
