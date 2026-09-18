@@ -412,7 +412,7 @@ SearchAnchorPicker<Person>(
         title: 'Anchored popup',
         persistLabel: 'onClose',
         difference:
-            'isFullScreen is false. The menu is anchored to + add. Tap outside to dismiss.',
+            'isFullScreen is false. The menu is anchored to the field. Tap outside to dismiss.',
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(title: 'Anchored popup'),
@@ -457,6 +457,26 @@ SearchAnchorPicker<Person>(
 );
 ''',
         seed: {1, 3, 4, 6, 7, 8, 9, 10, 11, 12},
+      ),
+      const SimpleCard(
+        title: 'Field without chips',
+        persistLabel: 'onClose',
+        difference:
+            'DefaultPickerFieldTrigger with showChips: false. Tapping the outlined field or Add still opens the picker. Selected people are not shown on the field.',
+        source: r'''
+SearchAnchorPicker<Person>(
+  triggerBuilder: (context, open, _) => DefaultPickerFieldTrigger<int>(
+    selectedIds: selected,
+    labelOf: (id) => names[id] ?? '#$id',
+    onOpen: open,
+    onDeleted: selected.remove,
+    showChips: false,
+  ),
+  onClose: (result) { /* write selected */ },
+);
+''',
+        seed: {1, 3},
+        showChips: false,
       ),
       const SimpleCard(
         title: 'Custom saving wrap',

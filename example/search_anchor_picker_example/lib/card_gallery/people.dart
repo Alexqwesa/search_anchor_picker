@@ -117,6 +117,19 @@ PickerConfig<Person> peopleConfig({
   );
 }
 
-Widget addTrigger(BuildContext context, VoidCallback open, int version) {
-  return TextButton(onPressed: open, child: const Text('+ add'));
+Widget peopleFieldTrigger(
+  VoidCallback open,
+  Set<int> selected, {
+  required ValueChanged<int> onDeleted,
+  SelectionMode selectionMode = SelectionMode.multi,
+  bool showChips = true,
+}) {
+  return DefaultPickerFieldTrigger<int>(
+    selectedIds: selected,
+    labelOf: personName,
+    onOpen: open,
+    onDeleted: onDeleted,
+    selectionMode: selectionMode,
+    showChips: showChips,
+  );
 }

@@ -86,6 +86,7 @@ class SimpleCard extends StatefulWidget {
     this.related = RelatedStatus.none,
     this.emptyText,
     this.noResultsText,
+    this.showChips = true,
   });
 
   final String title;
@@ -112,6 +113,7 @@ class SimpleCard extends StatefulWidget {
   final RelatedStatus related;
   final String? emptyText;
   final String? noResultsText;
+  final bool showChips;
 
   @override
   State<SimpleCard> createState() => _SimpleCardState();
@@ -153,57 +155,57 @@ class _SimpleCardState extends State<SimpleCard> {
                 ],
               ),
             ),
-          ChipField(
-            ids: _selected,
-            onDeleted: (id) => setState(() => _selected.remove(id)),
-            addButton: SearchAnchorPicker<Person>(
-              config: peopleConfig(
-                title: widget.title,
-                loadItems:
-                    widget.failLoad ||
-                        widget.includeSelectedInLoad ||
-                        widget.loadItems != null
-                    ? _load
-                    : null,
-                selectedFirst: widget.selectedFirst,
-                relatedListItemStatusOf: widget.related == RelatedStatus.none
-                    ? null
-                    : (person) => relatedStatus(widget.related, person)!,
-              ),
-              initialSelectedIds: _selected.toList(),
-              selectionMode: widget.mode,
-              isFullScreen: widget.fullScreen,
-              viewHintText: 'Search people',
-              emptyText: widget.emptyText,
-              noResultsText: widget.noResultsText,
-              viewConstraints: widget.viewConstraints ?? popupConstraints,
-              onChange: widget.persist == Persist.change
-                  ? (delta) async {
-                      await _maybeDelay();
-                      if (widget.failChange && _fail) {
-                        _showFailSnack('API fail change');
-                        throw StateError('simulated onChange failure');
-                      }
-                      setState(() => applyDelta(_selected, delta));
-                    }
+          SearchAnchorPicker<Person>(
+            config: peopleConfig(
+              title: widget.title,
+              loadItems:
+                  widget.failLoad ||
+                      widget.includeSelectedInLoad ||
+                      widget.loadItems != null
+                  ? _load
                   : null,
-              onClose: widget.persist == Persist.close
-                  ? (result) async {
-                      await _maybeDelay();
-                      if (widget.failClose && _fail && !result.isEmpty) {
-                        throw StateError('simulated onClose failure');
-                      }
-                      setState(() => applyDelta(_selected, result));
-                    }
-                  : null,
-              closeSavingBuilder: widget.customSaving ? _savingWrap : null,
-              closeSaveFailedBuilder: widget.customFail
-                  ? _customFailClose
-                  : null,
-              headerBuilder: widget.bulk == BulkCommands.none
+              selectedFirst: widget.selectedFirst,
+              relatedListItemStatusOf: widget.related == RelatedStatus.none
                   ? null
-                  : (context, controller, items) => _bulkButtons(controller),
-              triggerBuilder: addTrigger,
+                  : (person) => relatedStatus(widget.related, person)!,
+            ),
+            initialSelectedIds: _selected.toList(),
+            selectionMode: widget.mode,
+            isFullScreen: widget.fullScreen,
+            viewHintText: 'Search people',
+            emptyText: widget.emptyText,
+            noResultsText: widget.noResultsText,
+            viewConstraints: widget.viewConstraints ?? popupConstraints,
+            onChange: widget.persist == Persist.change
+                ? (delta) async {
+                    await _maybeDelay();
+                    if (widget.failChange && _fail) {
+                      _showFailSnack('API fail change');
+                      throw StateError('simulated onChange failure');
+                    }
+                    setState(() => applyDelta(_selected, delta));
+                  }
+                : null,
+            onClose: widget.persist == Persist.close
+                ? (result) async {
+                    await _maybeDelay();
+                    if (widget.failClose && _fail && !result.isEmpty) {
+                      throw StateError('simulated onClose failure');
+                    }
+                    setState(() => applyDelta(_selected, result));
+                  }
+                : null,
+            closeSavingBuilder: widget.customSaving ? _savingWrap : null,
+            closeSaveFailedBuilder: widget.customFail ? _customFailClose : null,
+            headerBuilder: widget.bulk == BulkCommands.none
+                ? null
+                : (context, controller, items) => _bulkButtons(controller),
+            triggerBuilder: (context, open, _) => peopleFieldTrigger(
+              open,
+              _selected,
+              onDeleted: (id) => setState(() => _selected.remove(id)),
+              selectionMode: widget.mode,
+              showChips: widget.showChips,
             ),
           ),
         ],

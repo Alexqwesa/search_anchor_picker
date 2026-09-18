@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'people.dart';
-
 class ExampleCard extends StatelessWidget {
   const ExampleCard({
     required this.title,
@@ -53,49 +51,6 @@ class ExampleCard extends StatelessWidget {
             const SizedBox(height: 12),
             child,
             if (footer != null) ...[const SizedBox(height: 8), footer!],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ChipField extends StatelessWidget {
-  const ChipField({
-    required this.ids,
-    required this.addButton,
-    required this.onDeleted,
-    super.key,
-  });
-
-  final Set<int> ids;
-  final Widget addButton;
-  final ValueChanged<int> onDeleted;
-
-  static const _lineHeight = 40.0;
-
-  @override
-  Widget build(BuildContext context) {
-    return InputDecorator(
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        isDense: true,
-        alignLabelWithHint: true,
-        contentPadding: EdgeInsets.fromLTRB(8, 8, 8, 8),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: _lineHeight-8),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            for (final id in ids)
-              InputChip(
-                label: Text(personName(id)),
-                onDeleted: () => onDeleted(id),
-              ),
-            addButton,
           ],
         ),
       ),

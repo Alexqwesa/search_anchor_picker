@@ -19,7 +19,10 @@ Also:
 * Bulk header commands take the same apply path as a row toggle (one delta).
 * Default copy is localized (empty, no-results, retry, in-use warning/confirm,
   saving, close-save failed). `emptyText` / `noResultsText` override the first
-  two. 
+  two.
+* `DefaultPickerFieldTrigger` is the field-style `triggerBuilder`: outlined
+  input, optional selected chips, Add (multi) or Change (single), field tap
+  opens, chip delete removes without opening. 
 
 ## 0.1.2 (git only)
 

@@ -78,34 +78,34 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
         'Directory: ${namesOf(_directory)}',
         style: Theme.of(context).textTheme.bodySmall,
       ),
-      child: ChipField(
-        ids: _selected,
-        onDeleted: (id) => setState(() => _selected.remove(id)),
-        addButton: SearchAnchorPicker<Person>(
-          config: peopleConfig(
-            title: widget.title,
-            loadItems: widget.parentRows == ParentRowSet.mainCatalog
-                ? (_) async => mainCatalogPeople()
-                : null,
-            relatedListItemStatusOf: widget.relatedOnParent
-                ? (person) => PickerRelatedListItemStatus(
-                    auxiliaryMembership: _directory.contains(person.id)
-                        ? PickerAuxiliaryMembership.member
-                        : PickerAuxiliaryMembership.notMember,
-                  )
-                : null,
-          ),
-          initialSelectedIds: _selected.toList(),
-          isFullScreen: false,
-          viewHintText: 'Search people',
-          viewConstraints: popupConstraints,
-          onClose: (result) {
-            setState(() => applyDelta(_selected, result));
-          },
-          headerBuilder: (context, controller, items) => [
-            _directoryTile(controller),
-          ],
-          triggerBuilder: addTrigger,
+      child: SearchAnchorPicker<Person>(
+        config: peopleConfig(
+          title: widget.title,
+          loadItems: widget.parentRows == ParentRowSet.mainCatalog
+              ? (_) async => mainCatalogPeople()
+              : null,
+          relatedListItemStatusOf: widget.relatedOnParent
+              ? (person) => PickerRelatedListItemStatus(
+                  auxiliaryMembership: _directory.contains(person.id)
+                      ? PickerAuxiliaryMembership.member
+                      : PickerAuxiliaryMembership.notMember,
+                )
+              : null,
+        ),
+        initialSelectedIds: _selected.toList(),
+        isFullScreen: false,
+        viewHintText: 'Search people',
+        viewConstraints: popupConstraints,
+        onClose: (result) {
+          setState(() => applyDelta(_selected, result));
+        },
+        headerBuilder: (context, controller, items) => [
+          _directoryTile(controller),
+        ],
+        triggerBuilder: (context, open, _) => peopleFieldTrigger(
+          open,
+          _selected,
+          onDeleted: (id) => setState(() => _selected.remove(id)),
         ),
       ),
     );

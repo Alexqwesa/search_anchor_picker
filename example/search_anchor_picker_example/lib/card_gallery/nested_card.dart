@@ -56,37 +56,37 @@ class _NestedCardState extends State<NestedCard> {
       difference: widget.difference,
       source: widget.source,
       footer: Text(_footer, style: Theme.of(context).textTheme.bodySmall),
-      child: ChipField(
-        ids: _selected,
-        onDeleted: (id) => setState(() => _selected.remove(id)),
-        addButton: SearchAnchorPicker<Person>(
-          config: peopleConfig(
-            title: widget.title,
-            relatedListItemStatusOf: widget.relatedOnParent
-                ? (person) => PickerRelatedListItemStatus(
-                    auxiliaryMembership: _directory.contains(person.id)
-                        ? PickerAuxiliaryMembership.member
-                        : PickerAuxiliaryMembership.notMember,
-                  )
-                : null,
-          ),
-          initialSelectedIds: _selected.toList(),
-          isFullScreen: false,
-          viewHintText: 'Search people',
-          viewConstraints: popupConstraints,
-          onChange: widget.parentPersist == Persist.change
-              ? (delta) => setState(() => applyDelta(_selected, delta))
+      child: SearchAnchorPicker<Person>(
+        config: peopleConfig(
+          title: widget.title,
+          relatedListItemStatusOf: widget.relatedOnParent
+              ? (person) => PickerRelatedListItemStatus(
+                  auxiliaryMembership: _directory.contains(person.id)
+                      ? PickerAuxiliaryMembership.member
+                      : PickerAuxiliaryMembership.notMember,
+                )
               : null,
-          onClose: widget.parentPersist == Persist.close
-              ? (result) {
-                  setState(() => applyDelta(_selected, result));
-                }
-              : null,
-          headerBuilder: (context, controller, items) => [
-            _directoryTile(controller),
-            if (widget.secondSublist) _watchlistTile(),
-          ],
-          triggerBuilder: addTrigger,
+        ),
+        initialSelectedIds: _selected.toList(),
+        isFullScreen: false,
+        viewHintText: 'Search people',
+        viewConstraints: popupConstraints,
+        onChange: widget.parentPersist == Persist.change
+            ? (delta) => setState(() => applyDelta(_selected, delta))
+            : null,
+        onClose: widget.parentPersist == Persist.close
+            ? (result) {
+                setState(() => applyDelta(_selected, result));
+              }
+            : null,
+        headerBuilder: (context, controller, items) => [
+          _directoryTile(controller),
+          if (widget.secondSublist) _watchlistTile(),
+        ],
+        triggerBuilder: (context, open, _) => peopleFieldTrigger(
+          open,
+          _selected,
+          onDeleted: (id) => setState(() => _selected.remove(id)),
         ),
       ),
     );

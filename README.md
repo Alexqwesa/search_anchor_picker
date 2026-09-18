@@ -138,6 +138,34 @@ Use focused builders to replace only the region you own:
 - `loadingBuilder`, `emptyBuilder`, and `errorBuilder`
 - `viewBuilder` and `viewSurfaceBuilder`
 
+Omitting `triggerBuilder` keeps the compact search icon. For a Material text
+field with selected chips, pass `DefaultPickerFieldTrigger`:
+
+```dart
+SearchAnchorPicker<Person>(
+  config: config,
+  initialSelectedIds: selectedIds.toList(),
+  onClose: (result) async {
+    await api.addPeople(result.added);
+    await api.removePeople(result.removed);
+  },
+  triggerBuilder: (context, open, _) => DefaultPickerFieldTrigger<int>(
+    selectedIds: selectedIds,
+    labelOf: (id) => names[id] ?? '#$id',
+    onOpen: open,
+    onDeleted: (id) => selectedIds.remove(id),
+    selectionMode: SelectionMode.multi,
+  ),
+);
+```
+
+Tapping the field, a chip, or Add / Change opens the picker. Add is used for
+multi-select; Change is used for `single` and `singleOptional`. Chip delete
+icons call `onDeleted` and do not open the popup. That write is outside the
+picker session, so persist it yourself if you also save from `onChange` or
+`onClose`. Set `showChips: false` to keep the outlined field and button without
+listing selected IDs.
+
 `itemBuilder` receives `(context, item, isSelected, relatedListItemStatus, toggle)`.
 The `relatedListItemStatus` comes from `config.relatedListItemStatusOf`, so custom rows
 can use both `auxiliaryMembership` and `unselectPolicy` without recomputing them.
@@ -161,7 +189,7 @@ errorBuilder: (context, error, stackTrace, retry) => Center(
 ),
 ```
 
-The default widgets are not built while the popup is closed.
+The default popup widgets are not built while the popup is closed.
 
 ## Related-list status and sub-list membership
 

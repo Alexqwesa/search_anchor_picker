@@ -42,6 +42,8 @@ Preserve these properties across every change:
   `SubPickerParentSelectionEffect`.
 - `lib/src/widgets/picker_defaults.dart`: public default row with related-list
   membership icons wrapping `RawDefaultPickerItemTile`.
+- `lib/src/raw/widgets/default_picker_field_trigger.dart`: outlined field
+  trigger with optional selected chips and Add / Change.
 - `lib/widgets.dart`: optional/default visuals. Core state and lifecycle logic
   do not belong in consumer-facing widget docs.
 - `test/`: core behavior, lifecycle, placement, selection, and visual parity.

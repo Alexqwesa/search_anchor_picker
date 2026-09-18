@@ -108,6 +108,10 @@ class PickerViewStyle {
   final bool shrinkWrap;
 }
 
+/// Compact search [IconButton] used when `triggerBuilder` is omitted.
+///
+/// For an outlined field with selected chips and an Add or Change button, use
+/// DefaultPickerFieldTrigger from `triggerBuilder` instead.
 class DefaultPickerTrigger extends StatelessWidget {
   const DefaultPickerTrigger({
     required this.onPressed,

@@ -15,7 +15,7 @@ The package is split between core behavior and optional visual defaults.
   pending synchronization to header code.
 - `SubPickerTile` is the optional nested-picker convenience widget, including
   parent-selection effects.
-- Default view widgets, tooltip helpers, and feedback UI are exported by
+- Default view widgets, tooltip helpers, field trigger, and feedback UI are exported by
   `package:search_anchor_picker/widgets.dart`.
 
 Never-opened pickers allocate no search, animation, selection-notifier, dynamic

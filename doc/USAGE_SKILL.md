@@ -262,6 +262,22 @@ Focused builders replace only their own region:
 - `loadingBuilder`, `emptyBuilder`, `errorBuilder`
 - `viewBuilder`, `viewSurfaceBuilder`
 
+Omitting `triggerBuilder` keeps the compact search icon. For an outlined field
+with selected chips, use `DefaultPickerFieldTrigger` from `triggerBuilder`.
+Tapping the field, a chip, or Add / Change opens the picker. Chip delete calls
+`onDeleted` and is not a picker-session delta; persist it yourself. Use
+`showChips: false` to hide chips. Multi-select labels the button Add; single
+modes label it Change.
+
+```dart
+triggerBuilder: (context, open, _) => DefaultPickerFieldTrigger<int>(
+  selectedIds: selectedIds,
+  labelOf: (id) => names[id] ?? '#$id',
+  onOpen: open,
+  onDeleted: selectedIds.remove,
+),
+```
+
 `itemBuilder` receives `(context, item, isSelected, relatedListItemStatus, toggle)`.
 Read `relatedListItemStatus.auxiliaryMembership` and `relatedListItemStatus.unselectPolicy`
 to customize the row; do not call `relatedListItemStatusOf` again. The supplied
