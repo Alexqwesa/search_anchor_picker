@@ -86,10 +86,11 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
 
   /// Observes each accepted selection delta after pending checkboxes update.
   ///
-  /// Persistence belongs in application code. If this returns a [Future], the
-  /// picker awaits it so close waits for in-flight work. A thrown error is
-  /// reported and does not roll back the applied selection.
-  final FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange;
+  /// Persistence belongs in application code. Persist from IDs; loaded items
+  /// can be missing from the current `loadItems` result. If this returns a
+  /// [Future], the picker awaits it so close waits for in-flight work. A
+  /// thrown error is reported and does not roll back the applied selection.
+  final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
 
   /// Observes the net result of one closed session.
   ///
@@ -792,7 +793,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
       final after = {...before, ...added}..removeAll(removed);
       _selection.recordExplicitChange(before, after);
       _pendingN.value = after;
-      await _runOnChange(change);
+      await _runOnChange(change.delta);
       return true;
     } finally {
       _pendingToggles--;
@@ -814,10 +815,10 @@ class _GenericRawSearchAnchorPickerState<T, K>
     );
   }
 
-  Future<void> _runOnChange(PickerSelectionChange<T, K> change) async {
+  Future<void> _runOnChange(PickerDelta<K> delta) async {
     if (widget.onChange == null) return;
     try {
-      await widget.onChange!(change);
+      await widget.onChange!(delta);
     } on Object catch (error, stack) {
       _reportCallbackError('onChange', error, stack);
     }

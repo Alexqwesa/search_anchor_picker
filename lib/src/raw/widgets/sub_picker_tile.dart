@@ -70,7 +70,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   final SelectionMode selectionMode;
   final Future<bool> Function(PickerSelectionChange<T, K> change)?
   canChangeSelection;
-  final FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange;
+  final FutureOr<void> Function(PickerDelta<K> delta)? onChange;
   final FutureOr<void> Function(PickerSelectionResult<K> result)? onClose;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final List<Widget> Function(

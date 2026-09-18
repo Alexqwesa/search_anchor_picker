@@ -209,11 +209,11 @@ class _DemoHomeState extends State<DemoHome> {
                     selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    onChange: (change) {
+                    onChange: (delta) {
                       setState(() {
                         selectedOnScreenA
-                          ..addAll(change.delta.added)
-                          ..removeAll(change.delta.removed);
+                          ..addAll(delta.added)
+                          ..removeAll(delta.removed);
                       });
                     },
 
@@ -234,17 +234,16 @@ class _DemoHomeState extends State<DemoHome> {
                             subA1.items,
                           ),
                           // Save each accepted change; parent removal sync follows.
-                          onChange: (change) {
+                          onChange: (delta) {
                             setState(() {
                               listA.addAll(
-                                change.delta.added
+                                delta.added
                                     .map((id) => findById(subA1.items, id))
                                     .whereType<DemoItem>(),
                                 same,
                               );
                               listA.removeWhere(
-                                (item) =>
-                                    change.delta.removed.contains(item.id),
+                                (item) => delta.removed.contains(item.id),
                               );
                             });
                           },
@@ -343,11 +342,11 @@ class _DemoHomeState extends State<DemoHome> {
                     selectionMode: SelectionMode.multi,
 
                     // Selecting in MAIN list => affects screen selection
-                    onChange: (change) {
+                    onChange: (delta) {
                       setState(() {
                         selectedOnScreenB
-                          ..addAll(change.delta.added)
-                          ..removeAll(change.delta.removed);
+                          ..addAll(delta.added)
+                          ..removeAll(delta.removed);
                       });
                     },
 
@@ -482,11 +481,9 @@ class _DemoHomeState extends State<DemoHome> {
                         ? const []
                         : [selectedRadioId!],
 
-                    onChange: (change) {
-                      if (change.delta.added.isEmpty) return;
-                      setState(
-                        () => selectedRadioId = change.delta.added.first,
-                      );
+                    onChange: (delta) {
+                      if (delta.added.isEmpty) return;
+                      setState(() => selectedRadioId = delta.added.first);
                     },
 
                     triggerBuilder: (_, open, version) {

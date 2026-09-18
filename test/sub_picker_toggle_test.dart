@@ -63,9 +63,7 @@ class _Harness {
               }
               return Future<bool>.value(true);
             },
-            onChange: onChange == null
-                ? null
-                : (change) => onChange(change.delta),
+            onChange: onChange,
             onClose: withClose
                 ? (result) {
                     finishes.add((

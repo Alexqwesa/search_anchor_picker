@@ -24,16 +24,6 @@ dependencies:
   search_anchor_picker: ^0.1.2
 ```
 
-To use the Git repository directly:
-
-```yaml
-dependencies:
-  search_anchor_picker:
-    git:
-      url: https://github.com/Alexqwesa/search_anchor_picker.git
-      ref: v0.1.2
-```
-
 ## Basic picker
 
 ```dart
@@ -254,20 +244,20 @@ the child's `onChange` or `onClose` callback must also call the appropriate
 parent API and update the authoritative parent IDs for the next open. Parent
 checkbox updates do not require reseeding the whole parent picker.
 
-The picker does not persist. Save in `onChange` for each accepted delta, or in
-`onClose` for the net session. Parent checkboxes follow accepted child
-selection changes, including bulk header commands.
+The picker notifies; it does not persist. Save from `onChange` (each accepted
+toggle) or `onClose` (whole delta of session). Parent checkboxes follow accepted
+child selection changes, including bulk header commands.
 
 ```dart
 canChangeSelection: (change) async {
   return change.removedItems.every((person) => !person.isLocked);
 },
-onChange: (change) async {
-  await directoryApi.add(change.delta.added);
-  await directoryApi.remove(change.delta.removed);
+onChange: (delta) async {
+  await directoryApi.add(delta.added);
+  await directoryApi.remove(delta.removed);
 },
 onClose: (result) {
-  // Optional observer of the net session.
+  // Optional: whole delta of the session.
 },
 ```
 
@@ -298,15 +288,15 @@ update its authoritative selected IDs separately.
 
 ## Persistence
 
-The picker notifies; the application persists. Save each accepted delta in
-`onChange`, or save the net session in `onClose`. `canChangeSelection` only
+The picker notifies; it does not persist. Save from `onChange` (each accepted
+toggle) or `onClose` (whole delta of session). `canChangeSelection` only
 accepts or rejects a proposed change. Checkboxes update after the gate
 succeeds. A thrown `onChange` / `onClose` error is reported and does not roll
 back selection.
 
-There is no replace-all close callback. Apply the explicit `added` and `removed`
-deltas, or use `initialSelectedIds` when the parent has a complete authoritative
-selection snapshot.
+There is no replace-all close callback. Persist `added` and `removed`.
+`initialSelectedIds` is only the seed for the next open, from your selected
+IDs.
 
 ## License
 
