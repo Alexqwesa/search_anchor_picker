@@ -79,8 +79,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
 
   /// Optional gate for a proposed selection mutation.
   ///
-  /// Return `false` to reject it. Presence of this callback does not change
-  /// [onChange] or [onClose] behavior.
+  /// Return `false` to leave checkboxes unchanged.
   final Future<bool> Function(PickerSelectionChange<T, K> change)?
   canChangeSelection;
 
