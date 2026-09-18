@@ -23,13 +23,14 @@ export 'package:search_anchor_picker/src/raw/picker_selection.dart'
 /// on close so a closed picker stays lightweight. Reopening calls [open],
 /// which resets snapshot and intent.
 ///
-/// [result] is the `onClose` payload: the net explicit delta versus
-/// [openedIds]. Select then unselect (or the reverse) any number of times
-/// nets to empty `added` / `removed`. `onChange` does not consume this intent,
-/// so close still reports the same net. Close deltas come only from those
-/// explicit toggles, not from comparing pending IDs to the current
-/// `loadItems` result. A selected ID that is not in that list stays
-/// selected; it is not treated as removed.
+/// [result] is the `onClose` payload: net explicit add/remove versus
+/// [openedIds] (the seed at open, not a later `initialSelectedIds`). Select
+/// then unselect (or the reverse) any number of times nets to empty `added` /
+/// `removed`. A later reseed updates checkboxes only; it does not create
+/// intent and does not drop recorded intent. `onChange` does not consume this
+/// intent, so close still reports the same net. Close deltas come only from
+/// those explicit toggles, not from comparing pending IDs to `loadItems` or
+/// to the current `initialSelectedIds`.
 class PickerSelectionSession<K> {
   PickerSelectionSession(Iterable<K> initialIds)
     : pendingN = ValueNotifier<Set<K>>(initialIds.toSet());
@@ -75,11 +76,10 @@ class PickerSelectionSession<K> {
   }
 
   PickerDelta<K> result({bool remainingOnly = false}) {
-    final pending = {...pendingN.value};
     final baseline = remainingOnly ? (_acceptedIds ?? _openedIds) : _openedIds;
     return PickerDelta<K>(
-      added: _explicitlyAdded.intersection(pending.difference(baseline)),
-      removed: _explicitlyRemoved.intersection(baseline.difference(pending)),
+      added: _explicitlyAdded.difference(baseline),
+      removed: _explicitlyRemoved.intersection(baseline),
     );
   }
 

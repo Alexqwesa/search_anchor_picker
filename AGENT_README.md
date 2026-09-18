@@ -126,7 +126,9 @@ as a rejection. Leaving the gate null is the same as always allowing.
 Save in `onChange` (each accepted delta) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
 Toggling the same ID on and off is two `onChange` calls. Save in `onClose`
-(net of session versus `initialSelectedIds`) while the overlay stays open.
+(net of session versus the seed at open) while the overlay stays open.
+A later `initialSelectedIds` change reseeds checkboxes; it does not retarget
+that delta.
 Select then deselect is omitted; empty means do not write. A thrown error is
 reported and the user is asked whether to update the
 selection or close without saving. Persist `added` and `removed`. A load

@@ -303,7 +303,7 @@ The picker notifies; it does not persist.
 `onChange` is the immediate save: each accepted delta, right after the
 checkboxes move. A thrown `onChange` error restores them. Toggling the same
 ID on and off is two `onChange` calls. `onClose` is the deferred save: the
-net of the session versus `initialSelectedIds`, saved while the overlay stays
+net of the session versus the seed captured at open, saved while the overlay stays
 open. Select then deselect the same ID any number of times and it is omitted;
 an empty delta means do not write. A thrown `onClose` error is reported and
 the user is asked whether to update the selection or close without saving.
@@ -312,7 +312,9 @@ Default strings are localized; override the saving wrap with
 
 Both may be set. `onChange` does not consume session intent, so `onClose`
 still reports the same net. If both persist, the API is called for each
-mutation and again at close. Persist in only one of them.
+mutation and again at close. Persist in only one of them. A later
+`initialSelectedIds` update reseeds checkboxes; it does not change the close
+baseline.
 
 `canChangeSelection` runs before either save, on every mutation, and is where
 pre-checks belong. Return false to reject; the checkbox never moves and no

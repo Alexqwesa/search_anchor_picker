@@ -35,6 +35,30 @@ void main() {
     expect(session.result(remainingOnly: true).removed, isEmpty);
   });
 
+  test('reseed does not drop explicit intent or invent removals', () {
+    final session = PickerSelectionSession<int>([1])..open([1]);
+    addTearDown(session.dispose);
+    session
+      ..recordExplicitChange({1}, {1, 2})
+      ..pendingN.value = {1, 2}
+      ..reseed([]);
+    expect(session.result().added, {2});
+    expect(session.result().removed, isEmpty);
+  });
+
+  test('restore to the open seed nets empty even after a reseed', () {
+    final session = PickerSelectionSession<int>([1])..open([1]);
+    addTearDown(session.dispose);
+    session
+      ..recordExplicitChange({1}, <int>{})
+      ..pendingN.value = <int>{}
+      ..recordExplicitChange(<int>{}, {1})
+      ..pendingN.value = {1}
+      ..reseed([]);
+    expect(session.result().added, isEmpty);
+    expect(session.result().removed, isEmpty);
+  });
+
   test('external reseeds change pending without creating deltas', () {
     final session = PickerSelectionSession<int>([1, 2, 3]);
     addTearDown(session.dispose);

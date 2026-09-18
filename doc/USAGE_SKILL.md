@@ -25,8 +25,8 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 Both may be set. `onChange` does not consume session intent, so `onClose`
 still reports the same net. Persist in only one of them. `onChange` fires on
 every accepted mutation (select then deselect is two calls). `onClose` nets
-against `initialSelectedIds` (select then deselect is omitted; empty means
-do not write).
+against the seed captured at open (select then deselect is omitted; empty means
+do not write). A later `initialSelectedIds` change reseeds checkboxes only.
 
 
 ## Basic integration
@@ -62,7 +62,8 @@ Follow these invariants:
 - Do not temporarily replace `initialSelectedIds` with an empty list while its
   real value is loading. Keep the previous authoritative value instead.
 - An external `initialSelectedIds` update may reseed an open picker, but it does
-  not create `added` or `removed` intent.
+  not create `added` or `removed` intent and does not change the close
+  baseline (the seed at open).
 - Hidden selected IDs remain selected during server-side search and pagination.
 - Persist `added` and `removed` from `onClose`. 
 
@@ -73,7 +74,7 @@ The picker notifies; it does not persist.
 `onChange` is the immediate save, run on each accepted delta once the
 checkboxes moved; a thrown error restores them. Toggling the same ID on and
 off is two calls. `onClose` is the deferred save, run on the net of the
-session versus `initialSelectedIds` while the overlay stays open; select then
+session versus the seed captured at open while the overlay stays open; select then
 deselect is omitted, and an empty delta means do not write. A thrown error is
 reported and the user is asked whether to update the selection or close
 without saving. Override with `closeSavingBuilder` and
