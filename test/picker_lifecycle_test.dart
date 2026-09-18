@@ -849,7 +849,7 @@ void main() {
       find.text('The popup could not be saved because of an error.'),
       findsOneWidget,
     );
-    await tester.tap(find.text('Update selection'));
+    await tester.tap(find.text('Keep editing'));
     await tester.pumpAndSettle();
     expect(find.text('Item 1'), findsOneWidget);
     expect(find.text('Item 2'), findsOneWidget);
@@ -860,29 +860,59 @@ void main() {
     expect(errors, hasLength(1));
   });
 
-  testWidgets('close-save builders replace the default saving wrap and prompt', (
-    tester,
-  ) async {
-    final errors = <FlutterErrorDetails>[];
-    final previousOnError = FlutterError.onError;
-    FlutterError.onError = errors.add;
-    addTearDown(() => FlutterError.onError = previousOnError);
-    final save = Completer<void>();
+  testWidgets(
+    'close-save builders replace the default saving wrap and prompt',
+    (
+      tester,
+    ) async {
+      final errors = <FlutterErrorDetails>[];
+      final previousOnError = FlutterError.onError;
+      FlutterError.onError = errors.add;
+      addTearDown(() => FlutterError.onError = previousOnError);
+      final save = Completer<void>();
+      final config = _config(() async => [1]);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SearchAnchorPicker<int>(
+            config: config,
+            initialSelectedIds: const [],
+            onClose: (_) => save.future,
+            closeSavingBuilder: (context, child) => Stack(
+              children: [
+                child,
+                const Center(child: Text('Custom saving')),
+              ],
+            ),
+            closeSaveFailedBuilder: (context, error, stackTrace) async {
+              return CloseSaveFailedAction.closeWithoutSaving;
+            },
+          ),
+        ),
+      );
+      config.open();
+      await tester.pumpAndSettle();
+      config.close();
+      await tester.pump();
+      expect(find.text('Custom saving'), findsOneWidget);
+      expect(find.text('Saving…'), findsNothing);
+      save.completeError(StateError('save failed'), StackTrace.current);
+      await tester.pumpAndSettle();
+      expect(find.text('Selection not saved'), findsNothing);
+      expect(find.text('Item 1'), findsNothing);
+      expect(errors, hasLength(1));
+    },
+  );
+
+  testWidgets('empty onClose delta still runs the callback', (tester) async {
+    var closes = 0;
     final config = _config(() async => [1]);
     await tester.pumpWidget(
       MaterialApp(
         home: SearchAnchorPicker<int>(
           config: config,
           initialSelectedIds: const [],
-          onClose: (_) => save.future,
-          closeSavingBuilder: (context, child) => Stack(
-            children: [
-              child,
-              const Center(child: Text('Custom saving')),
-            ],
-          ),
-          closeSaveFailedBuilder: (context, error, stackTrace) async {
-            return CloseSaveFailedAction.closeWithoutSaving;
+          onClose: (_) {
+            closes++;
           },
         ),
       ),
@@ -890,13 +920,8 @@ void main() {
     config.open();
     await tester.pumpAndSettle();
     config.close();
-    await tester.pump();
-    expect(find.text('Custom saving'), findsOneWidget);
-    expect(find.text('Saving…'), findsNothing);
-    save.completeError(StateError('save failed'), StackTrace.current);
     await tester.pumpAndSettle();
-    expect(find.text('Selection not saved'), findsNothing);
+    expect(closes, 1);
     expect(find.text('Item 1'), findsNothing);
-    expect(errors, hasLength(1));
   });
 }

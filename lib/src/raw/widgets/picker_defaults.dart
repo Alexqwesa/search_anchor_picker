@@ -398,7 +398,7 @@ const _PickerDefaultMessages _englishPickerDefaultMessages = (
   saving: 'Saving…',
   closeSaveFailedTitle: 'Selection not saved',
   closeSaveFailedMessage: 'The popup could not be saved because of an error.',
-  updateSelection: 'Update selection',
+  updateSelection: 'Keep editing',
   closeWithoutSaving: 'Close without saving',
 );
 

@@ -28,7 +28,7 @@ class CardsGalleryPage extends StatefulWidget {
 }
 
 class _CardsGalleryPageState extends State<CardsGalleryPage> {
-  late final List<Widget> _cards = galleryCards();
+  late final List<GallerySection> _sections = gallerySections();
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +41,7 @@ class _CardsGalleryPageState extends State<CardsGalleryPage> {
             const spacing = 16.0;
             final available = math.max(0.0, constraints.maxWidth - padding * 2);
             final cardWidth = math.min(galleryCardMaxWidth, available);
+            final theme = Theme.of(context);
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               child: Column(
@@ -48,17 +49,22 @@ class _CardsGalleryPageState extends State<CardsGalleryPage> {
                 children: [
                   Text(
                     'Each card is one way to use SearchAnchorPicker. The field holds selected people as chips; + add opens the popup. Use the code icon for that card’s source.',
-                    style: Theme.of(context).textTheme.bodyLarge,
+                    style: theme.textTheme.bodyLarge,
                   ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: spacing,
-                    runSpacing: spacing,
-                    children: [
-                      for (final card in _cards)
-                        SizedBox(width: cardWidth, child: card),
-                    ],
-                  ),
+                  for (final section in _sections) ...[
+                    const SizedBox(height: 28),
+                    Text(section.title, style: theme.textTheme.headlineSmall),
+                    const SizedBox(height: 4),
+                    Text(section.caption, style: theme.textTheme.bodyMedium),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: spacing,
+                      runSpacing: spacing,
+                      children: [
+                        for (final card in section.cards) SizedBox(width: cardWidth, child: card),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             );

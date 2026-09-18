@@ -46,7 +46,10 @@ class ExampleCard extends StatelessWidget {
             ),
             Text(persist, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
-            Text(difference, style: theme.textTheme.bodyMedium),
+            SelectableText(
+              difference,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+            ),
             const SizedBox(height: 12),
             child,
             if (footer != null) ...[const SizedBox(height: 8), footer!],
@@ -78,10 +81,10 @@ class ChipField extends StatelessWidget {
         border: OutlineInputBorder(),
         isDense: true,
         alignLabelWithHint: true,
-        contentPadding: EdgeInsets.fromLTRB(12, 8, 8, 8),
+        contentPadding: EdgeInsets.fromLTRB(8, 8, 8, 8),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: _lineHeight),
+        constraints: const BoxConstraints(minHeight: _lineHeight-8),
         child: Wrap(
           spacing: 8,
           runSpacing: 8,

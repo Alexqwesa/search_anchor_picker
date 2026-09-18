@@ -36,11 +36,24 @@ const knownDirectoryIds = {1, 2, 5};
 const pagedDirectoryIds = {1, 5};
 const knownWatchlistIds = {3, 8};
 
+/// Short parent catalog used by field/sublist demos (Ada … Knuth).
+const mainCatalogIds = {1, 2, 3, 4, 5, 6};
+
+List<Person> mainCatalogPeople() =>
+    people.where((person) => mainCatalogIds.contains(person.id)).toList();
+
 const popupConstraints = BoxConstraints(
   minWidth: 320,
   maxWidth: 400,
   minHeight: 280,
   maxHeight: 480,
+);
+
+const widePopupConstraints = BoxConstraints(
+  minWidth: 560,
+  maxWidth: 640,
+  minHeight: 320,
+  maxHeight: 520,
 );
 
 enum Persist { close, change }
@@ -61,6 +74,27 @@ void applyDelta(Set<int> ids, PickerDelta<int> delta) {
   ids
     ..addAll(delta.added)
     ..removeAll(delta.removed);
+}
+
+/// Writes field chips for a nested parent-selection effect.
+///
+/// `syncPending` only moves parent checkboxes. It does not create a parent
+/// `onChange` / `onClose` delta, so the app must persist the field itself.
+void applyEffectToSelection(
+  Set<int> selected,
+  SubPickerParentSelectionEffect effect,
+  PickerDelta<int> delta,
+) {
+  switch (effect) {
+    case SubPickerParentSelectionEffect.none:
+      break;
+    case SubPickerParentSelectionEffect.selectAdded:
+      selected.addAll(delta.added);
+    case SubPickerParentSelectionEffect.deselectRemoved:
+      selected.removeAll(delta.removed);
+    case SubPickerParentSelectionEffect.mirror:
+      applyDelta(selected, delta);
+  }
 }
 
 PickerConfig<Person> peopleConfig({

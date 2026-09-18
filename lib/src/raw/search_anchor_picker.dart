@@ -133,7 +133,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   ///
   /// If this returns a [Future], the picker awaits it while the overlay stays
   /// open. A thrown error is reported and the user is asked whether to keep
-  /// editing or close without saving.
+  /// editing or close without saving. An empty delta still runs this callback.
   final FutureOr<void> Function(PickerDelta<K> delta)? onClose;
 
   /// Optional wrap for the open view while [onClose] is saving.
@@ -143,7 +143,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
 
   /// Optional prompt after [onClose] throws.
   ///
-  /// When null, a localized dialog offers update-selection or close-without-saving.
+  /// When null, a localized dialog offers keep-editing or close-without-saving.
   final PickerCloseSaveFailedBuilder? closeSaveFailedBuilder;
   final SearchController? searchController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
@@ -660,7 +660,11 @@ class _GenericRawSearchAnchorPickerState<T, K>
           _finishClose(reason);
         }
       } on Object catch (dialogError, dialogStack) {
-        _reportCallbackError('closeSaveFailedBuilder', dialogError, dialogStack);
+        _reportCallbackError(
+          'closeSaveFailedBuilder',
+          dialogError,
+          dialogStack,
+        );
       } finally {
         _saveFailedPromptOpen = false;
       }

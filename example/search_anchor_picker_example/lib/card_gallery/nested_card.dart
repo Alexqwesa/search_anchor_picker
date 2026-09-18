@@ -103,7 +103,7 @@ class _NestedCardState extends State<NestedCard> {
     return SubPickerTile<Person>(
       title: 'Directory membership',
       icon: Icons.folder_shared_outlined,
-      config: _childConfig('Directory'),
+      config: _childConfig('Directory', parent),
       initialSelectedIds: _directory.toList(),
       selectionMode: widget.childMode,
       parentController: widget.effect == SubPickerParentSelectionEffect.none
@@ -111,11 +111,17 @@ class _NestedCardState extends State<NestedCard> {
           : parent,
       parentSelectionEffect: widget.effect,
       onChange: widget.childPersist == Persist.change
-          ? (delta) => setState(() => applyDelta(_directory, delta))
+          ? (delta) => setState(() {
+              applyDelta(_directory, delta);
+              applyEffectToSelection(_selected, widget.effect, delta);
+            })
           : null,
       onClose: widget.childPersist == Persist.close
           ? (result) {
-              setState(() => applyDelta(_directory, result));
+              setState(() {
+                applyDelta(_directory, result);
+                applyEffectToSelection(_selected, widget.effect, result);
+              });
             }
           : null,
       headerBuilder: widget.deep || widget.childBulk
@@ -163,20 +169,28 @@ class _NestedCardState extends State<NestedCard> {
     );
   }
 
-  PickerConfig<Person> _childConfig(String title) {
-    final plainRows =
-        widget.childUnselect == PickerUnselectPolicy.allow &&
-        !widget.childLockedInactive;
+  PickerConfig<Person> _childConfig(
+    String title,
+    GenericPickerController<Person, int> parent,
+  ) {
+    final gateUnselect = widget.childUnselect != PickerUnselectPolicy.allow;
+    if (!gateUnselect && !widget.childLockedInactive) {
+      return peopleConfig(title: title);
+    }
     return peopleConfig(
       title: title,
-      relatedListItemStatusOf: plainRows
-          ? null
-          : (person) => PickerRelatedListItemStatus(
-              selectable: !(widget.childLockedInactive && person.locked),
-              unselectPolicy: person.inUse
-                  ? widget.childUnselect
-                  : PickerUnselectPolicy.allow,
-            ),
+      relatedListItemStatusOf: (person) {
+        final usedByField = parent.pendingIds.contains(person.id);
+        return PickerRelatedListItemStatus(
+          selectable: !(widget.childLockedInactive && person.locked),
+          unselectPolicy: person.inUse || usedByField
+              ? widget.childUnselect
+              : PickerUnselectPolicy.allow,
+        );
+      },
+      relatedListItemStatusListenable: gateUnselect
+          ? parent.pendingIdsListenable
+          : null,
     );
   }
 }
