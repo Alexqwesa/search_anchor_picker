@@ -87,6 +87,7 @@ class SimpleCard extends StatefulWidget {
     this.emptyText,
     this.noResultsText,
     this.showChips = true,
+    this.emptyCatalog = false,
   });
 
   final String title;
@@ -114,6 +115,7 @@ class SimpleCard extends StatefulWidget {
   final String? emptyText;
   final String? noResultsText;
   final bool showChips;
+  final bool emptyCatalog;
 
   @override
   State<SimpleCard> createState() => _SimpleCardState();
@@ -161,6 +163,7 @@ class _SimpleCardState extends State<SimpleCard> {
               loadItems:
                   widget.failLoad ||
                       widget.includeSelectedInLoad ||
+                      widget.emptyCatalog ||
                       widget.loadItems != null
                   ? _load
                   : null,
@@ -293,6 +296,7 @@ class _SimpleCardState extends State<SimpleCard> {
       if (_fail) throw StateError('simulated search API failure');
     }
     if (widget.includeSelectedInLoad) return _selectedPlusCatalog();
+    if (widget.emptyCatalog) return const <Person>[];
     if (widget.loadItems != null) {
       if (!context.mounted) return const <Person>[];
       return widget.loadItems!(context);

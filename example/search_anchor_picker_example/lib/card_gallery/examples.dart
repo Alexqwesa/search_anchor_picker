@@ -408,42 +408,81 @@ SearchAnchorPicker<Person>(
         seed: {3},
         fullScreen: true,
       ),
-      const SimpleCard(
+      const NestedCard(
         title: 'Anchored popup',
         persistLabel: 'onClose',
         difference:
-            'isFullScreen is false. The menu is anchored to the field. Tap outside to dismiss.',
+            'isFullScreen is false, so the menu is anchored to the field. Directory and Watchlist sit in the header; the main people list is below them. Open each sublist: they use different menuOffset and viewConstraints. Tap outside to dismiss.',
         source: r'''
 SearchAnchorPicker<Person>(
-  config: peopleConfig(title: 'Anchored popup'),
-  initialSelectedIds: selected.toList(),
   isFullScreen: false,
   viewConstraints: const BoxConstraints(
-    minWidth: 320,
-    maxWidth: 400,
-    minHeight: 280,
+    minWidth: 360,
+    maxWidth: 420,
+    minHeight: 320,
     maxHeight: 480,
   ),
-  onClose: (result) { /* write selected */ },
+  headerBuilder: (context, controller, items) => [
+    SubPickerTile<Person>(
+      title: 'Directory membership',
+      menuOffset: const Offset(24, 36),
+      viewConstraints: const BoxConstraints(
+        minWidth: 240,
+        maxWidth: 280,
+        minHeight: 200,
+        maxHeight: 280,
+      ),
+    ),
+    SubPickerTile<Person>(
+      title: 'Watchlist',
+      menuOffset: const Offset(56, 12),
+      viewConstraints: const BoxConstraints(
+        minWidth: 360,
+        maxWidth: 440,
+        minHeight: 300,
+        maxHeight: 420,
+      ),
+    ),
+  ],
 );
 ''',
-        seed: {3},
-        fullScreen: false,
+        secondSublist: true,
+        viewConstraints: BoxConstraints(
+          minWidth: 360,
+          maxWidth: 420,
+          minHeight: 320,
+          maxHeight: 480,
+        ),
+        directoryOffset: Offset(24, 36),
+        directoryConstraints: BoxConstraints(
+          minWidth: 240,
+          maxWidth: 280,
+          minHeight: 200,
+          maxHeight: 280,
+        ),
+        watchlistOffset: Offset(56, 12),
+        watchlistConstraints: BoxConstraints(
+          minWidth: 360,
+          maxWidth: 440,
+          minHeight: 300,
+          maxHeight: 420,
+        ),
       ),
       const SimpleCard(
         title: 'Custom empty copy',
         persistLabel: 'onClose',
         difference:
-            'emptyText / noResultsText replace the localized defaults. Search for zzz to see no-results.',
+            'emptyText / noResultsText replace the localized defaults. Open shows Custom: No items. Search for zzz to see Custom: No results.',
         source: r'''
 SearchAnchorPicker<Person>(
-  emptyText: 'Nobody in this roster yet',
-  noResultsText: 'No person matches that query',
+  emptyText: 'Custom: No items',
+  noResultsText: 'Custom: No results',
   onClose: (result) { /* write selected */ },
 );
 ''',
-        emptyText: 'Nobody in this roster yet',
-        noResultsText: 'No person matches that query',
+        emptyText: 'Custom: No items',
+        noResultsText: 'Custom: No results',
+        emptyCatalog: true,
       ),
       const SimpleCard(
         title: 'Multiline field',

@@ -21,6 +21,11 @@ class NestedCard extends StatefulWidget {
     this.childBulk = false,
     this.childLockedInactive = false,
     this.childUnselect = PickerUnselectPolicy.allow,
+    this.viewConstraints,
+    this.directoryOffset,
+    this.directoryConstraints,
+    this.watchlistOffset,
+    this.watchlistConstraints,
   });
 
   final String title;
@@ -37,6 +42,11 @@ class NestedCard extends StatefulWidget {
   final bool childBulk;
   final bool childLockedInactive;
   final PickerUnselectPolicy childUnselect;
+  final BoxConstraints? viewConstraints;
+  final Offset? directoryOffset;
+  final BoxConstraints? directoryConstraints;
+  final Offset? watchlistOffset;
+  final BoxConstraints? watchlistConstraints;
 
   @override
   State<NestedCard> createState() => _NestedCardState();
@@ -70,7 +80,7 @@ class _NestedCardState extends State<NestedCard> {
         initialSelectedIds: _selected.toList(),
         isFullScreen: false,
         viewHintText: 'Search people',
-        viewConstraints: popupConstraints,
+        viewConstraints: widget.viewConstraints ?? popupConstraints,
         onChange: widget.parentPersist == Persist.change
             ? (delta) => setState(() => applyDelta(_selected, delta))
             : null,
@@ -110,6 +120,12 @@ class _NestedCardState extends State<NestedCard> {
           ? null
           : parent,
       parentSelectionEffect: widget.effect,
+      isFullScreen:
+          widget.directoryOffset != null || widget.directoryConstraints != null
+          ? false
+          : null,
+      menuOffset: widget.directoryOffset ?? const Offset(30, 30),
+      viewConstraints: widget.directoryConstraints,
       onChange: widget.childPersist == Persist.change
           ? (delta) => setState(() {
               applyDelta(_directory, delta);
@@ -148,6 +164,12 @@ class _NestedCardState extends State<NestedCard> {
       icon: Icons.visibility_outlined,
       config: peopleConfig(title: 'Watchlist'),
       initialSelectedIds: _watchlist.toList(),
+      isFullScreen:
+          widget.watchlistOffset != null || widget.watchlistConstraints != null
+          ? false
+          : null,
+      menuOffset: widget.watchlistOffset ?? const Offset(30, 30),
+      viewConstraints: widget.watchlistConstraints,
       onChange: widget.childPersist == Persist.change
           ? (delta) => setState(() => applyDelta(_watchlist, delta))
           : null,
