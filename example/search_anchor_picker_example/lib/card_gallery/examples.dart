@@ -17,8 +17,8 @@ SearchAnchorPicker<Person>(
   initialSelectedIds: selected.toList(),
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -58,8 +58,8 @@ SearchAnchorPicker<Person>(
   initialSelectedIds: selected.toList(),
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -79,8 +79,8 @@ SearchAnchorPicker<Person>(
     await Future<void>.delayed(const Duration(milliseconds: 700));
     if (failClose) throw StateError('simulated onClose failure');
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -121,8 +121,8 @@ SearchAnchorPicker<Person>(
   selectionMode: SelectionMode.single,
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -141,8 +141,8 @@ SearchAnchorPicker<Person>(
   selectionMode: SelectionMode.singleOptional,
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -160,8 +160,8 @@ SearchAnchorPicker<Person>(
   initialSelectedIds: selected.toList(),
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',
@@ -179,8 +179,8 @@ SearchAnchorPicker<Person>(
   selectedFirst: false,
   onClose: (result) {
     selected
-      ..clear()
-      ..addAll(result.finalIds);
+      ..addAll(result.added)
+      ..removeAll(result.removed);
   },
 );
 ''',

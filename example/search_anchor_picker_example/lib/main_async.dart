@@ -492,7 +492,7 @@ class _SubPickerTile extends StatelessWidget {
   final IconData icon;
   final PickerConfig<DemoItem> config;
   final List<int> seedIds;
-  final Future<void> Function(PickerSelectionResult<int> result) onClose;
+  final Future<void> Function(PickerDelta<int> result) onClose;
 
   @override
   Widget build(BuildContext context) {

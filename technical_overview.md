@@ -89,7 +89,9 @@ does not mutate the external seed. Neither operation creates a new persistence
 delta. Reopening starts a new selection session from the latest external seed
 and clears old intent.
 
-There is no replace-all close callback. Persist `added` and `removed`.
+There is no replace-all close callback and no final snapshot on `onClose`.
+Persist `added` and `removed`. A failed or empty `loadItems` is not "the list
+is empty".
 `initialSelectedIds` is only the seed for the next open.
 
 ## Nested menus

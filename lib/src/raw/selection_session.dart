@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:search_anchor_picker/src/raw/picker_selection.dart';
 
 export 'package:search_anchor_picker/src/raw/picker_selection.dart'
-    show PickerSelectionResult;
+    show PickerDelta;
 
 /// Selection bookkeeping for one open picker overlay.
 ///
@@ -23,8 +23,8 @@ export 'package:search_anchor_picker/src/raw/picker_selection.dart'
 /// on close so a closed picker stays lightweight. Reopening calls [open],
 /// which resets snapshot and intent.
 ///
-/// [result] is the `onClose` payload: current pending IDs plus the net
-/// explicit delta versus [openedIds]. Select then unselect (or the reverse)
+/// [result] is the `onClose` payload: the net explicit delta versus
+/// [openedIds]. Select then unselect (or the reverse)
 /// nets to empty `added` / `removed`. Close deltas come only from those
 /// explicit toggles, not from comparing pending IDs to the current
 /// `loadItems` result. A selected ID that is not in that list stays
@@ -73,13 +73,12 @@ class PickerSelectionSession<K> {
       ..removeAll(before.difference(after));
   }
 
-  PickerSelectionResult<K> result({bool remainingOnly = false}) {
-    final finalIds = {...pendingN.value};
+  PickerDelta<K> result({bool remainingOnly = false}) {
+    final pending = {...pendingN.value};
     final baseline = remainingOnly ? (_acceptedIds ?? _openedIds) : _openedIds;
-    return PickerSelectionResult<K>(
-      finalIds: finalIds,
-      added: _explicitlyAdded.intersection(finalIds.difference(baseline)),
-      removed: _explicitlyRemoved.intersection(baseline.difference(finalIds)),
+    return PickerDelta<K>(
+      added: _explicitlyAdded.intersection(pending.difference(baseline)),
+      removed: _explicitlyRemoved.intersection(baseline.difference(pending)),
     );
   }
 

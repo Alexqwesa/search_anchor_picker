@@ -320,7 +320,9 @@ Select-all tap into a request per person, which is a property of the save, not
 of the command. `onClose` avoids the question, because a whole session
 collapses into one net delta.
 
-There is no replace-all close callback. Persist `added` and `removed`.
+There is no replace-all close callback and no final snapshot on `onClose`.
+Persist `added` and `removed`, applied to the seed you already hold. A failed
+or empty `loadItems` is not "the list is empty".
 `initialSelectedIds` is only the seed for the next open, from your selected
 IDs.
 

@@ -6,8 +6,8 @@
 * Added `PickerAuxiliaryMembership`: `member`, `notMember`, and `unknown`.
   Absence from a partial page stays unknown unless independently established.
 * Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
-* Breaking: the picker notifies through `onChange` (`PickerDelta`) and `onClose`.
-  Applications persist. `canChangeSelection` receives `PickerSelectionChange`.
+* Breaking: the picker notifies through `onChange` and `onClose`, both
+  `PickerDelta`. `PickerSelectionResult` is removed. Applications persist.
   A thrown `onChange` restores the checkbox. A thrown `onClose` keeps the
   overlay open, shows a localized saving wrap, then asks whether to keep
   editing or close without saving. Override with `closeSavingBuilder` and

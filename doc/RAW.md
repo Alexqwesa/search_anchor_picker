@@ -13,7 +13,7 @@ from `package:search_anchor_picker/search_anchor_picker.dart` and
 - `SubPickerTile` / `GenericSubPickerTile`
 - `PickerRelatedListItemStatus`, `PickerUnselectPolicy`,
   `PickerAuxiliaryMembership`, `SubPickerParentSelectionEffect`,
-  `PickerSelectionResult`, `PickerDelta`, `PickerSelectionChange`
+  `PickerDelta`
 - default widgets exported by `widgets.dart`
 
 Do not tell application code to import `package:search_anchor_picker/raw.dart`.
@@ -30,7 +30,7 @@ effects.
 | Overlay, search, selection, load/close | Raw | `GenericRawSearchAnchorPicker`, `GenericRawPickerConfig`, `OverlayBody`, `PickerSelectionSession` |
 | Related-list status and unselect policy | Main | `PickerRelatedListItemStatus`, `GenericPickerConfig`, `GenericSearchAnchorPicker` |
 | Parent/child checkbox sync | Main | `SubPickerParentSelectionEffect`, `GenericSubPickerTile` |
-| Selection observables | Raw | `canChangeSelection` (`PickerSelectionChange`), `onChange` (`PickerDelta`), `onClose` (`PickerSelectionResult`) |
+| Selection observables | Raw | `onChange` / `onClose` (`PickerDelta`) |
 | Nested tile without parent sync | Raw | `GenericRawSubPickerTile` |
 
 ## Libraries
@@ -48,8 +48,7 @@ effects.
 - `lib/src/raw/selection_session.dart`: initial seed, pending IDs, and explicit
   delta bookkeeping.
 - `lib/src/raw/overlay_body.dart`: filtering, rows, and toggle orchestration.
-- `lib/src/raw/picker_selection.dart`: `PickerDelta`, `PickerSelectionChange`,
-  and session result types.
+- `lib/src/raw/picker_selection.dart`: `PickerDelta`.
 - `lib/src/raw/picker_config.dart`: raw config, controller, `PickerUnselectPolicy`.
 - `lib/src/picker_status.dart`: related-list membership and unselect policy.
 - `lib/src/picker_config.dart`: public config wrapping the raw config.

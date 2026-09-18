@@ -79,11 +79,7 @@ class _NestedCardState extends State<NestedCard> {
               : null,
           onClose: widget.parentPersist == Persist.close
               ? (result) {
-                  setState(() {
-                    _selected
-                      ..clear()
-                      ..addAll(result.finalIds);
-                  });
+                  setState(() => applyDelta(_selected, result));
                 }
               : null,
           headerBuilder: (context, controller, items) => [
@@ -119,11 +115,7 @@ class _NestedCardState extends State<NestedCard> {
           : null,
       onClose: widget.childPersist == Persist.close
           ? (result) {
-              setState(() {
-                _directory
-                  ..clear()
-                  ..addAll(result.finalIds);
-              });
+              setState(() => applyDelta(_directory, result));
             }
           : null,
       headerBuilder: widget.deep || widget.childBulk
@@ -155,11 +147,7 @@ class _NestedCardState extends State<NestedCard> {
           : null,
       onClose: widget.childPersist == Persist.close
           ? (result) {
-              setState(() {
-                _watchlist
-                  ..clear()
-                  ..addAll(result.finalIds);
-              });
+              setState(() => applyDelta(_watchlist, result));
             }
           : null,
     );
