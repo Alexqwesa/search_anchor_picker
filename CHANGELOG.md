@@ -1,25 +1,25 @@
 ## 0.2.0
 
-* Breaking: per-item rules use `relatedListItemStatusOf` returning
-  `PickerRelatedListItemStatus(auxiliaryMembership:, unselectPolicy:)`.
-  `relatedListItemStatusListenable` refreshes status without reloading items.
-* Added `PickerAuxiliaryMembership`: `member`, `notMember`, and `unknown`.
-  Absence from a partial page stays unknown unless independently established.
-* Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
-* Breaking: the picker notifies through `onChange` and `onClose`, both
-  `PickerDelta`. `PickerSelectionResult` is removed. Applications persist.
-  A thrown `onChange` restores the checkbox. A thrown `onClose` keeps the
-  overlay open, shows a localized saving wrap, then asks whether to keep
-  editing or close without saving. Override with `closeSavingBuilder` and
-  `closeSaveFailedBuilder`. Both may persist; `onChange` does not consume
-  session intent, so persist in only one of them. `onClose` nets select then
-  deselect; `onChange` does not.
-* Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
-* Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
-  Parent sync runs after a successful child `onChange`.
-* Row toggles and bulk header commands share the same apply pipeline. A bulk
-  command reports one delta over every affected ID, so an `onChange` that
-  saves per ID turns one command into a request per ID.
+Breaking vs 0.1.1:
+
+* `onToggle` / `OnToggleMode` → `onChange(PickerDelta)`. A throw restores the checkbox.
+* `onFinish` → `onClose(PickerDelta)`. A throw keeps the overlay open
+  (`closeSavingBuilder` / `closeSaveFailedBuilder`). `viewOnClose` is overlay lifecycle.
+* `PickerMode.radio` / `radioToggle` → `SelectionMode.single` / `singleOptional`.
+* `UnselectBehavior` + `isItemInUse` → `relatedListItemStatusOf`
+  (`unselectPolicy`, `selectable`, `auxiliaryMembership`). Status listenable
+  repaints without reload. `itemBuilder` gets status before `toggle`.
+* `SubPickerTile` no longer deselects parent IDs just because `parentController`
+  is set. Opt in with `SubPickerParentSelectionEffect`.
+
+Also:
+
+* Persist in `onChange` or `onClose`, not both. Close nets select/deselect
+  against the seed at open; change does not.
+* Bulk header commands take the same apply path as a row toggle (one delta).
+* Default copy is localized (empty, no-results, retry, in-use warning/confirm,
+  saving, close-save failed). `emptyText` / `noResultsText` override the first
+  two. 
 
 ## 0.1.2 (git only)
 
