@@ -59,7 +59,7 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
     this.parentSelectionEffect = SubPickerParentSelectionEffect.none,
     super.icon,
     super.canChangeSelection,
-    FutureOr<void> Function(PickerSelectionChange<T, K> change)? onChange,
+    FutureOr<void> Function(PickerDelta<K> delta)? onChange,
     super.onClose,
     SelectionMode selectionMode = SelectionMode.multi,
     super.leading,
@@ -117,14 +117,14 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
          },
          onChange: parentSelectionEffect == SubPickerParentSelectionEffect.none
              ? onChange
-             : (change) {
+             : (delta) {
                  _applyParentEffect(
                    parentController,
                    parentSelectionEffect,
-                   change.delta.added,
-                   change.delta.removed,
+                   delta.added,
+                   delta.removed,
                  );
-                 return onChange?.call(change);
+                 return onChange?.call(delta);
                },
        );
 

@@ -30,7 +30,7 @@ effects.
 | Overlay, search, selection, load/close | Raw | `GenericRawSearchAnchorPicker`, `GenericRawPickerConfig`, `OverlayBody`, `PickerSelectionSession` |
 | Related-list status and unselect policy | Main | `PickerRelatedListItemStatus`, `GenericPickerConfig`, `GenericSearchAnchorPicker` |
 | Parent/child checkbox sync | Main | `SubPickerParentSelectionEffect`, `GenericSubPickerTile` |
-| Selection observables | Raw | `canChangeSelection`, `onChange`, `onClose` |
+| Selection observables | Raw | `canChangeSelection` (`PickerSelectionChange`), `onChange` (`PickerDelta`), `onClose` (`PickerSelectionResult`) |
 | Nested tile without parent sync | Raw | `GenericRawSubPickerTile` |
 
 ## Libraries

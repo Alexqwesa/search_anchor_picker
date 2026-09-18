@@ -113,9 +113,10 @@ insufficient knowledge from a partial result; it must remain distinct from
 loading the whole auxiliary list.
 
 The picker notifies; it does not persist. Save from `onChange` (each accepted
-delta) or `onClose` (net session). `canChangeSelection` only accepts or
-rejects a proposed change. Leaving it null is the same as always allowing.
-It does not change when `onChange` or `onClose` fire for accepted work.
+toggle) or `onClose` (whole delta of session). `canChangeSelection` only
+accepts or rejects a proposed change. Leaving it null is the same as always
+allowing. It does not change when `onChange` or `onClose` fire for accepted
+work.
 
 Apply order is unselect policy, then the gate, then pending checkboxes, then
 `onChange`. A blocked or cancelled unselect never reaches the gate. A

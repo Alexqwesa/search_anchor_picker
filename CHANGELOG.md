@@ -6,8 +6,8 @@
 * Added `PickerAuxiliaryMembership`: `member`, `notMember`, and `unknown`.
   Absence from a partial page stays unknown unless independently established.
 * Breaking: `itemBuilder` receives `relatedListItemStatus` before `toggle`.
-* Breaking: the picker notifies through `onChange` and `onClose`. Applications
-  persist. `canChangeSelection` is only a gate.
+* Breaking: the picker notifies through `onChange` (`PickerDelta`) and `onClose`.
+  Applications persist. `canChangeSelection` receives `PickerSelectionChange`.
 * Breaking: `onFinish` is `onClose`. `viewOnClose` remains overlay lifecycle.
 * Breaking: `SubPickerParentEffect` is `SubPickerParentSelectionEffect`.
   Parent sync runs after an accepted child selection change.

@@ -16,16 +16,16 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 | Use case | API |
 | --- | --- |
-| Save the net session when the popup closes | `onClose` |
+| Save the whole session delta when the popup closes | `onClose` |
 | Save each accepted delta as it happens | `onChange` |
 | Validate a proposed change | `canChangeSelection` |
 | Nested sublist membership | `SubPickerTile` + `onChange` / `onClose` |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
 
-There is no replace-all close callback. Apply explicit deltas to backend or
-application state. Use `initialSelectedIds` only from an authoritative selected
-ID source.
+There is no replace-all close callback. Persist `added` and `removed`.
+`initialSelectedIds` is only the seed for the next open, from your selected
+IDs.
 
 ## Basic integration
 
@@ -65,15 +65,16 @@ Follow these invariants:
 
 ## Observables
 
-The picker does not persist. Save in `onChange` when each accepted delta should
-be written as it happens, including bulk header commands. Save in `onClose`
-when changes should be batched until the popup closes.
+The picker notifies; it does not persist. Save from `onChange` (each accepted
+toggle) or `onClose` (whole delta of session). Bulk header commands also go
+through `onChange`.
 
 `canChangeSelection` only accepts or rejects a proposed change. Checkboxes
-update after that gate succeeds. Presence of `canChangeSelection` does not
-change `onChange` or `onClose`. Handle persistence errors in application code;
-a thrown observer does not roll back selection. `viewOnClose` is the overlay
-lifecycle callback, not the selection result.
+update after that gate succeeds. Persist from IDs, not from loaded items.
+Presence of `canChangeSelection` does not change `onChange` or `onClose`.
+Handle persistence errors in application code; a thrown observer does not
+roll back selection. `viewOnClose` is the overlay lifecycle callback, not
+the selection result.
 
 ## Item reloads
 

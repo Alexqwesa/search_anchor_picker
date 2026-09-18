@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-/// Added and removed IDs for one selection mutation or a session result.
+/// Added and removed IDs for one accepted `onChange` mutation or a session
+/// result.
 @immutable
 class PickerDelta<K> {
   const PickerDelta({
@@ -30,7 +31,11 @@ class PickerSelectionResult<K> {
   PickerDelta<K> get delta => PickerDelta(added: added, removed: removed);
 }
 
-/// A proposed or accepted selection mutation, including loaded items when known.
+/// A proposed selection mutation for `canChangeSelection`.
+///
+/// [addedItems] / [removedItems] are loaded objects from the current
+/// `loadItems` result when those IDs are present. Persist from [delta], not
+/// from these lists.
 @immutable
 class PickerSelectionChange<T, K> {
   const PickerSelectionChange({

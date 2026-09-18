@@ -328,11 +328,11 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
                     ),
                     initialSelectedIds: _ids(selectedOnScreenA),
                     selectionMode: SelectionMode.multi,
-                    onChange: (change) {
+                    onChange: (delta) {
                       final current = ref.read(selectedScreenAProvider);
                       final next = Set<int>.from(current)
-                        ..addAll(change.delta.added)
-                        ..removeAll(change.delta.removed);
+                        ..addAll(delta.added)
+                        ..removeAll(delta.removed);
                       ref.read(selectedScreenAProvider.notifier).set(next);
                     },
                     headerBuilder: (ctx, actions, allItems) {

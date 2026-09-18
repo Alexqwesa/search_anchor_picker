@@ -109,9 +109,9 @@ class _RadioHomeState extends State<RadioHome> {
                     ),
                     selectionMode: SelectionMode.single,
                     initialSelectedIds: selectedId == null ? [] : [selectedId!],
-                    onChange: (change) {
-                      if (change.delta.added.isEmpty) return;
-                      setState(() => selectedId = change.delta.added.first);
+                    onChange: (delta) {
+                      if (delta.added.isEmpty) return;
+                      setState(() => selectedId = delta.added.first);
                     },
                     triggerBuilder: (_, open, version) {
                       final has = selectedId != null;
@@ -164,10 +164,10 @@ class _RadioHomeState extends State<RadioHome> {
                     initialSelectedIds: _unifiedSelectedId == null
                         ? []
                         : [_unifiedSelectedId!],
-                    onChange: (change) {
-                      if (change.delta.added.isEmpty) return;
+                    onChange: (delta) {
+                      if (delta.added.isEmpty) return;
                       setState(() {
-                        _unifiedSelectedId = change.delta.added.first;
+                        _unifiedSelectedId = delta.added.first;
                         if (!subItems.any(
                           (item) => item.id == _unifiedSelectedId,
                         )) {
@@ -221,11 +221,10 @@ class _RadioHomeState extends State<RadioHome> {
                         initialSelectedIds: _unifiedSelectedId == null
                             ? []
                             : [_unifiedSelectedId!],
-                        onChange: (change) {
-                          if (change.delta.added.isEmpty) return;
+                        onChange: (delta) {
+                          if (delta.added.isEmpty) return;
                           final item = subItems.firstWhere(
-                            (candidate) =>
-                                candidate.id == change.delta.added.first,
+                            (candidate) => candidate.id == delta.added.first,
                           );
                           setState(() {
                             _unifiedSelectedId = item.id;

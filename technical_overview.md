@@ -85,8 +85,8 @@ does not mutate the external seed. Neither operation creates a new persistence
 delta. Reopening starts a new selection session from the latest external seed
 and clears old intent.
 
-There is no replace-all close callback. Consumers apply explicit deltas, while a
-parent with a complete authoritative snapshot can reseed `initialSelectedIds`.
+There is no replace-all close callback. Persist `added` and `removed`.
+`initialSelectedIds` is only the seed for the next open.
 
 ## Nested menus
 
@@ -100,12 +100,12 @@ parent selection, update the external parent seed, or create a parent
 `onChange` / `onClose` delta. Consumers with separate parent-selection
 persistence must save that change in `onChange` or `onClose` and handle failures.
 
-`SubPickerTile` forwards `canChangeSelection`, `onChange`, `onClose`, and
-`headerBuilder`. Accepted deltas share one apply pipeline for rows and bulk
-commands. The picker notifies; the application persists. Policies run before
-gates, pending work defers close, and a rejected gate never applies. Deferred
-controller updates are session-guarded so late child callbacks cannot mutate a
-closed or reopened parent.
+`SubPickerTile` forwards `canChangeSelection`, `onChange` (`PickerDelta`),
+`onClose`, and `headerBuilder`. Accepted deltas share one apply pipeline for
+rows and bulk commands. The picker notifies; the application persists. Policies
+run before gates, pending work defers close, and a rejected gate never applies.
+Deferred controller updates are session-guarded so late child callbacks cannot
+mutate a closed or reopened parent.
 
 Nested overlays use no follower layers or permanent trigger keys. This avoids the
 paint-transform failures that can occur when editing a search field under a
