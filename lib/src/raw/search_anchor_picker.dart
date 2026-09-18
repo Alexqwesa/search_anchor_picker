@@ -119,8 +119,10 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   ///
   /// This is not overlay-lifecycle [viewOnClose].
   /// Toggling and bulk commands inside one session collapse into one delta
-  /// versus `initialSelectedIds`. Select then deselect the same ID, any number
-  /// of times, and it appears in neither set. Empty means do not write.
+  /// versus the seed captured at open. A later `initialSelectedIds` change
+  /// reseeds checkboxes; it does not retarget this delta. Select then
+  /// deselect the same ID, any number of times, and it appears in neither
+  /// set. Empty means do not write.
   ///
   /// Persist [PickerDelta.added] and [PickerDelta.removed]. Apply that to the
   /// seed you already hold. A load error or empty search is not a deletion.

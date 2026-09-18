@@ -88,7 +88,9 @@ an external add/remove delta to only the currently open picker's pending IDs; it
 does not mutate the external seed. Neither operation creates a new persistence
 delta. Reopening starts a new selection session from the latest external seed
 and clears old intent. `onChange` does not consume that intent: `onClose` is
-always the net versus the open seed, even when `onChange` already ran. Select
+always the net versus the open seed, even when `onChange` already ran. A later
+`initialSelectedIds` reseed updates checkboxes only; it does not invent or
+drop recorded intent. Select
 then deselect nets to empty `onClose`; each accepted toggle still fires
 `onChange`. Persist in only one of them.
 

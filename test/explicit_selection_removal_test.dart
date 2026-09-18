@@ -314,6 +314,56 @@ void main() {
     },
   );
 
+  testWidgets(
+    'user add survives a later empty initialSelectedIds reseed',
+    (tester) async {
+      final selectedN = ValueNotifier<List<int>>(const [1]);
+      var addedIds = <int>[];
+      var removedIds = <int>[];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValueListenableBuilder<List<int>>(
+              valueListenable: selectedN,
+              builder: (context, selectedIds, _) {
+                return SearchAnchorPicker<int>(
+                  config: PickerConfig<int>(
+                    loadItems: (_) async => [1, 2, 3],
+                    idOf: (i) => i,
+                    labelOf: (i) => 'Item $i',
+                    searchTermsOf: (i) => ['Item $i'],
+                  ),
+                  initialSelectedIds: selectedIds,
+                  triggerBuilder: (_, open, __) => ElevatedButton(
+                    onPressed: open,
+                    child: const Text('Open'),
+                  ),
+                  onClose: (result) {
+                    addedIds = result.added.toList();
+                    removedIds = result.removed.toList();
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Item 2'));
+      await tester.pumpAndSettle();
+      selectedN.value = const [];
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+
+      expect(addedIds, [2]);
+      expect(removedIds, isEmpty);
+    },
+  );
+
   testWidgets('syncPending changes final ids without reporting deltas', (
     tester,
   ) async {
