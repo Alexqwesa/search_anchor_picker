@@ -907,10 +907,13 @@ class _GenericRawSearchAnchorPickerState<T, K>
       _pendingN.value = after;
       if (!await _runOnChange(delta)) {
         _selection.recordExplicitChange(after, before);
-        if (_pendingN.value.length == after.length &&
-            _pendingN.value.containsAll(after)) {
-          _pendingN.value = before;
-        }
+        // Invert this delta against the live set. Replacing with [before]
+        // would wipe a concurrent success; skipping unless the snapshot still
+        // matches would leave this failed row selected.
+        final current = {..._pendingN.value};
+        current.removeAll(selectableAdded);
+        current.addAll(selectableRemoved);
+        _pendingN.value = current;
         return false;
       }
       return true;
