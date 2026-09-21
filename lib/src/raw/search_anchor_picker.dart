@@ -770,7 +770,10 @@ class _GenericRawSearchAnchorPickerState<T, K>
     PickerResourceTracker.register(entry);
     _overlayEntry = entry;
     overlay.insert(entry);
-    unawaited(_animationController.forward());
+    // TickerFuture is @awaitNotRequired on current Flutter; unawaited()
+    // trips unnecessary_unawaited there, and omitting it trips
+    // discarded_futures on older SDKs.
+    _animationController.forward(); // ignore: discarded_futures
   }
 
   void _removeOverlay() {
