@@ -1,5 +1,11 @@
 include: package:very_good_analysis/analysis_options.yaml
 
+analyzer:
+  exclude:
+    # Example is its own package (Riverpod, flutter_lints). Analyze it from
+    # example/search_anchor_picker_example after that package's pub get.
+    - example/**
+
 linter:
   rules:
     # Public classes are documented at the class/API level without repeating
