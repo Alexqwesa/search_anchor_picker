@@ -36,6 +36,20 @@ const knownDirectoryIds = {1, 2, 5};
 const pagedDirectoryIds = {1, 5};
 const knownWatchlistIds = {3, 8};
 
+const knownTeamIds = {4, 6};
+
+/// Disjoint 3–7 row catalogs so nested sublists do not share people.
+const directoryCatalogIds = {1, 2, 5, 7, 9};
+const watchlistCatalogIds = {3, 8, 10, 11};
+const teamCatalogIds = {4, 6, 12};
+const favoritesCatalogIds = {1, 7, 9};
+
+/// Short parent catalog (Ada … Margaret). Nested demos keep 3–7 main rows.
+const shortMainIds = {1, 2, 3, 4, 5};
+
+List<Person> peopleIn(Set<int> ids) =>
+    people.where((person) => ids.contains(person.id)).toList();
+
 /// Short parent catalog used by field/sublist demos (Ada … Knuth).
 const mainCatalogIds = {1, 2, 3, 4, 5, 6};
 
@@ -102,7 +116,9 @@ PickerConfig<Person> peopleConfig({
   Future<List<Person>> Function(BuildContext context)? loadItems,
   PickerRelatedListItemStatus Function(Person)? relatedListItemStatusOf,
   Listenable? relatedListItemStatusListenable,
+  Listenable? listenable,
   bool selectedFirst = true,
+  Object? reloadKey,
 }) {
   return PickerConfig<Person>(
     title: title,
@@ -114,6 +130,8 @@ PickerConfig<Person> peopleConfig({
     selectedFirst: selectedFirst,
     relatedListItemStatusOf: relatedListItemStatusOf,
     relatedListItemStatusListenable: relatedListItemStatusListenable,
+    listenable: listenable,
+    reloadKey: reloadKey,
   );
 }
 

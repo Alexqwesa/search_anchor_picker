@@ -361,15 +361,13 @@ SearchAnchorPicker<Person>(
         bulk: BulkCommands.all,
       ),
       const NestedCard(
-        title: 'Nested child bulk commands',
+        title: 'Unrelated: child bulk commands',
         persistLabel: 'child onChange, parent onClose',
         difference:
-            'The directory sublist has Select results / Clear results. Each command is one delta that the child saves immediately, and it does not parent-sync unless an effect is set.',
+            'Directory has Select results / Clear results. Each command is one delta that the child saves immediately. Sublists do not move parent checkboxes.',
         source: r'''
 SubPickerTile<Person>(
-  title: 'Directory membership',
-  config: directoryConfig,
-  initialSelectedIds: directory.toList(),
+  title: 'Directory',
   onChange: (delta) { /* write the whole delta once */ },
   headerBuilder: (context, controller, items) => [
     TextButton(
@@ -384,6 +382,7 @@ SubPickerTile<Person>(
 );
 ''',
         childBulk: true,
+        sublists: 2,
       ),
     ],
   ),
@@ -409,10 +408,10 @@ SearchAnchorPicker<Person>(
         fullScreen: true,
       ),
       const NestedCard(
-        title: 'Anchored popup',
+        title: 'Unrelated: anchored nested popups',
         persistLabel: 'onClose',
         difference:
-            'isFullScreen is false, so the menu is anchored to the field. Directory and Watchlist sit in the header; the main people list is below them. Open each sublist: they use different menuOffset and viewConstraints. Tap outside to dismiss.',
+            'isFullScreen is false, so the menu is anchored to the field. Directory and Watchlist sit in the header; the short main people list is below them. Open each sublist: they use different menuOffset and viewConstraints. Tap outside to dismiss.',
         source: r'''
 SearchAnchorPicker<Person>(
   isFullScreen: false,
@@ -446,7 +445,7 @@ SearchAnchorPicker<Person>(
   ],
 );
 ''',
-        secondSublist: true,
+        sublists: 2,
         viewConstraints: BoxConstraints(
           minWidth: 360,
           maxWidth: 420,
@@ -560,9 +559,9 @@ SearchAnchorPicker<Person>(
     ],
   ),
   GallerySection(
-    title: 'Selected, main list, and sublist',
+    title: 'Nested list logic',
     caption:
-        'How field chips, parent rows, and a nested directory share people. Extras can go to the field only, appear as main-list rows (checked or not), and leave the directory with or without leaving the field.',
+        'Direct: the parent shows sublist members; uncheck in a sublist and they leave the parent unless parent-checked stays. Reverse: checking the parent makes people appear or become checkable in sublists. Unrelated: sublist membership is separate — the card subtitle, or a shared field of extra chips (not the main list, not a subtitle).',
     cards: [
       const SimpleCard(
         title: 'Selected stay in this open list',
@@ -594,230 +593,155 @@ SearchAnchorPicker<Person>(
         includeSelectedInLoad: true,
       ),
       const NestedCard(
-        title: 'Nested: check added',
+        title: 'Direct: sublist uncheck leaves the parent',
         persistLabel: 'child onChange, parent onClose',
         difference:
-            'selectAdded. Adding someone to the directory also checks them in the open parent. This demo writes those IDs onto the field chips immediately — syncPending does not create a parent onClose delta.',
+            'Direct logic. Each sublist is a different 3–7 person catalog (Directory Ada…Guido, Watchlist Grace…Anders, Team Katherine…Radia). The parent list is the union of their checked rows (about 7). Uncheck someone in a sublist: they uncheck on the parent, leave the list, and drop from the field chips.\n\n'
+            'Try Alan in Directory, Linus in Watchlist, or Knuth in Team.',
+        source: r'''
+SearchAnchorPicker<Person>(
+  config: peopleConfig(
+    loadItems: (_) async =>
+        people.where((p) => sublistUnion.contains(p.id)).toList(),
+    reloadKey: {...sublistUnion},
+  ),
+  headerBuilder: (context, controller, items) => [
+    SubPickerTile<Person>(
+      title: 'Directory',
+      parentController: controller,
+      parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
+    ),
+    SubPickerTile<Person>(title: 'Watchlist', /* same effect */),
+    SubPickerTile<Person>(title: 'Team', /* same effect */),
+  ],
+);
+''',
+        relation: NestedRelation.direct,
+        sublists: 3,
+      ),
+      const NestedCard(
+        title: 'Direct: parent-checked stays',
+        persistLabel: 'child onChange, parent onClose',
+        difference:
+            'Direct logic with a stay rule. The short main list (Ada … Margaret) always stays. Sublist extras still appear when checked. Uncheck Ada in Directory: she leaves the directory subtitle, but her parent checkbox and field chip stay because she is parent-checked.\n\n'
+            'Uncheck Linus in Watchlist: he was only a sublist extra and not parent-checked, so he leaves the parent list and is not added as a chip.',
         source: r'''
 SubPickerTile<Person>(
-  title: 'Directory membership',
-  config: directoryConfig,
-  initialSelectedIds: directory.toList(),
   parentController: controller,
   parentSelectionEffect: SubPickerParentSelectionEffect.selectAdded,
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta) { /* write sublist; do not remove parent-checked */ },
 );
 ''',
-        effect: SubPickerParentSelectionEffect.selectAdded,
+        relation: NestedRelation.directStay,
+        sublists: 3,
       ),
       const NestedCard(
-        title: 'Nested: uncheck removed',
-        persistLabel: 'child onChange, parent onClose',
-        difference:
-            'deselectRemoved. Removing someone from the directory unchecks them in the open parent. This demo also drops them from the field chips immediately — parent onClose would not see that remove.',
-        source: r'''
-SubPickerTile<Person>(
-  title: 'Directory membership',
-  config: directoryConfig,
-  initialSelectedIds: directory.toList(),
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  onChange: (delta) { /* write directory */ },
-);
-''',
-        effect: SubPickerParentSelectionEffect.deselectRemoved,
-      ),
-      const NestedCard(
-        title: 'Nested: mirror both',
-        persistLabel: 'child onChange, parent onClose',
-        difference:
-            'mirror. Parent checkboxes follow both sides of the directory delta. This demo writes the same delta onto the field chips. Parent onClose still only reports explicit parent row toggles.',
-        source: r'''
-SubPickerTile<Person>(
-  title: 'Directory membership',
-  config: directoryConfig,
-  initialSelectedIds: directory.toList(),
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
-  onChange: (delta) { /* write directory */ },
-);
-''',
-        effect: SubPickerParentSelectionEffect.mirror,
-      ),
-      const FieldRelationCard(
-        title: 'Directory members on the field cannot leave',
+        title: 'Reverse: parent check appears in sublists',
         persistLabel: 'parent onClose, child onChange',
         difference:
-            'The main popup lists everyone. Some of those rows are also directory members. The field starts with Ada and Katherine. Directory starts with Ada, Alan, and Margaret.\n\n'
-            'Open Directory: those three are checked. Ada is also a field chip, so unselect is blocked — she must stay in the directory while she is on the main screen. Alan is directory-only, so you can remove him. Katherine is on the field but not in the directory, so she is not checked in the sublist.\n\n'
-            'Parent rows show directory membership icons. Field chips still wait for parent close. The lock reads parent pending, so if you check Ada on the parent first, the directory row blocks immediately.',
+            'Reverse logic. The main list is Ada … Margaret (5). Each sublist only loads people from its own catalog who are currently checked on the parent.\n\n'
+            'The field starts with Ada and Katherine: Directory opens with Ada, Team with Katherine, Watchlist is empty (neither is in that catalog). Check Grace on the parent: she appears in Watchlist only.',
         source: r'''
 SubPickerTile<Person>(
-  title: 'Directory membership',
+  config: peopleConfig(
+    loadItems: (_) async => people
+        .where((p) =>
+            catalog.contains(p.id) && parent.pendingIds.contains(p.id))
+        .toList(),
+    listenable: parent.pendingIdsListenable,
+  ),
+);
+''',
+        relation: NestedRelation.reverseAppear,
+        sublists: 3,
+      ),
+      const NestedCard(
+        title: 'Reverse: parent check unlocks sublists',
+        persistLabel: 'parent onClose, child onChange',
+        difference:
+            'Reverse logic. Each sublist lists its own 3–7 people. A row is checkable only after that person is selected on the parent. Ada starts unlocked in Directory, Katherine in Team. Alan is grey in Directory until you check him on the parent. Grace is grey in Watchlist until you check her.',
+        source: r'''
+SubPickerTile<Person>(
   config: peopleConfig(
     relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
-      unselectPolicy: parent.pendingIds.contains(person.id)
-          ? PickerUnselectPolicy.blocked
-          : PickerUnselectPolicy.allow,
+      selectable: parent.pendingIds.contains(person.id),
     ),
     relatedListItemStatusListenable: parent.pendingIdsListenable,
   ),
-  initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
 );
+''',
+        relation: NestedRelation.reverseAvailable,
+        sublists: 3,
+      ),
+      const NestedCard(
+        title: 'Unrelated: sublists in the card subtitle',
+        persistLabel: 'parent onClose, child onChange',
+        difference:
+            'Unrelated logic. The short main list (Ada … Margaret) does not follow sublist checks. Directory, Watchlist, and Team are different 3–7 person catalogs; membership only updates the card subtitle. Field chips are the parent selection only.',
+        source: r'''
+headerBuilder: (context, controller, items) => [
+  SubPickerTile<Person>(title: 'Directory', onChange: writeDirectory),
+  SubPickerTile<Person>(title: 'Watchlist', onChange: writeWatchlist),
+  SubPickerTile<Person>(title: 'Team', onChange: writeTeam),
+];
+''',
+        relation: NestedRelation.unrelated,
+        sublists: 3,
+      ),
+      const NestedCard(
+        title: 'Unrelated: shared field',
+        persistLabel: 'child onChange, parent onClose',
+        difference:
+            'Unrelated logic, shared field. Directory, Watchlist, and Team are different 3–7 person catalogs. They do not change the main list (Ada … Margaret stays) and there is no Directory subtitle. Checking Linus in Watchlist only adds a field chip alongside Ada and Katherine. Uncheck him in Watchlist, or tap the chip X: the extra chip is gone. The parent popup still has no Linus row.',
+        source: r'''
+// Field chips = parentSelected ∪ directory ∪ watchlist ∪ team
+// Parent loadItems stays the short main list.
+SubPickerTile<Person>(
+  onChange: (delta) { /* write sublist; field reads the union */ },
+);
+''',
+        relation: NestedRelation.unrelatedField,
+        sublists: 3,
+      ),
+      const FieldRelationCard(
+        title: 'Unrelated: block unselect while on parent',
+        persistLabel: 'parent onClose, child onChange',
+        difference:
+            'Unrelated membership, with a guard: Directory cannot drop someone who is still checked on the parent. Ada starts on the field, so her Directory unselect is blocked. Alan is directory-only and can leave.\n\n'
+            'Watchlist and Team are independent and have no guard.',
+        source: r'''
+relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
+  unselectPolicy: parent.pendingIds.contains(person.id)
+      ? PickerUnselectPolicy.blocked
+      : PickerUnselectPolicy.allow,
+),
 ''',
         sublistUnselect: SublistFieldUnselect.blockIfOnField,
       ),
       const FieldRelationCard(
-        title: 'On-field directory members confirm unselect',
+        title: 'Unrelated: confirm unselect while on parent',
         persistLabel: 'parent onClose, child onChange',
         difference:
-            'Same overlap as “cannot leave”, but the directory asks before removing someone who is still on the field. Try Ada (on the field): confirm or cancel. Try Alan (directory only): he unchecks with no dialog.\n\n'
-            'Use confirm when the person may leave the directory, but the user should notice that they are still a field value. Use blocked when the directory must keep every person who is shown on the main screen.',
+            'Unrelated membership, with a confirm guard. Removing Ada from Directory asks first because she is on the field. Alan (directory only) unchecks with no dialog.',
         source: r'''
-relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
-  unselectPolicy: parent.pendingIds.contains(person.id)
-      ? PickerUnselectPolicy.confirm
-      : PickerUnselectPolicy.allow,
-),
+unselectPolicy: parent.pendingIds.contains(person.id)
+    ? PickerUnselectPolicy.confirm
+    : PickerUnselectPolicy.allow,
 ''',
         sublistUnselect: SublistFieldUnselect.confirmIfOnField,
-      ),
-      const FieldRelationCard(
-        title: 'Sublist extra goes to the field only',
-        persistLabel: 'parent onClose, child onChange, selectAdded',
-        difference:
-            'The parent list is the short catalog Ada … Knuth. Directory can still load everyone, including Linus and Radia, who are not parent rows.\n\n'
-            'Add Linus in Directory (selectAdded). The open parent checks him even though he is not in loadItems, and this demo writes him onto the field chips immediately. Close and reopen: there is still no Linus row — a hidden selected ID. Directory still shows him checked.\n\n'
-            'That is “directly to the screen field”. He never appears as a main-list checkbox. Remove him with the chip, or from Directory plus deselectRemoved (see the leave-field card). Compare with Hidden selected ID.',
-        source: r'''
-SearchAnchorPicker<Person>(
-  config: peopleConfig(
-    loadItems: (_) async => people.where((p) => p.id <= 6).toList(),
-  ),
-  headerBuilder: (context, controller, items) => [
-    SubPickerTile<Person>(
-      parentController: controller,
-      parentSelectionEffect: SubPickerParentSelectionEffect.selectAdded,
-      onChange: (delta) { /* write directory */ },
-    ),
-  ],
-);
-''',
-        effect: SubPickerParentSelectionEffect.selectAdded,
-        parentRows: ParentRowSet.mainCatalog,
-      ),
-      const FieldRelationCard(
-        title: 'Field-only extra: leave directory, leave field',
-        persistLabel: 'parent onClose, child onChange, mirror',
-        difference:
-            'Same short parent catalog as “Sublist extra goes to the field only”, but directory membership is mirrored onto the parent: add checks, remove unchecks.\n\n'
-            'Add Linus in Directory. He is a field chip with no parent row. Uncheck Linus in Directory: the parent drops him even though he has no row, and this demo drops the chip immediately. Reopen: he is gone from the list.\n\n'
-            'Ada is a catalog row on the field — removing her from Directory unchecks the parent row too. Membership drives the chip; the main list never shows the extra.',
-        source: r'''
-SearchAnchorPicker<Person>(
-  config: peopleConfig(
-    loadItems: (_) async => people.where((p) => p.id <= 6).toList(),
-  ),
-  headerBuilder: (context, controller, items) => [
-    SubPickerTile<Person>(
-      parentController: controller,
-      parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
-      onChange: (delta) { /* write directory */ },
-    ),
-  ],
-);
-''',
-        effect: SubPickerParentSelectionEffect.mirror,
-        parentRows: ParentRowSet.mainCatalog,
-      ),
-      const FieldRelationCard(
-        title: 'Sublist extra appears on main, unchecked',
-        persistLabel: 'parent onClose, child onChange, no effect',
-        difference:
-            'The parent list loads everyone, so directory extras are ordinary parent rows. Adding to Directory does not check the parent (effect none).\n\n'
-            'Add Linus in Directory: the footer updates, the parent Linus row stays unchecked, and the field chips do not change. He is now a directory member who is available on the main list but not selected.\n\n'
-            'To put him on the field, check him on the parent (or use selectAdded in the next card). To drop only membership, uncheck him in Directory — he remains a main-list row because loadItems still returns everyone.',
-        source: r'''
-SubPickerTile<Person>(
-  title: 'Directory membership',
-  // parentController omitted — effect none
-  onChange: (delta) { /* write directory */ },
-);
-''',
-        effect: SubPickerParentSelectionEffect.none,
-        parentRows: ParentRowSet.allPeople,
-      ),
-      const FieldRelationCard(
-        title: 'Sublist extra appears on main, checked',
-        persistLabel: 'parent onClose, child onChange, selectAdded',
-        difference:
-            'Same full parent list as the unchecked card, but selectAdded also checks the open parent.\n\n'
-            'Add Linus in Directory: his parent checkbox turns on, and this demo writes him onto the field chips immediately. Directory still lists him as a member (icon on the parent row).\n\n'
-            'Two ways to take him off the field afterwards: uncheck the parent row, or remove him from Directory with deselectRemoved (next cards). Removing him from Directory with effect none leaves the parent checkbox on.',
-        source: r'''
-SubPickerTile<Person>(
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.selectAdded,
-  onChange: (delta) { /* write directory */ },
-);
-''',
-        effect: SubPickerParentSelectionEffect.selectAdded,
-        parentRows: ParentRowSet.allPeople,
-      ),
-      const FieldRelationCard(
-        title: 'Leave directory, stay on the field',
-        persistLabel: 'parent onClose, child onChange, selectAdded',
-        difference:
-            'selectAdded only pushes directory adds onto the parent. It does not uncheck on directory remove.\n\n'
-            'Ada starts as both a chip and a directory member. Open Directory and uncheck Ada: she leaves the directory (footer), but the parent checkbox and the field chip stay. Close the parent: Ada is still selected.\n\n'
-            'Use this when directory membership is extra metadata and the field value has its own lifetime. Contrast with “Leave directory, also leave the field”.',
-        source: r'''
-SubPickerTile<Person>(
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.selectAdded,
-  onChange: (delta) { /* write directory */ },
-);
-''',
-        effect: SubPickerParentSelectionEffect.selectAdded,
-        parentRows: ParentRowSet.allPeople,
-      ),
-      const FieldRelationCard(
-        title: 'Leave directory, also leave the field',
-        persistLabel:
-            'child onChange writes directory and field, deselectRemoved',
-        difference:
-            'deselectRemoved unchecks the open parent, but that is only pending. syncPending does not create a parent onClose delta, so this card also writes the child remove onto the field chips.\n\n'
-            'Ada starts on the field and in the directory. Uncheck Ada in Directory: her chip leaves immediately, and the parent row unchecks. Close: she stays gone. Alan is directory-only, so removing him does not change chips. Katherine is field-only, so she is not checked in Directory and this effect never runs for her.\n\n'
-            'Pair with selectAdded (mirror) if extras should join and leave the field together with the directory. This card is remove-only so you can see unselect without also auto-checking new members.',
-        source: r'''
-SubPickerTile<Person>(
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  onChange: (delta) {
-    directory
-      ..addAll(delta.added)
-      ..removeAll(delta.removed);
-    // syncPending does not persist parent selection.
-    selected.removeAll(delta.removed);
-  },
-);
-''',
-        effect: SubPickerParentSelectionEffect.deselectRemoved,
-        parentRows: ParentRowSet.allPeople,
       ),
     ],
   ),
   GallerySection(
     title: 'Nested picker structure',
     caption:
-        'One or more SubPickerTiles, child selection modes, and which callback writes. Coupling effects live in the previous section; these cards are about nesting itself.',
+        'Unrelated nesting: sibling and nested SubPickerTiles, child selection modes, and which callback writes. Parent/sublist coupling lives in Nested list logic.',
     cards: [
       const NestedCard(
-        title: 'Nested directory, independent',
+        title: 'Unrelated: nested directory',
         persistLabel: 'onClose (both)',
         difference:
-            'A SubPickerTile manages directory membership. Parent checkboxes do not follow directory add/remove.',
+            'A Directory and Watchlist SubPickerTile manage membership. Parent checkboxes do not follow sublist add/remove.',
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(title: 'People'),
@@ -837,10 +761,10 @@ SearchAnchorPicker<Person>(
         childPersist: Persist.close,
       ),
       const NestedCard(
-        title: 'Two sublists',
+        title: 'Unrelated: sibling sublists',
         persistLabel: 'onClose parent, onChange children',
         difference:
-            'Directory and Watchlist are two independent SubPickerTiles. Neither changes parent checkboxes.',
+            'Directory, Watchlist, and Team are independent SubPickerTiles with different people. None of them changes parent checkboxes.',
         source: r'''
 headerBuilder: (context, controller, items) => [
   SubPickerTile<Person>(
@@ -857,13 +781,13 @@ headerBuilder: (context, controller, items) => [
   ),
 ],
 ''',
-        secondSublist: true,
+        sublists: 3,
       ),
       const NestedCard(
-        title: 'Nested directory inside directory',
+        title: 'Unrelated: nested sublist inside sublist',
         persistLabel: 'child onChange, grandchild onChange',
         difference:
-            'Favorites is a SubPickerTile inside Directory. Three membership lists: people, directory, favorites.',
+            'Favorites is a SubPickerTile inside Directory. Membership lists: people, Directory, Watchlist, and Favorites.',
         source: r'''
 SubPickerTile<Person>(
   title: 'Directory membership',
@@ -883,7 +807,7 @@ SubPickerTile<Person>(
         deep: true,
       ),
       const NestedCard(
-        title: 'Nested child is single optional',
+        title: 'Unrelated: child is single optional',
         persistLabel: 'child onChange, parent onClose',
         difference:
             'The directory sublist allows at most one member. Tapping that row clears it. The parent stays multi-select.',
@@ -899,7 +823,7 @@ SubPickerTile<Person>(
         childMode: SelectionMode.singleOptional,
       ),
       const NestedCard(
-        title: 'Nested child blocks in-use',
+        title: 'Unrelated: child blocks in-use',
         persistLabel: 'child onChange, parent onClose',
         difference:
             'Directory unselect is blocked when the person is in use: Alan and Margaret have the in-use flag, and Ada is on the field (both lists). Grace can still be added and removed. The policy runs in the child; the parent list stays tappable.',
@@ -921,7 +845,7 @@ SubPickerTile<Person>(
         childUnselect: PickerUnselectPolicy.blocked,
       ),
       const NestedCard(
-        title: 'Nested child confirms unselect',
+        title: 'Unrelated: child confirms unselect',
         persistLabel: 'child onChange, parent onClose',
         difference:
             'Removing a directory member who is in use or still on the field asks for confirmation. Try Ada (chip) or Alan (in-use). Cancel leaves the child checkbox selected. Grace has no prompt.',
@@ -943,7 +867,7 @@ SubPickerTile<Person>(
         childUnselect: PickerUnselectPolicy.confirm,
       ),
       const NestedCard(
-        title: 'Nested child with inactive rows',
+        title: 'Unrelated: child with inactive rows',
         persistLabel: 'child onChange, parent onClose',
         difference:
             'Locked people (Alan) are inactive inside the directory sublist only. The parent list still allows them.',
@@ -962,7 +886,7 @@ SubPickerTile<Person>(
         childLockedInactive: true,
       ),
       const NestedCard(
-        title: 'Sublist plus related-list icons',
+        title: 'Unrelated: sublist plus related-list icons',
         persistLabel: 'child onChange, parent onClose',
         difference:
             'Parent rows show directory membership icons. The nested directory still does not move parent checkboxes unless you set an effect.',
@@ -988,7 +912,7 @@ SearchAnchorPicker<Person>(
         relatedOnParent: true,
       ),
       const NestedCard(
-        title: 'Parent close, child change',
+        title: 'Unrelated: parent close, child change',
         persistLabel: 'parent onClose, child onChange',
         difference:
             'Directory membership writes on each child toggle. Parent field chips wait until the parent popup closes. No parent checkbox coupling.',
@@ -1007,7 +931,7 @@ SearchAnchorPicker<Person>(
 ''',
       ),
       const NestedCard(
-        title: 'Parent change, nested independent',
+        title: 'Unrelated: parent change, nested independent',
         persistLabel: 'parent onChange, child onChange',
         difference:
             'Parent field chips update on each parent toggle. Directory writes live too. No checkbox coupling.',
@@ -1029,10 +953,10 @@ SearchAnchorPicker<Person>(
         parentPersist: Persist.change,
       ),
       const NestedCard(
-        title: 'Mirror plus parent onChange',
+        title: 'Direct: mirror plus parent onChange',
         persistLabel: 'parent onChange, child onChange',
         difference:
-            'Directory deltas mirror into open parent checkboxes. Parent row toggles also write the field immediately. Mirror still does not create a parent onChange delta.',
+            'Direct logic. Sublist deltas mirror into open parent checkboxes and the parent list reloads. Parent row toggles also write the field immediately. Mirror still does not create a parent onChange delta.',
         source: r'''
 SearchAnchorPicker<Person>(
   onChange: (delta) { /* parent row/bulk only */ },
@@ -1041,13 +965,13 @@ SearchAnchorPicker<Person>(
       parentController: controller,
       parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
       onChange: (delta) { /* write directory */ },
-      // title, config, initialSelectedIds...
     ),
   ],
 );
 ''',
-        effect: SubPickerParentSelectionEffect.mirror,
+        relation: NestedRelation.direct,
         parentPersist: Persist.change,
+        sublists: 3,
       ),
     ],
   ),
