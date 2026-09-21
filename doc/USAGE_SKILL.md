@@ -85,12 +85,10 @@ Both may be set. `onChange` does not consume session intent, so `onClose`
 still reports the same net. If both persist, the API is called for each
 mutation and again at close. Persist in only one of them.
 
-`canChangeSelection` runs before either save, on every mutation, so
-pre-checks belong there. Return false and the checkbox never moves and no save
-runs. Use it for rules on already-loaded item fields; await a backend only
-when the checkbox must not move until that answer arrives. It runs once per
-command, not per ID, so awaiting costs no extra calls, but every tap then
-waits for a round trip and nothing coalesces the way `onClose` does.
+Block or confirm unselect with `relatedListItemStatusOf` /
+`PickerUnselectPolicy`. A blocked or cancelled unselect never moves the
+checkbox and never runs `onChange`. Throw from `onChange` to restore a
+checkbox after a failed write.
 
 A bulk command is an ordinary mutation with a bigger delta. Save the delta in
 one write: a save that loops the IDs turns one Select-all tap into a request

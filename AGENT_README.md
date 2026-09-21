@@ -117,13 +117,10 @@ loading the whole auxiliary list.
 The picker notifies; it does not persist.
 
 `onChange` is the immediate save, `onClose` the deferred one; the picker owns
-pending IDs in both cases. `canChangeSelection` runs before either, on every
-mutation, and is where pre-checks belong. Return false and nothing moves, so
-no save runs. Use it for rules on already-loaded item fields; await a backend
-here only when the checkbox must not move until that answer arrives: it runs
-once per command, not per ID, so it adds no calls, but it puts a round trip
-behind every tap and coalesces nothing. A thrown gate is reported and counted
-as a rejection. Leaving the gate null is the same as always allowing.
+pending IDs in both cases. Block or confirm unselect with
+`PickerUnselectPolicy` on `relatedListItemStatusOf`. A blocked or cancelled
+unselect never moves the checkbox, so no save runs. Throw from `onChange` to
+restore a checkbox after a failed write.
 
 Save in `onChange` (each accepted delta) if the checkbox should move
 first. A thrown `onChange` error restores the checkbox and session intent.
@@ -145,11 +142,10 @@ toggle and produce one delta over every affected ID. The only caveat is on the
 application side, documented on `onChange`: a save that loops the delta turns
 one command into a request per ID.
 
-Apply order is unselect policy, then the gate, then pending checkboxes, then
-`onChange`. A blocked or cancelled unselect never reaches the gate. A
-rejected gate never applies and never parent-syncs. A thrown `onChange`
-restores the checkbox and does not parent-sync. Close waits for in-flight
-gates, `onChange`, and `onClose` work.
+Apply order is unselect policy, then pending checkboxes, then
+`onChange`. A blocked or cancelled unselect never reaches `onChange`. A
+thrown `onChange` restores the checkbox and does not parent-sync. Close waits
+for in-flight `onChange` and `onClose` work.
 
 `SubPickerTile` leaves parent selection unchanged unless
 `parentSelectionEffect` is set. Passing `parentController` alone does not

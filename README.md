@@ -17,7 +17,8 @@ single selection, and optional nested menus.
   interpreted as deleted selections.
 - The picker notifies; it does not persist. Save from `onChange` (each accepted
   toggle) or `onClose` (whole delta of session).
-- Optional `canChangeSelection` gate. Return false to leave checkboxes unchanged.
+- Optional `PickerUnselectPolicy` (allow / blocked / confirm) per row via
+  `relatedListItemStatusOf`.
 - Optional builders for every visual region; built-in widgets are only defaults.
 - No permanent trigger `GlobalKey`; popup resources are created on demand.
 
@@ -25,7 +26,7 @@ single selection, and optional nested menus.
 
 ```yaml
 dependencies:
-  search_anchor_picker: ^0.1.2
+  search_anchor_picker: ^0.2.0
 ```
 
 ## Basic picker
@@ -286,9 +287,6 @@ toggle) or `onClose` (whole delta of session). Parent checkboxes follow accepted
 child selection changes, including bulk header commands.
 
 ```dart
-canChangeSelection: (change) async {
-  return change.removedItems.every((person) => !person.isLocked);
-},
 onChange: (delta) async {
   await directoryApi.add(delta.added);
   await directoryApi.remove(delta.removed);
@@ -298,9 +296,8 @@ onClose: (result) {
 },
 ```
 
-Rejected, blocked, cancelled, or thrown-`onChange` changes never update the
-parent.
-Closing waits for in-flight `canChangeSelection` / `onChange` work to settle.
+Blocked, cancelled, or thrown-`onChange` changes never update the parent.
+Closing waits for in-flight `onChange` work to settle.
 `viewOnClose` remains the overlay-lifecycle callback.
 
 ## Server-side search safety
@@ -344,13 +341,12 @@ mutation and again at close. Persist in only one of them. A later
 `initialSelectedIds` update reseeds checkboxes; it does not change the close
 baseline.
 
-`canChangeSelection` runs before either save, on every mutation, and is where
-pre-checks belong. Return false to reject; the checkbox never moves and no
-save runs. Keep it to cheap checks on fields of already-loaded items. Awaiting
-a backend adds no calls, since it runs once per command, but it puts a round
-trip behind every tap and coalesces nothing. Leaving it null always allows.
+Block or confirm unselect with `relatedListItemStatusOf` /
+`PickerUnselectPolicy`. A blocked or cancelled unselect never moves the
+checkbox and never runs `onChange`. Throw from `onChange` to restore a
+checkbox after a failed write.
 
-Bulk header commands are ordinary mutations: one gate call, then one delta.
+Bulk header commands are ordinary mutations: one delta.
 Save that delta as a single write. A save that loops the IDs turns one
 Select-all tap into a request per person, which is a property of the save, not
 of the command. `onClose` avoids the question, because a whole session

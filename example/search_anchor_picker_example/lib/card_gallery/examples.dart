@@ -202,7 +202,7 @@ PickerConfig<Person>(
         title: 'In-use blocked',
         persistLabel: 'onClose',
         difference:
-            'Alan and Margaret are in use. Unselect is blocked and shows the in-use warning. Different from a rejected gate: the policy runs first.',
+            'Alan and Margaret are in use. Unselect is blocked and shows the in-use warning. The unselect policy runs before the checkbox moves; a blocked row never reaches onChange.',
         source: r'''
 PickerConfig<Person>(
   relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
@@ -623,14 +623,22 @@ SearchAnchorPicker<Person>(
         title: 'Direct: parent-checked stays',
         persistLabel: 'child onChange, parent onClose',
         difference:
-            'Direct logic with a stay rule. The short main list (Ada … Margaret) always stays. Sublist extras still appear when checked. Uncheck Ada in Directory: she leaves the directory subtitle, but her parent checkbox and field chip stay because she is parent-checked.\n\n'
-            'Uncheck Linus in Watchlist: he was only a sublist extra and not parent-checked, so he leaves the parent list and is not added as a chip.',
+            'Direct logic with a stay rule. Stay is whoever is currently checked on the parent, including in-session parent toggles — not a rebuild from field chips ∪ every sublist member.\n\n'
+            'Uncheck Ada in Directory: she is parent-checked, so her parent checkbox and field chip stay. Uncheck Linus in Watchlist: he is only a sublist extra, so he leaves the parent list and is not added as a chip. Uncheck Ada on the parent first, then in Directory: she is no longer parent-checked and does not get checked again.',
         source: r'''
-SubPickerTile<Person>(
-  parentController: controller,
-  parentSelectionEffect: SubPickerParentSelectionEffect.selectAdded,
-  onChange: (delta) { /* write sublist; do not remove parent-checked */ },
-);
+onChange: (delta) {
+  final unionBefore = {...sublistUnion};
+  final pendingNow = {...parent.pendingIds};
+  writeSublist(delta);
+  final stay = {
+    for (final id in pendingNow)
+      if (fieldSelected.contains(id) || !unionBefore.contains(id)) id,
+  };
+  parent.syncPending(
+    added: delta.added,
+    removed: delta.removed.where((id) => !stay.contains(id)),
+  );
+},
 ''',
         relation: NestedRelation.directStay,
         sublists: 3,
@@ -692,13 +700,17 @@ headerBuilder: (context, controller, items) => [
         title: 'Unrelated: shared field',
         persistLabel: 'child onChange, parent onClose',
         difference:
-            'Unrelated logic, shared field. Directory, Watchlist, and Team are different 3–7 person catalogs. They do not change the main list (Ada … Margaret stays) and there is no Directory subtitle. Checking Linus in Watchlist only adds a field chip alongside Ada and Katherine. Uncheck him in Watchlist, or tap the chip X: the extra chip is gone. The parent popup still has no Linus row.',
+            'Unrelated logic, shared field. Directory, Watchlist, and Team are different 3–7 person catalogs. They do not change the main list (Ada … Margaret stays) and there is no Directory subtitle. Checking Linus in Watchlist only adds a field chip alongside Ada and Katherine. Uncheck him in Watchlist, or tap the chip X: both use the same sublist write, so the extra chip is gone. The parent popup still has no Linus row.',
         source: r'''
-// Field chips = parentSelected ∪ directory ∪ watchlist ∪ team
-// Parent loadItems stays the short main list.
+void writeSublist(Set<int> ids, PickerDelta<int> delta) {
+  applyDelta(ids, delta); // same persist as the child onChange
+}
+
 SubPickerTile<Person>(
-  onChange: (delta) { /* write sublist; field reads the union */ },
+  onChange: (delta) => writeSublist(watchlist, delta),
 );
+// Chip X:
+writeSublist(watchlist, PickerDelta(removed: {id}));
 ''',
         relation: NestedRelation.unrelatedField,
         sublists: 3,
@@ -1057,6 +1069,7 @@ PickerConfig<Person>(
         source: r'''
 SearchAnchorPicker<Person>(
   onClose: (result) {
+    if (result.isEmpty) return;
     throw StateError('simulated onClose failure');
   },
   closeSaveFailedBuilder: (context, error, stackTrace) async {

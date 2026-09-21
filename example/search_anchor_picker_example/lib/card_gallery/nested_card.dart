@@ -85,6 +85,7 @@ class _NestedCardState extends State<NestedCard> {
   final Set<int> _watchlist = {...knownWatchlistIds};
   final Set<int> _team = {...knownTeamIds};
   final Set<int> _favorites = {1};
+  Set<int>? _directStayOpenSeed;
 
   @override
   void initState() {
@@ -142,16 +143,22 @@ class _NestedCardState extends State<NestedCard> {
                 )
               : null,
         ),
-        initialSelectedIds: _parentCheckedIds.toList(),
+        initialSelectedIds: _parentOpenIds.toList(),
         isFullScreen: false,
         viewHintText: 'Search people',
         viewConstraints: widget.viewConstraints ?? popupConstraints,
         onChange: widget.parentPersist == Persist.change
-            ? (delta) => setState(() => applyDelta(_selected, delta))
+            ? (delta) => setState(() {
+                applyDelta(_selected, delta);
+                _directStayOpenSeed = null;
+              })
             : null,
         onClose: widget.parentPersist == Persist.close
             ? (result) {
-                setState(() => applyDelta(_selected, result));
+                setState(() {
+                  applyDelta(_selected, result);
+                  _directStayOpenSeed = null;
+                });
               }
             : null,
         headerBuilder: (context, controller, items) => [
@@ -228,6 +235,15 @@ class _NestedCardState extends State<NestedCard> {
     }
   }
 
+  /// Seed at open. Direct-stay freezes it so child writes cannot reseed
+  /// live parent checkboxes back to field ∪ union.
+  Set<int> get _parentOpenIds {
+    if (widget.relation != NestedRelation.directStay) {
+      return _parentCheckedIds;
+    }
+    return _directStayOpenSeed ??= {..._selected, ..._sublistUnion};
+  }
+
   /// Chips on the field. Direct follows sublists; unrelated extras are a union.
   Set<int> get _fieldChipIds {
     switch (widget.relation) {
@@ -247,10 +263,15 @@ class _NestedCardState extends State<NestedCard> {
     _selected.remove(id);
     if (widget.relation == NestedRelation.direct ||
         widget.relation == NestedRelation.unrelatedField) {
-      _directory.remove(id);
-      _watchlist.remove(id);
-      _team.remove(id);
+      final delta = PickerDelta<int>(added: const {}, removed: {id});
+      for (final ids in [_directory, _watchlist, _team]) {
+        if (ids.contains(id)) _persistSublist(ids, delta);
+      }
     }
+  }
+
+  void _persistSublist(Set<int> ids, PickerDelta<int> delta) {
+    applyDelta(ids, delta);
   }
 
   void _onChildDelta(
@@ -258,24 +279,34 @@ class _NestedCardState extends State<NestedCard> {
     Set<int> ids,
     PickerDelta<int> delta,
   ) {
-    applyDelta(ids, delta);
     switch (widget.relation) {
+      case NestedRelation.directStay:
+        final unionBefore = {..._sublistUnion};
+        final pendingNow = {...parent.pendingIds};
+        _persistSublist(ids, delta);
+        final stay = {
+          for (final id in pendingNow)
+            if (_selected.contains(id) || !unionBefore.contains(id)) id,
+        };
+        parent.syncPending(
+          added: delta.added,
+          removed: [
+            for (final id in delta.removed)
+              if (!stay.contains(id)) id,
+          ],
+        );
       case NestedRelation.direct:
+        _persistSublist(ids, delta);
         applyEffectToSelection(
           _selected,
           SubPickerParentSelectionEffect.mirror,
           delta,
         );
-      case NestedRelation.directStay:
-        final pending = {..._selected, ..._sublistUnion};
-        parent.syncPending(
-          added: pending.difference(parent.pendingIds),
-          removed: parent.pendingIds.difference(pending),
-        );
       case NestedRelation.unrelated:
       case NestedRelation.unrelatedField:
       case NestedRelation.reverseAppear:
       case NestedRelation.reverseAvailable:
+        _persistSublist(ids, delta);
         applyEffectToSelection(_selected, _effect, delta);
     }
   }

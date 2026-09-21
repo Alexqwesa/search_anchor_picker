@@ -9,6 +9,8 @@ Breaking vs 0.1.1:
 * `UnselectBehavior` + `isItemInUse` → `relatedListItemStatusOf`
   (`unselectPolicy`, `selectable`, `auxiliaryMembership`). Status listenable
   repaints without reload. `itemBuilder` gets status before `toggle`.
+* Removed `canChangeSelection`. Block or confirm with `PickerUnselectPolicy`;
+  throw from `onChange` to restore a checkbox after a failed write.
 * `SubPickerTile` no longer deselects parent IDs just because `parentController`
   is set. Opt in with `SubPickerParentSelectionEffect`.
 
