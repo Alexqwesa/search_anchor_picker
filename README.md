@@ -70,7 +70,7 @@ identity as a data revision.
 
 Reload deliberately through one of these paths:
 
-- Type in the default search field (`loadItems` is called with `query`).
+- Type or clear the default search field (`loadItems` is called with `query`).
 - Call `controller.refresh()` from custom popup UI.
 - Provide `config.listenable`; notifications reload only while the popup is open.
 - Change `config.reloadKey` for declarative revision-based reloads.

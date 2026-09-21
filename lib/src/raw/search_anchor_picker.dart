@@ -722,6 +722,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
 
   void _clearQuery() {
     _controller.clear();
+    widget.viewOnChanged?.call('');
+    _scheduleReload();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _open) {
         _searchFocusNode?.requestFocus();

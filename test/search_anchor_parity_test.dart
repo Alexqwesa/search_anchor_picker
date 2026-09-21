@@ -326,6 +326,13 @@ void main() {
     expect(queries, ['', '2']);
     expect(find.text('Item 1'), findsNothing);
     expect(find.text('Item 2'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pumpAndSettle();
+    expect(queries, ['', '2', '']);
+    expect(find.text('Item 1'), findsOneWidget);
+    expect(find.text('Item 2'), findsOneWidget);
+    expect(find.byType(SearchBar), findsOneWidget);
   });
 
   testWidgets('explicit view properties override SearchViewTheme', (

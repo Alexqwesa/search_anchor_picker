@@ -89,10 +89,11 @@ class GenericRawPickerConfig<T, K> {
   ///
   /// The picker calls this on open (`query` is `''`), on
   /// [GenericRawPickerController.refresh], when [reloadKey]/[listenable]
-  /// changes, and when the default search field text changes (`query` is that
-  /// text). Ignore `query` to load a full catalog and let the overlay filter
-  /// locally. A custom [GenericRawSearchAnchorPicker.searchFieldBuilder] must
-  /// call [GenericRawPickerController.refresh] itself if typing should reload.
+  /// changes, and when the default search field text changes or is cleared
+  /// (`query` is that text). Ignore `query` to load a full catalog and let the
+  /// overlay filter locally. A custom
+  /// [GenericRawSearchAnchorPicker.searchFieldBuilder] must call
+  /// [GenericRawPickerController.refresh] itself if typing should reload.
   final LoadItems<T> loadItems;
 
   /// Returns a stable identifier for [T].
