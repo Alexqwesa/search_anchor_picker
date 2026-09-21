@@ -65,7 +65,12 @@ Follow these invariants:
   not create `added` or `removed` intent and does not change the close
   baseline (the seed at open).
 - Hidden selected IDs remain selected during server-side search and pagination.
-- Persist `added` and `removed` from `onClose`. 
+- Persist `added` and `removed` from `onClose`.
+
+The default search box filters the loaded page locally. To fetch a new page
+without a custom view, store the query from `viewOnChanged` and call
+`controller.refresh()` (or change `reloadKey`). `loadItems` still does not
+receive the query argument.
 
 ## Observables
 

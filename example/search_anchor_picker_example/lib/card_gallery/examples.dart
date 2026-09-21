@@ -4,6 +4,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 import 'field_relation_card.dart';
 import 'nested_card.dart';
 import 'people.dart';
+import 'server_search_card.dart';
 import 'simple_card.dart';
 
 class GallerySection {
@@ -990,7 +991,7 @@ SearchAnchorPicker<Person>(
   GallerySection(
     title: 'Fail handling, partial load, and server search',
     caption:
-        'Thrown saves, incomplete loadItems pages, and unknown related-list membership. Search in this picker filters the loaded page; a server API should return the current page from loadItems and never treat a missing row as unselected.',
+        'Thrown saves and incomplete loadItems pages. The default search box filters the loaded page locally. Missing rows stay selected — that is the safety, not automatic server search. Wire viewOnChanged + refresh (or reloadKey) to fetch a new page.',
     cards: [
       const SimpleCard(
         title: 'API fail close',
@@ -1087,7 +1088,7 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'loadItems returns only the first four people. Radia stays selected even though she is not on the loaded page.',
+            'loadItems returns only the first four people. Radia stays selected even though she is not on the loaded page. Typing still filters only that page — Linus will not appear. Compare with Server search, default search field.',
         source: r'''
 PickerConfig<Person>(
   loadItems: (_) async => people.take(4).toList(),
@@ -1099,6 +1100,7 @@ PickerConfig<Person>(
         seed: const {1, 12},
         loadItems: (_) async => people.take(4).toList(),
       ),
+      const ServerSearchCard(),
       const SimpleCard(
         title: 'Related-list unknown',
         persistLabel: 'onClose',

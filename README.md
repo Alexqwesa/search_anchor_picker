@@ -302,6 +302,28 @@ Closing waits for in-flight `onChange` work to settle.
 
 ## Server-side search safety
 
+The default search box filters the current `loadItems` page locally.
+`loadItems` does not receive the query, and typing does not reload by itself.
+
+To fetch a new page without a custom view, keep the query in your State, pass
+it to `viewOnChanged`, and call `controller.refresh()` (or change
+`config.reloadKey`). `searchFieldBuilder` / `viewBuilder` are optional.
+
+```dart
+viewOnChanged: (text) {
+  query = text;
+  controller?.refresh();
+},
+headerBuilder: (context, actions, items) {
+  controller = actions;
+  return const [];
+},
+config: PickerConfig(
+  loadItems: (_) => api.searchPeople(query),
+  // idOf, labelOf, searchTermsOf...
+),
+```
+
 `loadItems` is display/search data, not deletion truth. A selected ID that is
 missing from the current result remains selected.
 
