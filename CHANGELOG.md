@@ -26,7 +26,8 @@ Also:
   two.
 * `DefaultPickerFieldTrigger` is the field-style `triggerBuilder`: outlined
   input, optional selected chips, Add (multi) or Change (single), field tap
-  opens, chip delete removes without opening. 
+  opens, chip delete removes without opening.
+* `copyWith` can clear nullable fields (`copyWith(listenable: null)`). 
 
 ## 0.1.2 (git only)
 

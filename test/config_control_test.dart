@@ -110,4 +110,110 @@ void main() {
     // Back to home
     expect(find.byIcon(Icons.search), findsOneWidget);
   });
+
+  test('copyWith keeps omitted nullable configuration', () {
+    final listenable = ChangeNotifier();
+    final statusListenable = ChangeNotifier();
+    String tooltipOf(int item) => '$item';
+    Widget iconOf(int item) => const SizedBox();
+    int comparator(int a, int b) => a.compareTo(b);
+    PickerRelatedListItemStatus statusOf(int item) {
+      return const PickerRelatedListItemStatus();
+    }
+
+    Widget warningBuilder(BuildContext context, int item) => const SizedBox();
+    Future<bool> confirmBuilder(BuildContext context, int item) async => true;
+
+    final config = PickerConfig<int>(
+      loadItems: (_, _) async => [1],
+      idOf: (item) => item,
+      labelOf: (item) => '$item',
+      searchTermsOf: (item) => ['$item'],
+      title: 'People',
+      tooltipOf: tooltipOf,
+      iconOf: iconOf,
+      comparator: comparator,
+      listenable: listenable,
+      reloadKey: 1,
+      relatedListItemStatusOf: statusOf,
+      relatedListItemStatusListenable: statusListenable,
+      unselectWarningBuilder: warningBuilder,
+      unselectConfirmationBuilder: confirmBuilder,
+    );
+
+    final kept = config.copyWith(selectedFirst: false);
+    expect(kept.selectedFirst, isFalse);
+    expect(kept.title, 'People');
+    expect(kept.tooltipOf, same(tooltipOf));
+    expect(kept.iconOf, same(iconOf));
+    expect(kept.comparator, same(comparator));
+    expect(kept.listenable, same(listenable));
+    expect(kept.reloadKey, 1);
+    expect(kept.relatedListItemStatusOf, same(statusOf));
+    expect(kept.relatedListItemStatusListenable, same(statusListenable));
+    expect(kept.rebuildListenable, same(statusListenable));
+    expect(kept.unselectWarningBuilder, same(warningBuilder));
+    expect(kept.unselectConfirmationBuilder, same(confirmBuilder));
+  });
+
+  test('copyWith can clear nullable configuration', () {
+    final config = PickerConfig<int>(
+      loadItems: (_, _) async => [1],
+      idOf: (item) => item,
+      labelOf: (item) => '$item',
+      searchTermsOf: (item) => ['$item'],
+      title: 'People',
+      tooltipOf: (item) => '$item',
+      iconOf: (item) => const SizedBox(),
+      comparator: (a, b) => a.compareTo(b),
+      listenable: ChangeNotifier(),
+      reloadKey: 1,
+      relatedListItemStatusOf: (_) => const PickerRelatedListItemStatus(),
+      relatedListItemStatusListenable: ChangeNotifier(),
+      unselectWarningBuilder: (context, item) => const SizedBox(),
+      unselectConfirmationBuilder: (context, item) async => true,
+    );
+
+    final cleared = config.copyWith(
+      title: null,
+      tooltipOf: null,
+      iconOf: null,
+      comparator: null,
+      listenable: null,
+      reloadKey: null,
+      relatedListItemStatusOf: null,
+      relatedListItemStatusListenable: null,
+      unselectWarningBuilder: null,
+      unselectConfirmationBuilder: null,
+    );
+
+    expect(cleared.title, isNull);
+    expect(cleared.tooltipOf, isNull);
+    expect(cleared.iconOf, isNull);
+    expect(cleared.comparator, isNull);
+    expect(cleared.listenable, isNull);
+    expect(cleared.reloadKey, isNull);
+    expect(cleared.relatedListItemStatusOf, isNull);
+    expect(cleared.relatedListItemStatusListenable, isNull);
+    expect(cleared.rebuildListenable, isNull);
+    expect(cleared.unselectWarningBuilder, isNull);
+    expect(cleared.unselectConfirmationBuilder, isNull);
+  });
+
+  test(
+    'copyWith(rebuildListenable: null) clears related-list status listenable',
+    () {
+      final config = PickerConfig<int>(
+        loadItems: (_, _) async => [1],
+        idOf: (item) => item,
+        labelOf: (item) => '$item',
+        searchTermsOf: (item) => ['$item'],
+        relatedListItemStatusListenable: ChangeNotifier(),
+      );
+
+      final cleared = config.copyWith(rebuildListenable: null);
+      expect(cleared.relatedListItemStatusListenable, isNull);
+      expect(cleared.rebuildListenable, isNull);
+    },
+  );
 }

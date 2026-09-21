@@ -13,7 +13,11 @@ export 'package:search_anchor_picker/src/raw/picker_selection.dart';
 typedef LoadItems<T> =
     Future<List<T>> Function(BuildContext context, String query);
 
-const _reloadKeyNotProvided = Object();
+const _copyUnset = Object();
+
+T? _copyOrKeep<T>(Object? value, T? current) {
+  return identical(value, _copyUnset) ? current : value as T?;
+}
 
 /// Policy applied when the user tries to unselect an item.
 enum PickerUnselectPolicy {
@@ -184,43 +188,49 @@ class GenericRawPickerConfig<T, K> {
   /// Owns confirmation UX for [PickerUnselectPolicy.confirm] when provided.
   final GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder;
 
+  /// Copies this config.
+  ///
+  /// Omitted nullable fields are kept. Pass `null` to clear them, for example
+  /// `copyWith(listenable: null)`.
   GenericRawPickerConfig<T, K> copyWith({
     LoadItems<T>? loadItems,
     K Function(T)? idOf,
     String Function(T)? labelOf,
     Iterable<String> Function(T)? searchTermsOf,
-    String Function(T)? tooltipOf,
-    Widget Function(T)? iconOf,
-    int Function(T a, T b)? comparator,
-    String? title,
+    Object? tooltipOf = _copyUnset,
+    Object? iconOf = _copyUnset,
+    Object? comparator = _copyUnset,
+    Object? title = _copyUnset,
     bool? selectedFirst,
-    Listenable? listenable,
-    Object? reloadKey = _reloadKeyNotProvided,
-    Listenable? rebuildListenable,
+    Object? listenable = _copyUnset,
+    Object? reloadKey = _copyUnset,
+    Object? rebuildListenable = _copyUnset,
     PickerUnselectPolicy? unselectPolicy,
-    GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
-    GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder,
+    Object? unselectWarningBuilder = _copyUnset,
+    Object? unselectConfirmationBuilder = _copyUnset,
   }) {
     return GenericRawPickerConfig<T, K>(
       loadItems: loadItems ?? this.loadItems,
       idOf: idOf ?? this.idOf,
       labelOf: labelOf ?? this.labelOf,
       searchTermsOf: searchTermsOf ?? this.searchTermsOf,
-      tooltipOf: tooltipOf ?? this.tooltipOf,
-      iconOf: iconOf ?? this.iconOf,
-      comparator: comparator ?? this.comparator,
-      title: title ?? this.title,
+      tooltipOf: _copyOrKeep(tooltipOf, this.tooltipOf),
+      iconOf: _copyOrKeep(iconOf, this.iconOf),
+      comparator: _copyOrKeep(comparator, this.comparator),
+      title: _copyOrKeep(title, this.title),
       selectedFirst: selectedFirst ?? this.selectedFirst,
-      listenable: listenable ?? this.listenable,
-      reloadKey: identical(reloadKey, _reloadKeyNotProvided)
-          ? this.reloadKey
-          : reloadKey,
-      rebuildListenable: rebuildListenable ?? this.rebuildListenable,
+      listenable: _copyOrKeep(listenable, this.listenable),
+      reloadKey: _copyOrKeep(reloadKey, this.reloadKey),
+      rebuildListenable: _copyOrKeep(rebuildListenable, this.rebuildListenable),
       unselectPolicy: unselectPolicy ?? this.unselectPolicy,
-      unselectWarningBuilder:
-          unselectWarningBuilder ?? this.unselectWarningBuilder,
-      unselectConfirmationBuilder:
-          unselectConfirmationBuilder ?? this.unselectConfirmationBuilder,
+      unselectWarningBuilder: _copyOrKeep(
+        unselectWarningBuilder,
+        this.unselectWarningBuilder,
+      ),
+      unselectConfirmationBuilder: _copyOrKeep(
+        unselectConfirmationBuilder,
+        this.unselectConfirmationBuilder,
+      ),
     );
   }
 }
@@ -250,38 +260,51 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
     int Function(T)? idOf,
     String Function(T)? labelOf,
     Iterable<String> Function(T)? searchTermsOf,
-    String Function(T)? tooltipOf,
-    Widget Function(T)? iconOf,
-    int Function(T a, T b)? comparator,
-    String? title,
+    Object? tooltipOf = _copyUnset,
+    Object? iconOf = _copyUnset,
+    Object? comparator = _copyUnset,
+    Object? title = _copyUnset,
     bool? selectedFirst,
-    Listenable? listenable,
-    Object? reloadKey = _reloadKeyNotProvided,
-    Listenable? rebuildListenable,
+    Object? listenable = _copyUnset,
+    Object? reloadKey = _copyUnset,
+    Object? rebuildListenable = _copyUnset,
     PickerUnselectPolicy? unselectPolicy,
-    GenericUnselectWarningBuilder<T>? unselectWarningBuilder,
-    GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder,
+    Object? unselectWarningBuilder = _copyUnset,
+    Object? unselectConfirmationBuilder = _copyUnset,
   }) {
+    final copied = super.copyWith(
+      loadItems: loadItems,
+      idOf: idOf,
+      labelOf: labelOf,
+      searchTermsOf: searchTermsOf,
+      tooltipOf: tooltipOf,
+      iconOf: iconOf,
+      comparator: comparator,
+      title: title,
+      selectedFirst: selectedFirst,
+      listenable: listenable,
+      reloadKey: reloadKey,
+      rebuildListenable: rebuildListenable,
+      unselectPolicy: unselectPolicy,
+      unselectWarningBuilder: unselectWarningBuilder,
+      unselectConfirmationBuilder: unselectConfirmationBuilder,
+    );
     return RawPickerConfig<T>(
-      loadItems: loadItems ?? this.loadItems,
-      idOf: idOf ?? this.idOf,
-      labelOf: labelOf ?? this.labelOf,
-      searchTermsOf: searchTermsOf ?? this.searchTermsOf,
-      tooltipOf: tooltipOf ?? this.tooltipOf,
-      iconOf: iconOf ?? this.iconOf,
-      comparator: comparator ?? this.comparator,
-      title: title ?? this.title,
-      selectedFirst: selectedFirst ?? this.selectedFirst,
-      listenable: listenable ?? this.listenable,
-      reloadKey: identical(reloadKey, _reloadKeyNotProvided)
-          ? this.reloadKey
-          : reloadKey,
-      rebuildListenable: rebuildListenable ?? this.rebuildListenable,
-      unselectPolicy: unselectPolicy ?? this.unselectPolicy,
-      unselectWarningBuilder:
-          unselectWarningBuilder ?? this.unselectWarningBuilder,
-      unselectConfirmationBuilder:
-          unselectConfirmationBuilder ?? this.unselectConfirmationBuilder,
+      loadItems: copied.loadItems,
+      idOf: copied.idOf,
+      labelOf: copied.labelOf,
+      searchTermsOf: copied.searchTermsOf,
+      tooltipOf: copied.tooltipOf,
+      iconOf: copied.iconOf,
+      comparator: copied.comparator,
+      title: copied.title,
+      selectedFirst: copied.selectedFirst,
+      listenable: copied.listenable,
+      reloadKey: copied.reloadKey,
+      rebuildListenable: copied.rebuildListenable,
+      unselectPolicy: copied.unselectPolicy,
+      unselectWarningBuilder: copied.unselectWarningBuilder,
+      unselectConfirmationBuilder: copied.unselectConfirmationBuilder,
     );
   }
 }
