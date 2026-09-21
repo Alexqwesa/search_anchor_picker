@@ -24,5 +24,5 @@ Run the scenario-card gallery (chip fields, nested lists, `onClose` /
 flutter run -d chrome -t lib/main_cards.dart
 ```
 
-The deployed example is available at
+The deployed Card Gallery is available at
 https://alexqwesa.github.io/search_anchor_picker/.

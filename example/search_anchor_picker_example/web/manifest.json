@@ -1,11 +1,11 @@
 {
-    "name": "search_anchor_picker_example",
-    "short_name": "search_anchor_picker_example",
+    "name": "Picker scenario cards",
+    "short_name": "Picker cards",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "SearchAnchorPicker Card Gallery",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -35,7 +35,7 @@ jobs:
 
       - name: Build web example
         working-directory: example/search_anchor_picker_example
-        run: flutter build web --release --base-href "/search_anchor_picker/"
+        run: flutter build web --release --base-href "/search_anchor_picker/" -t lib/main_cards.dart
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
