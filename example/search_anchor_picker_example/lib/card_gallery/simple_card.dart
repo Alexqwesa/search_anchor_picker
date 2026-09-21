@@ -109,7 +109,7 @@ class SimpleCard extends StatefulWidget {
   final bool wide;
   final BoxConstraints? viewConstraints;
   final Duration? saveDelay;
-  final Future<List<Person>> Function(BuildContext context)? loadItems;
+  final LoadItems<Person>? loadItems;
   final bool includeSelectedInLoad;
   final RelatedStatus related;
   final String? emptyText;
@@ -290,7 +290,7 @@ class _SimpleCardState extends State<SimpleCard> {
       );
   }
 
-  Future<List<Person>> _load(BuildContext context) async {
+  Future<List<Person>> _load(BuildContext context, String query) async {
     if (widget.failLoad) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
       if (_fail) throw StateError('simulated search API failure');
@@ -299,7 +299,7 @@ class _SimpleCardState extends State<SimpleCard> {
     if (widget.emptyCatalog) return const <Person>[];
     if (widget.loadItems != null) {
       if (!context.mounted) return const <Person>[];
-      return widget.loadItems!(context);
+      return widget.loadItems!(context, query);
     }
     return people;
   }

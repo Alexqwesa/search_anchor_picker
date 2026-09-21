@@ -7,7 +7,7 @@ import 'package:search_anchor_picker/src/raw/picker_resource_tracker.dart';
 
 PickerConfig<int> _config(Future<List<int>> Function() load) {
   return PickerConfig<int>(
-    loadItems: (_) => load(),
+    loadItems: (_, _) => load(),
     idOf: (item) => item,
     labelOf: (item) => 'Item $item',
     searchTermsOf: (item) => ['Item $item'],
@@ -37,7 +37,7 @@ void main() {
     final configs = List.generate(
       pickerCount,
       (_) => PickerConfig<int>(
-        loadItems: (_) async {
+        loadItems: (_, _) async {
           loadCalls++;
           return const [1];
         },
@@ -131,7 +131,7 @@ void main() {
     final source = _TrackedListenable();
     addTearDown(source.dispose);
     final config = PickerConfig<int>(
-      loadItems: (_) async => [1],
+      loadItems: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => 'Item $item',
       searchTermsOf: (_) => const [],
@@ -164,7 +164,7 @@ void main() {
       var membership = PickerAuxiliaryMembership.member;
       var loadCalls = 0;
       final config = PickerConfig<int>(
-        loadItems: (_) async {
+        loadItems: (_, _) async {
           loadCalls++;
           return [1];
         },
@@ -222,7 +222,7 @@ void main() {
       const loadedSublistIds = {1};
       const authoritativeMembership = {2: false};
       final config = PickerConfig<int>(
-        loadItems: (_) async => [1, 2, 3],
+        loadItems: (_, _) async => [1, 2, 3],
         idOf: (item) => item,
         labelOf: (item) => 'Item $item',
         searchTermsOf: (item) => ['Item $item'],
@@ -281,7 +281,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_) async => [1],
+      loadItems: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => 'Item $item',
       searchTermsOf: (item) => ['Item $item'],
@@ -317,7 +317,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_) async => [1],
+      loadItems: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => 'Item $item',
       searchTermsOf: (item) => ['Item $item'],
@@ -370,7 +370,7 @@ void main() {
             final buildValue = parentBuildValue;
             return SearchAnchorPicker<int>(
               config: PickerConfig<int>(
-                loadItems: (_) async {
+                loadItems: (_, _) async {
                   loadCalls++;
                   return [1];
                 },
@@ -414,7 +414,7 @@ void main() {
               config: PickerConfig<int>(
                 reloadKey: reloadKey,
                 title: 'Build $unrelatedValue',
-                loadItems: (_) async {
+                loadItems: (_, _) async {
                   loadCalls++;
                   return [1];
                 },
@@ -465,7 +465,7 @@ void main() {
             rebuild = setState;
             return SearchAnchorPicker<int>(
               config: PickerConfig<int>(
-                loadItems: (_) async {
+                loadItems: (_, _) async {
                   loadCalls++;
                   return [1];
                 },
@@ -639,7 +639,7 @@ void main() {
     final second = Completer<List<int>>();
     var calls = 0;
     final config = PickerConfig<int>(
-      loadItems: (_) => calls++ == 0 ? first.future : second.future,
+      loadItems: (_, _) => calls++ == 0 ? first.future : second.future,
       idOf: (item) => item,
       labelOf: (item) => 'Item $item',
       searchTermsOf: (item) => ['Item $item'],

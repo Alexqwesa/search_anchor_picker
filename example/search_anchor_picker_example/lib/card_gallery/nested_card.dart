@@ -200,7 +200,7 @@ class _NestedCardState extends State<NestedCard> {
     );
   }
 
-  Future<List<Person>> _parentLoad(BuildContext context) async {
+  Future<List<Person>> _parentLoad(BuildContext context, String _) async {
     final ids = _parentRowIds();
     return people.where((person) => ids.contains(person.id)).toList();
   }
@@ -389,7 +389,7 @@ class _NestedCardState extends State<NestedCard> {
       icon: Icons.star_outline,
       config: peopleConfig(
         title: 'Favorites',
-        loadItems: (_) async => peopleIn(favoritesCatalogIds),
+        loadItems: (_, _) async => peopleIn(favoritesCatalogIds),
       ),
       initialSelectedIds: _favorites.toList(),
       onChange: (delta) => setState(() => applyDelta(_favorites, delta)),
@@ -401,12 +401,12 @@ class _NestedCardState extends State<NestedCard> {
     GenericPickerController<Person, int> parent,
     Set<int> catalogIds,
   ) {
-    Future<List<Person>> loadCatalog(BuildContext _) async =>
+    Future<List<Person>> loadCatalog(BuildContext _, String _) async =>
         peopleIn(catalogIds);
     if (widget.relation == NestedRelation.reverseAppear) {
       return peopleConfig(
         title: title,
-        loadItems: (_) async => people
+        loadItems: (_, _) async => people
             .where(
               (person) =>
                   catalogIds.contains(person.id) &&

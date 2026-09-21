@@ -102,7 +102,7 @@ class _RadioHomeState extends State<RadioHome> {
                   child: SearchAnchorPicker<DemoItem>(
                     config: PickerConfig<DemoItem>(
                       title: 'Radio Picker',
-                      loadItems: (_) async => mainItems,
+                      loadItems: (_, _) async => mainItems,
                       idOf: (it) => it.id,
                       labelOf: (it) => it.label,
                       searchTermsOf: (it) => [it.label],
@@ -154,7 +154,7 @@ class _RadioHomeState extends State<RadioHome> {
                   child: SearchAnchorPicker<DemoItem>(
                     config: PickerConfig<DemoItem>(
                       title: 'Radio Parent',
-                      loadItems: (_) async => [...mainItems, ..._extraItems],
+                      loadItems: (_, _) async => [...mainItems, ..._extraItems],
                       idOf: (it) => it.id,
                       labelOf: (it) => it.label,
                       searchTermsOf: (it) => [it.label],
@@ -187,7 +187,7 @@ class _RadioHomeState extends State<RadioHome> {
                       SearchAnchorPicker<DemoItem>(
                         config: PickerConfig<DemoItem>(
                           title: 'Radio Sub',
-                          loadItems: (_) async => subItems,
+                          loadItems: (_, _) async => subItems,
                           idOf: (it) => it.id,
                           labelOf: (it) => it.label,
                           searchTermsOf: (it) => [it.label],

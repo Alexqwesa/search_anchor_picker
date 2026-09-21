@@ -13,8 +13,9 @@ single selection, and optional nested menus.
 - Nested `SubPickerTile` menus with optional animated offsets.
 - Optional selected-first ordering, frozen at open so toggles do not reshuffle
   the list. Default is on (`selectedFirst: true`).
-- Safe client-side and server-side search: missing loaded items are never
-  interpreted as deleted selections.
+- Safe client-side and server-side search: `loadItems` receives `query` from
+  the default search field; missing loaded items are never interpreted as
+  deleted selections.
 - The picker notifies; it does not persist. Save from `onChange` (each accepted
   toggle) or `onClose` (whole delta of session).
 - Optional `PickerUnselectPolicy` (allow / blocked / confirm) per row via
@@ -37,7 +38,7 @@ final selectedIds = <int>{};
 SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
-    loadItems: (_) => api.searchPeople(),
+    loadItems: (context, query) => api.searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
     searchTermsOf: (person) => [person.name, person.email],
@@ -69,6 +70,7 @@ identity as a data revision.
 
 Reload deliberately through one of these paths:
 
+- Type in the default search field (`loadItems` is called with `query`).
 - Call `controller.refresh()` from custom popup UI.
 - Provide `config.listenable`; notifications reload only while the popup is open.
 - Change `config.reloadKey` for declarative revision-based reloads.
@@ -77,7 +79,7 @@ Reload deliberately through one of these paths:
 PickerConfig<Person>(
   reloadKey: resultsRevision,
   listenable: repository.changes,
-  loadItems: (_) => repository.search(),
+  loadItems: (context, query) => repository.search(query),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,
   searchTermsOf: (person) => [person.name],
@@ -302,30 +304,18 @@ Closing waits for in-flight `onChange` work to settle.
 
 ## Server-side search safety
 
-The default search box filters the current `loadItems` page locally.
-`loadItems` does not receive the query, and typing does not reload by itself.
-
-To fetch a new page without a custom view, keep the query in your State, pass
-it to `viewOnChanged`, and call `controller.refresh()` (or change
-`config.reloadKey`). `searchFieldBuilder` / `viewBuilder` are optional.
+`loadItems` is the search callback. The default search field passes the box
+text as `query` and reloads; no custom view is required.
 
 ```dart
-viewOnChanged: (text) {
-  query = text;
-  controller?.refresh();
-},
-headerBuilder: (context, actions, items) {
-  controller = actions;
-  return const [];
-},
-config: PickerConfig(
-  loadItems: (_) => api.searchPeople(query),
+PickerConfig(
+  loadItems: (context, query) => api.searchPeople(query),
   // idOf, labelOf, searchTermsOf...
-),
+)
 ```
 
-`loadItems` is display/search data, not deletion truth. A selected ID that is
-missing from the current result remains selected.
+Ignore `query` to load a full catalog once and let the overlay filter locally.
+A selected ID missing from the current page remains selected.
 
 Header selection helpers record explicit persistence intent:
 

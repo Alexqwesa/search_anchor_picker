@@ -24,7 +24,8 @@ Preserve these properties across every change:
   not update an overlay.
 - Config identity is not a reload signal. Rebind configuration on replacement,
   but fetch only on open, `controller.refresh()`, a configured `Listenable`
-  notification, or a changed `reloadKey` while open.
+  notification, a changed `reloadKey` while open, or default search-field
+  text (`loadItems(context, query)`).
 - Escape and back close only the topmost picker. Outside taps close anchored
   popups; full-screen views instead retain a visible close/back affordance.
   Close callbacks run at most once per session.

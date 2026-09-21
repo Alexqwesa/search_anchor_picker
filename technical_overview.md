@@ -49,8 +49,9 @@ tests compare theme resolution, constraints, platform behavior, and placement.
 Configuration identity and data revision are intentionally separate. Replacing
 `PickerConfig` rebinds its control callbacks and, when necessary, its open-only
 `Listenable` subscription without loading. Loads occur only on open, explicit
-controller refresh, a configured `Listenable` notification, or a changed
-`reloadKey` while open. Same-frame `reloadKey` changes are coalesced, and the
+controller refresh, a configured `Listenable` notification, a changed
+`reloadKey` while open, or default search-field text (`loadItems(context, query)`).
+Same-frame `reloadKey` changes are coalesced, and the
 next open always uses the latest loader.
 
 Each load receives a generation number. Only the newest generation may publish

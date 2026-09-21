@@ -117,7 +117,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<String>(
             config: PickerConfig<String>(
-              loadItems: (_) async => const ['A', 'B'],
+              loadItems: (_, _) async => const ['A', 'B'],
               idOf: (item) => item.hashCode,
               labelOf: (item) => item,
               searchTermsOf: (item) => [item],

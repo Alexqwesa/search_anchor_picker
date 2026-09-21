@@ -6,7 +6,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 PickerConfig<int> _config({List<int> items = const [1, 2]}) {
   return PickerConfig<int>(
-    loadItems: (_) async => items,
+    loadItems: (_, _) async => items,
     idOf: (item) => item,
     labelOf: (item) => 'Item $item',
     searchTermsOf: (item) => ['Item $item'],
@@ -15,7 +15,7 @@ PickerConfig<int> _config({List<int> items = const [1, 2]}) {
 
 PickerConfig<int> _configFrom(Future<List<int>> Function() load) {
   return PickerConfig<int>(
-    loadItems: (_) => load(),
+    loadItems: (_, _) => load(),
     idOf: (item) => item,
     labelOf: (item) => 'Item $item',
     searchTermsOf: (item) => ['Item $item'],
@@ -289,6 +289,43 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Nothing loaded'), findsNothing);
     expect(find.text('Nothing matched'), findsOneWidget);
+  });
+
+  testWidgets('default search field reloads loadItems with query', (
+    tester,
+  ) async {
+    final queries = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: PickerConfig<int>(
+            loadItems: (_, query) async {
+              queries.add(query);
+              if (query.isEmpty) return [1, 2];
+              return [
+                for (final id in [1, 2])
+                  if ('Item $id'.toLowerCase().contains(query.toLowerCase()))
+                    id,
+              ];
+            },
+            idOf: (item) => item,
+            labelOf: (item) => 'Item $item',
+            searchTermsOf: (item) => ['Item $item'],
+          ),
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(queries, ['']);
+    expect(find.text('Item 1'), findsOneWidget);
+
+    await tester.enterText(find.byType(SearchBar), '2');
+    await tester.pumpAndSettle();
+    expect(queries, ['', '2']);
+    expect(find.text('Item 1'), findsNothing);
+    expect(find.text('Item 2'), findsOneWidget);
   });
 
   testWidgets('explicit view properties override SearchViewTheme', (

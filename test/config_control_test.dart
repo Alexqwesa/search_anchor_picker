@@ -7,7 +7,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_) async => [1, 2, 3],
+      loadItems: (_, _) async => [1, 2, 3],
       idOf: (i) => i,
       labelOf: (i) => '$i',
       searchTermsOf: (_) => [],
@@ -47,7 +47,7 @@ void main() {
   ) async {
     // MAIN PICKER
     final mainConfig = PickerConfig<int>(
-      loadItems: (_) async => [1],
+      loadItems: (_, _) async => [1],
       idOf: (i) => i,
       labelOf: (i) => 'Main $i',
       searchTermsOf: (_) => [],
@@ -55,7 +55,7 @@ void main() {
 
     // SUB PICKER
     final subConfig = PickerConfig<int>(
-      loadItems: (_) async => [100],
+      loadItems: (_, _) async => [100],
       idOf: (i) => i,
       labelOf: (i) => 'Sub $i',
       searchTermsOf: (_) => [],

@@ -560,6 +560,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _reloadScheduled = false;
   }
 
+  /// Calls [GenericRawPickerConfig.loadItems] with the current search-field text.
   void _reload() {
     if (!mounted || !_open) return;
     final generation = ++_loadGeneration;
@@ -569,7 +570,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _viewTickN.value++;
 
     unawaited(
-      Future<List<T>>.sync(() => widget.config.loadItems(context)).then(
+      Future<List<T>>.sync(
+        () => widget.config.loadItems(context, _controller.text),
+      ).then(
         (items) {
           if (!mounted || !_open || generation != _loadGeneration) return;
           _itemsSnapshot = items;
@@ -1049,7 +1052,10 @@ class _GenericRawSearchAnchorPickerState<T, K>
           hintText: widget.viewHintText,
           headerHeight: widget.headerHeight,
           textCapitalization: widget.textCapitalization,
-          onChanged: widget.viewOnChanged,
+          onChanged: (value) {
+            widget.viewOnChanged?.call(value);
+            _scheduleReload();
+          },
           onSubmitted: widget.viewOnSubmitted,
           textInputAction: widget.textInputAction,
           keyboardType: widget.keyboardType,

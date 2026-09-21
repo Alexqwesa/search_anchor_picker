@@ -35,7 +35,7 @@ do not write). A later `initialSelectedIds` change reseeds checkboxes only.
 SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
-    loadItems: (_) => api.searchPeople(),
+    loadItems: (context, query) => api.searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
     searchTermsOf: (person) => [person.name, person.email],
@@ -67,10 +67,8 @@ Follow these invariants:
 - Hidden selected IDs remain selected during server-side search and pagination.
 - Persist `added` and `removed` from `onClose`.
 
-The default search box filters the loaded page locally. To fetch a new page
-without a custom view, store the query from `viewOnChanged` and call
-`controller.refresh()` (or change `reloadKey`). `loadItems` still does not
-receive the query argument.
+`loadItems` receives the default search-box text as `query` and is called again
+when that text changes. Ignore `query` for a client-side catalog.
 
 ## Observables
 

@@ -10,7 +10,8 @@ import 'package:search_anchor_picker/src/raw/widgets/sub_picker_tile.dart'
 
 export 'package:search_anchor_picker/src/raw/picker_selection.dart';
 
-typedef LoadItems<T> = Future<List<T>> Function(BuildContext context);
+typedef LoadItems<T> =
+    Future<List<T>> Function(BuildContext context, String query);
 
 const _reloadKeyNotProvided = Object();
 
@@ -84,10 +85,14 @@ class GenericRawPickerConfig<T, K> {
     internalOnClose?.call(reason);
   }
 
-  /// Loads the current display/search result.
+  /// Search/display loader. This is the search callback.
   ///
-  /// Called when the picker overlay opens (and may be called again if you choose
-  /// to refresh). Keep it fast; cache upstream if needed.
+  /// The picker calls this on open (`query` is `''`), on
+  /// [GenericRawPickerController.refresh], when [reloadKey]/[listenable]
+  /// changes, and when the default search field text changes (`query` is that
+  /// text). Ignore `query` to load a full catalog and let the overlay filter
+  /// locally. A custom [GenericRawSearchAnchorPicker.searchFieldBuilder] must
+  /// call [GenericRawPickerController.refresh] itself if typing should reload.
   final LoadItems<T> loadItems;
 
   /// Returns a stable identifier for [T].

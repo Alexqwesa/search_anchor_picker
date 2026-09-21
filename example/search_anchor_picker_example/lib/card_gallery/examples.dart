@@ -574,7 +574,7 @@ SearchAnchorPicker<Person>(
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(
-    loadItems: (_) async {
+    loadItems: (_, _) async {
       final catalog = people.where((p) => p.id <= 6).toList();
       final extra = people.where(
         (p) => selected.contains(p.id) && p.id > 6,
@@ -602,7 +602,7 @@ SearchAnchorPicker<Person>(
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(
-    loadItems: (_) async =>
+    loadItems: (_, _) async =>
         people.where((p) => sublistUnion.contains(p.id)).toList(),
     reloadKey: {...sublistUnion},
   ),
@@ -653,7 +653,7 @@ onChange: (delta) {
         source: r'''
 SubPickerTile<Person>(
   config: peopleConfig(
-    loadItems: (_) async => people
+    loadItems: (_, _) async => people
         .where((p) =>
             catalog.contains(p.id) && parent.pendingIds.contains(p.id))
         .toList(),
@@ -991,7 +991,7 @@ SearchAnchorPicker<Person>(
   GallerySection(
     title: 'Fail handling, partial load, and server search',
     caption:
-        'Thrown saves and incomplete loadItems pages. The default search box filters the loaded page locally. Missing rows stay selected — that is the safety, not automatic server search. Wire viewOnChanged + refresh (or reloadKey) to fetch a new page.',
+        'Thrown saves and incomplete loadItems pages. The default search box passes query into loadItems and reloads. Missing rows stay selected. Ignore query to keep a client-side catalog and filter locally.',
     cards: [
       const SimpleCard(
         title: 'API fail close',
@@ -1052,10 +1052,10 @@ SearchAnchorPicker<Person>(
             'Turn on “API fail search”. Open the popup: loadItems waits 0.5s then throws, so the list shows the load error (retry). Selected chips stay — a failed search page is not an empty selection. Turn the checkbox off and retry.',
         source: r'''
 PickerConfig<Person>(
-  loadItems: (_) async {
+  loadItems: (_, query) async {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (failSearch) throw StateError('simulated search API failure');
-    return api.searchPeople();
+    return api.searchPeople(query);
   },
 );
 ''',
@@ -1088,17 +1088,17 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'loadItems returns only the first four people. Radia stays selected even though she is not on the loaded page. Typing still filters only that page — Linus will not appear. Compare with Server search, default search field.',
+            'loadItems returns only the first four people (it ignores query). Radia stays selected even though she is not on the loaded page. Typing still filters that page locally — Linus will not appear until loadItems uses query. Compare with Server search, default search field.',
         source: r'''
 PickerConfig<Person>(
-  loadItems: (_) async => people.take(4).toList(),
+  loadItems: (_, _) async => people.take(4).toList(),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,
   searchTermsOf: (person) => [person.name],
 );
 ''',
         seed: const {1, 12},
-        loadItems: (_) async => people.take(4).toList(),
+        loadItems: (_, _) async => people.take(4).toList(),
       ),
       const ServerSearchCard(),
       const SimpleCard(

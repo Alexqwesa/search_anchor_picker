@@ -40,7 +40,7 @@ class _Harness {
           body: SubPickerTile<int>(
             title: 'Child',
             config: PickerConfig<int>(
-              loadItems: (_) async => [1, 2, 3],
+              loadItems: (_, _) async => [1, 2, 3],
               idOf: (item) => item,
               labelOf: (item) => 'Item $item',
               searchTermsOf: (item) => ['$item'],
@@ -138,7 +138,7 @@ void main() {
     final save = Completer<void>();
     late GenericPickerController<int, int> parent;
     final config = PickerConfig<int>(
-      loadItems: (_) async => [1],
+      loadItems: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => 'Row $item',
       searchTermsOf: (_) => [],

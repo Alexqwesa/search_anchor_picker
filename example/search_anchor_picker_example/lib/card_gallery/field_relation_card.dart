@@ -99,9 +99,9 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
           title: widget.title,
           loadItems: switch (widget.parentRows) {
             ParentRowSet.allPeople => null,
-            ParentRowSet.mainCatalog => (_) async => mainCatalogPeople(),
+            ParentRowSet.mainCatalog => (_, _) async => mainCatalogPeople(),
             ParentRowSet.shortMain =>
-              (_) async => people
+              (_, _) async => people
                   .where((person) => shortMainIds.contains(person.id))
                   .toList(),
           },
@@ -170,7 +170,7 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
       icon: icon,
       config: peopleConfig(
         title: title,
-        loadItems: (_) async => peopleIn(catalogIds),
+        loadItems: (_, _) async => peopleIn(catalogIds),
         relatedListItemStatusOf: lockToField
             ? (person) => PickerRelatedListItemStatus(
                 unselectPolicy: _directoryUnselectPolicy(parent, person.id),

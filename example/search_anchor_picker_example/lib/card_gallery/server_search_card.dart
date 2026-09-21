@@ -4,11 +4,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 import 'example_card.dart';
 import 'people.dart';
 
-/// Default search field + [SearchAnchorPicker.viewOnChanged] + [GenericPickerController.refresh].
-///
-/// No custom [SearchAnchorPicker.searchFieldBuilder] or view. Typing still
-/// locally filters the loaded page; [refresh] replaces that page from the
-/// fake server using the stored query.
+/// Default search field reloads [PickerConfig.loadItems] with `query`.
 class ServerSearchCard extends StatefulWidget {
   const ServerSearchCard({super.key});
 
@@ -18,11 +14,9 @@ class ServerSearchCard extends StatefulWidget {
 
 class _ServerSearchCardState extends State<ServerSearchCard> {
   final Set<int> _selected = {1};
-  String _query = '';
   String _lastRequest = 'GET /people?page=1';
   String _lastResult =
       'Ada Lovelace, Alan Turing, Grace Hopper, Katherine Johnson';
-  GenericPickerController<Person, int>? _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -30,32 +24,17 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
       title: 'Server search, default search field',
       persist: 'onClose',
       difference:
-          'The default box only filters the current loadItems page. loadItems does not receive the query. This card keeps query state, listens with viewOnChanged, and calls controller.refresh() — no searchFieldBuilder or viewBuilder.\n\n'
-          'Open: page 1 is Ada … Katherine. Type lin without refresh and the list would be empty. After refresh:\n\n'
+          'loadItems is the search callback: the picker passes the box text as query and reloads. No viewOnChanged, refresh(), or custom search field.\n\n'
+          'Open: GET /people?page=1 → Ada … Katherine. Type lin:\n\n'
           'GET /people?q=lin\n'
           '→ Linus Torvalds\n\n'
-          'Ada’s chip stays while she is missing from that page. Clear the box for page 1 again. The footer shows the last request and the IDs the fake server returned.',
+          'Ada’s chip stays while she is missing from that page. The footer is the last request and the people the fake server returned.',
       source: r'''
-String query = '';
-GenericPickerController<Person, int>? controller;
-
-SearchAnchorPicker<Person>(
-  viewOnChanged: (text) {
-    query = text;
-    // Asks the open picker to call config.loadItems again.
-    controller?.refresh();
+PickerConfig(
+  loadItems: (context, query) {
+    // Picker calls this on open (query == '') and on each search-box change.
+    return api.searchPeople(query);
   },
-  headerBuilder: (context, actions, items) {
-    controller = actions;
-    return const [];
-  },
-  config: peopleConfig(
-    // The picker calls this: on open, on refresh(), and on reloadKey.
-    loadItems: (_) async {
-      // GET /people?q=$query  →  matching people
-      return api.searchPeople(query);
-    },
-  ),
 );
 ''',
       footer: Text(
@@ -67,28 +46,12 @@ SearchAnchorPicker<Person>(
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: 'Server search, default search field',
-          // Picker-invoked: open, refresh(), or reloadKey. Not called by typing.
           loadItems: _loadPage,
         ),
         initialSelectedIds: _selected.toList(),
         isFullScreen: false,
         viewHintText: 'Search people',
         viewConstraints: popupConstraints,
-        viewOnChanged: (text) {
-          _query = text;
-          setState(() {
-            final query = text.trim();
-            _lastRequest = query.isEmpty
-                ? 'GET /people?page=1'
-                : 'GET /people?q=${Uri.encodeQueryComponent(query)}';
-          });
-          // refresh() → picker._reload() → config.loadItems(_loadPage).
-          _controller?.refresh();
-        },
-        headerBuilder: (context, controller, items) {
-          _controller = controller;
-          return const <Widget>[];
-        },
         onClose: (result) {
           setState(() => applyDelta(_selected, result));
         },
@@ -101,18 +64,18 @@ SearchAnchorPicker<Person>(
     );
   }
 
-  /// Fake `GET /people`. Invoked only by the picker (`loadItems`), never
-  /// directly from [viewOnChanged].
-  Future<List<Person>> _loadPage(BuildContext context) async {
-    final query = _query.trim();
-    final request = query.isEmpty
+  /// Fake GET /people. Invoked by the picker as [PickerConfig.loadItems]
+  /// on open and whenever the default search field text changes.
+  Future<List<Person>> _loadPage(BuildContext context, String query) async {
+    final trimmed = query.trim();
+    final request = trimmed.isEmpty
         ? 'GET /people?page=1'
-        : 'GET /people?q=${Uri.encodeQueryComponent(query)}';
+        : 'GET /people?q=${Uri.encodeQueryComponent(trimmed)}';
     await Future<void>.delayed(const Duration(milliseconds: 250));
-    final results = query.isEmpty
+    final results = trimmed.isEmpty
         ? people.take(4).toList()
         : people.where((person) {
-            final needle = query.toLowerCase();
+            final needle = trimmed.toLowerCase();
             return person.name.toLowerCase().contains(needle) ||
                 person.team.toLowerCase().contains(needle);
           }).toList();

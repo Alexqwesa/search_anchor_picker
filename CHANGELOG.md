@@ -13,6 +13,8 @@ Breaking vs 0.1.1:
   throw from `onChange` to restore a checkbox after a failed write.
 * `SubPickerTile` no longer deselects parent IDs just because `parentController`
   is set. Opt in with `SubPickerParentSelectionEffect`.
+* `loadItems` is `(context, query)`. The default search field reloads with
+  the box text; ignore `query` for a client-side catalog.
 
 Also:
 

@@ -5,7 +5,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 void main() {
   testWidgets('Basic SearchAnchorPicker renders', (tester) async {
     final config = PickerConfig<String>(
-      loadItems: (_) async => ['A', 'B', 'C'],
+      loadItems: (_, _) async => ['A', 'B', 'C'],
       idOf: (s) => s.hashCode,
       labelOf: (s) => s,
       searchTermsOf: (s) => [s],
@@ -32,7 +32,7 @@ void main() {
 
   testWidgets('Picker opens and shows items', (tester) async {
     final config = PickerConfig<String>(
-      loadItems: (_) async => ['A', 'B', 'C'],
+      loadItems: (_, _) async => ['A', 'B', 'C'],
       idOf: (s) => s.hashCode,
       labelOf: (s) => s,
       searchTermsOf: (s) => [s],
@@ -67,7 +67,7 @@ void main() {
     var selectedIds = <int>[];
 
     final config = PickerConfig<String>(
-      loadItems: (_) async => ['A', 'B', 'C'],
+      loadItems: (_, _) async => ['A', 'B', 'C'],
       idOf: (s) => s.hashCode,
       labelOf: (s) => s,
       searchTermsOf: (s) => [s],
