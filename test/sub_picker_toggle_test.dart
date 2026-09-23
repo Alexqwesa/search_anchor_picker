@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,7 +40,7 @@ class _Harness {
           body: SubPickerTile<int>(
             title: 'Child',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2, 3],
+              itemsLoader: (_, _) async => [1, 2, 3],
               idOf: (item) => item,
               labelOf: (item) => 'Item $item',
               searchTermsOf: (item) => ['$item'],
@@ -139,7 +139,7 @@ void main() {
     final save = Completer<void>();
     late GenericPickerController<int, int> parent;
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1],
+      itemsLoader: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => 'Row $item',
       searchTermsOf: (_) => [],
@@ -213,7 +213,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Child',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (item) => item,
               labelOf: (item) => 'Item $item',
               searchTermsOf: (item) => ['$item'],
@@ -263,7 +263,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Child',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (item) => item,
               labelOf: (item) => 'Item $item',
               searchTermsOf: (item) => ['$item'],
@@ -355,7 +355,7 @@ void main() {
     (tester) async {
       final save = Completer<void>();
       final config = PickerConfig<int>(
-        loadItems: (_, _) async => [1, 2],
+        itemsLoader: (_, _) async => [1, 2],
         idOf: (item) => item,
         labelOf: (item) => 'Row $item',
         searchTermsOf: (item) => ['$item'],

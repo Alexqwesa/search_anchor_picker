@@ -7,7 +7,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1, 2],
+      itemsLoader: (_, _) async => [1, 2],
       idOf: (i) => i,
       labelOf: (i) => 'Item $i',
       searchTermsOf: (_) => [],
@@ -74,7 +74,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1, 2],
+      itemsLoader: (_, _) async => [1, 2],
       idOf: (i) => i,
       labelOf: (i) => 'Item $i',
       searchTermsOf: (_) => [],

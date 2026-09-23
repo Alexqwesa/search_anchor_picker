@@ -152,7 +152,7 @@ class _NestedCardState extends State<NestedCard> {
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: widget.title,
-          loadItems: _parentLoad,
+          itemsLoader: _parentLoad,
           reloadKey: _parentReloadKey,
           relatedListItemStatusOf: widget.relatedOnParent
               ? (person) => PickerRelatedListItemStatus(
@@ -450,7 +450,7 @@ class _NestedCardState extends State<NestedCard> {
       icon: Icons.star_outline,
       config: peopleConfig(
         title: 'Favorites',
-        loadItems: (_, _) async => peopleIn(favoritesCatalogIds),
+        itemsLoader: (_, _) async => peopleIn(favoritesCatalogIds),
       ),
       initialSelectedIds: _favorites.toList(),
       onChange: (delta, _) => setState(() => applyDelta(_favorites, delta)),
@@ -467,7 +467,7 @@ class _NestedCardState extends State<NestedCard> {
     if (widget.relation == NestedRelation.reverseAppear) {
       return peopleConfig(
         title: title,
-        loadItems: (_, _) async => people
+        itemsLoader: (_, _) async => people
             .where(
               (person) =>
                   catalogIds.contains(person.id) &&
@@ -480,11 +480,11 @@ class _NestedCardState extends State<NestedCard> {
     final gateUnselect = widget.childUnselect != PickerUnselectPolicy.allow;
     final reverseAvailable = widget.relation == NestedRelation.reverseAvailable;
     if (!gateUnselect && !widget.childLockedInactive && !reverseAvailable) {
-      return peopleConfig(title: title, loadItems: loadCatalog);
+      return peopleConfig(title: title, itemsLoader: loadCatalog);
     }
     return peopleConfig(
       title: title,
-      loadItems: loadCatalog,
+      itemsLoader: loadCatalog,
       relatedListItemStatusOf: (person) {
         final usedByField = parent.pendingIds.contains(person.id);
         return PickerRelatedListItemStatus(

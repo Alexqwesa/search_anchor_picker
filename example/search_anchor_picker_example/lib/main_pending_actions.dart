@@ -54,7 +54,7 @@ class _PendingActionsDemoPageState extends State<PendingActionsDemoPage> {
   late final PickerConfig<PendingActionItem> _config =
       PickerConfig<PendingActionItem>(
         title: 'Choose people',
-        loadItems: (_, _) async => _items,
+        itemsLoader: (_, _) async => _items,
         idOf: (item) => item.id,
         labelOf: (item) => item.label,
         searchTermsOf: (item) => <String>[

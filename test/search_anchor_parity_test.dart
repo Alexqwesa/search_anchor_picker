@@ -6,7 +6,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 
 PickerConfig<int> _config({List<int> items = const [1, 2]}) {
   return PickerConfig<int>(
-    loadItems: (_, _) async => items,
+    itemsLoader: (_, _) async => items,
     idOf: (item) => item,
     labelOf: (item) => 'Item $item',
     searchTermsOf: (item) => ['Item $item'],
@@ -15,7 +15,7 @@ PickerConfig<int> _config({List<int> items = const [1, 2]}) {
 
 PickerConfig<int> _configFrom(Future<List<int>> Function() load) {
   return PickerConfig<int>(
-    loadItems: (_, _) => load(),
+    itemsLoader: (_, _) => load(),
     idOf: (item) => item,
     labelOf: (item) => 'Item $item',
     searchTermsOf: (item) => ['Item $item'],
@@ -291,7 +291,7 @@ void main() {
     expect(find.text('Nothing matched'), findsOneWidget);
   });
 
-  testWidgets('default search field reloads loadItems with query', (
+  testWidgets('default search field reloads itemsLoader with query', (
     tester,
   ) async {
     final queries = <String>[];
@@ -300,7 +300,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
             searchMode: PickerSearchMode.remote,
-            loadItems: (_, query) async {
+            itemsLoader: (_, query) async {
               queries.add(query);
               if (query.isEmpty) return [1, 2];
               return [
@@ -345,7 +345,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
             searchMode: PickerSearchMode.remote,
-            loadItems: (_, query) async {
+            itemsLoader: (_, query) async {
               queries.add(query);
               return query.isEmpty ? [1] : [2];
             },
@@ -353,7 +353,7 @@ void main() {
             labelOf: (item) => 'Item $item',
           ),
           initialSelectedIds: const [],
-          viewOnChanged: changed.add,
+          onQueryChanged: changed.add,
           searchFieldBuilder: (context, controller, close) {
             return Material(
               child: TextField(controller: controller),
@@ -387,7 +387,7 @@ void main() {
             searchController: controller,
             config: PickerConfig<int>(
               searchMode: PickerSearchMode.remote,
-              loadItems: (_, query) async {
+              itemsLoader: (_, query) async {
                 queries.add(query);
                 return query.isEmpty ? [1] : [2];
               },
@@ -395,7 +395,7 @@ void main() {
               labelOf: (item) => 'Item $item',
             ),
             initialSelectedIds: const [],
-            viewOnChanged: changed.add,
+            onQueryChanged: changed.add,
           ),
         ),
       );

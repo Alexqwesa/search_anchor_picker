@@ -9,7 +9,7 @@ void main() {
       MaterialApp(
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
-            loadItems: (_, query) async {
+            itemsLoader: (_, query) async {
               queries.add(query);
               return [1, 2];
             },
@@ -50,7 +50,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
             searchMode: PickerSearchMode.remote,
-            loadItems: (_, query) async {
+            itemsLoader: (_, query) async {
               queries.add(query);
               if (query.isEmpty) return [1];
               return [8];
@@ -85,7 +85,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
             searchMode: PickerSearchMode.hybrid,
-            loadItems: (_, query) async {
+            itemsLoader: (_, query) async {
               queries.add(query);
               if (query.isEmpty) return [1];
               return [8];
@@ -116,7 +116,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
             searchMode: PickerSearchMode.remote,
-            loadItems: (_, query) async => query.isEmpty ? [1] : [99],
+            itemsLoader: (_, query) async => query.isEmpty ? [1] : [99],
             idOf: (item) => item,
             labelOf: (item) => 'Item $item',
           ),
@@ -135,7 +135,7 @@ void main() {
   test('copyWith can change searchMode and clear searchTermsOf', () {
     Iterable<String> terms(int item) => ['$item'];
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1],
+      itemsLoader: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => '$item',
       searchTermsOf: terms,

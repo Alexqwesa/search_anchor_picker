@@ -51,7 +51,7 @@ Configuration identity and data revision are intentionally separate. Replacing
 `Listenable` subscription without loading. Loads occur only on open, explicit
 controller refresh, a configured `Listenable` notification, a changed
 `reloadKey` while open, or default search-field text when `searchMode` is
-`remote` or `hybrid` (`loadItems(context, query)`). `local` (default) loads
+`remote` or `hybrid` (`itemsLoader(context, query)`). `local` (default) loads
 once and filters the snapshot with `searchTermsOf`. `remote` shows the
 returned page as-is. `hybrid` reloads, then filters that page locally.
 Same-frame `reloadKey` changes are coalesced, and the
@@ -70,7 +70,7 @@ completes, leaving the picker reusable.
 
 ## Selection rules
 
-`loadItems` is a display result, never deletion truth. Pending IDs are not
+`itemsLoader` is a display result, never deletion truth. Pending IDs are not
 intersected with loaded IDs.
 
 `PickerRelatedListItemStatus`, supplied by `relatedListItemStatusOf`, describes

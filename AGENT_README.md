@@ -13,7 +13,7 @@ Preserve these properties across every change:
 - A closed picker must stay lightweight. Search controllers, focus nodes,
   animation controllers, overlays, dynamic keys, item snapshots, and source
   subscriptions are created only after opening and released on close.
-- `loadItems` is display/search data, never deletion truth. Missing IDs must not
+- `itemsLoader` is display/search data, never deletion truth. Missing IDs must not
   be removed from selection.
 - Only row interactions and explicit controller selection commands create
   `added` or `removed` deltas. External reseeds and `syncPending` do not.
@@ -38,7 +38,7 @@ Preserve these properties across every change:
   behavior.
 - `lib/src/picker_config.dart`: public configuration and picker controller API.
 - `lib/src/debouncer.dart`: general `Debouncer` for any chatty API. Use it (or
-  an equivalent) around remote `loadItems`; the picker does not debounce.
+  an equivalent) around remote `itemsLoader`; the picker does not debounce.
 - `lib/src/picker_status.dart`: `PickerRelatedListItemStatus` and related
   membership/unselect types.
 - `lib/src/widgets/sub_picker_tile.dart`: nested `SubPickerTile` and

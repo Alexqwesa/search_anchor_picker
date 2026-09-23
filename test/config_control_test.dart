@@ -7,7 +7,7 @@ void main() {
     tester,
   ) async {
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1, 2, 3],
+      itemsLoader: (_, _) async => [1, 2, 3],
       idOf: (i) => i,
       labelOf: (i) => '$i',
       searchTermsOf: (_) => [],
@@ -47,7 +47,7 @@ void main() {
   ) async {
     // MAIN PICKER
     final mainConfig = PickerConfig<int>(
-      loadItems: (_, _) async => [1],
+      itemsLoader: (_, _) async => [1],
       idOf: (i) => i,
       labelOf: (i) => 'Main $i',
       searchTermsOf: (_) => [],
@@ -55,7 +55,7 @@ void main() {
 
     // SUB PICKER
     final subConfig = PickerConfig<int>(
-      loadItems: (_, _) async => [100],
+      itemsLoader: (_, _) async => [100],
       idOf: (i) => i,
       labelOf: (i) => 'Sub $i',
       searchTermsOf: (_) => [],
@@ -125,7 +125,7 @@ void main() {
     Future<bool> confirmBuilder(BuildContext context, int item) async => true;
 
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1],
+      itemsLoader: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => '$item',
       searchTermsOf: (item) => ['$item'],
@@ -158,7 +158,7 @@ void main() {
 
   test('copyWith can clear nullable configuration', () {
     final config = PickerConfig<int>(
-      loadItems: (_, _) async => [1],
+      itemsLoader: (_, _) async => [1],
       idOf: (item) => item,
       labelOf: (item) => '$item',
       searchTermsOf: (item) => ['$item'],
@@ -204,7 +204,7 @@ void main() {
     'copyWith(rebuildListenable: null) clears related-list status listenable',
     () {
       final config = PickerConfig<int>(
-        loadItems: (_, _) async => [1],
+        itemsLoader: (_, _) async => [1],
         idOf: (item) => item,
         labelOf: (item) => '$item',
         searchTermsOf: (item) => ['$item'],

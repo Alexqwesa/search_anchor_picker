@@ -9,7 +9,7 @@ import 'package:flutter/foundation.dart';
 /// means do not write.
 ///
 /// Persist both sets together, by ID. An ID can stay selected while missing
-/// from the current `loadItems` page. A load error or empty search is not a
+/// from the current `itemsLoader` page. A load error or empty search is not a
 /// deletion.
 ///
 /// A later `initialSelectedIds` update reseeds checkboxes; it does not change

@@ -27,7 +27,7 @@ void main() {
           home: Scaffold(
             body: SearchAnchorPicker<int>(
               config: PickerConfig<int>(
-                loadItems: (_, _) async => [2, 4],
+                itemsLoader: (_, _) async => [2, 4],
                 idOf: (i) => i,
                 labelOf: (i) => 'Item $i',
                 searchTermsOf: (i) => ['Item $i'],
@@ -73,7 +73,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [2, 4],
+              itemsLoader: (_, _) async => [2, 4],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -119,7 +119,7 @@ void main() {
           home: Scaffold(
             body: SearchAnchorPicker<int>(
               config: PickerConfig<int>(
-                loadItems: (_, _) async => [4],
+                itemsLoader: (_, _) async => [4],
                 idOf: (i) => i,
                 labelOf: (i) => 'Item $i',
                 searchTermsOf: (i) => ['Item $i'],
@@ -163,7 +163,7 @@ void main() {
           home: Scaffold(
             body: SearchAnchorPicker<int>(
               config: PickerConfig<int>(
-                loadItems: (_, _) async => items,
+                itemsLoader: (_, _) async => items,
                 idOf: (i) => i,
                 labelOf: (i) => 'Item $i',
                 searchTermsOf: (i) => ['Item $i'],
@@ -213,7 +213,7 @@ void main() {
               builder: (context, selectedIds, _) {
                 return SearchAnchorPicker<int>(
                   config: PickerConfig<int>(
-                    loadItems: (_, _) async => [1, 2, 3],
+                    itemsLoader: (_, _) async => [1, 2, 3],
                     idOf: (i) => i,
                     labelOf: (i) => 'Item $i',
                     searchTermsOf: (i) => ['Item $i'],
@@ -282,7 +282,7 @@ void main() {
               builder: (context, selectedIds, _) {
                 return SearchAnchorPicker<int>(
                   config: PickerConfig<int>(
-                    loadItems: (_, _) async => [1, 2, 3],
+                    itemsLoader: (_, _) async => [1, 2, 3],
                     idOf: (i) => i,
                     labelOf: (i) => 'Item $i',
                     searchTermsOf: (i) => ['Item $i'],
@@ -329,7 +329,7 @@ void main() {
               builder: (context, selectedIds, _) {
                 return SearchAnchorPicker<int>(
                   config: PickerConfig<int>(
-                    loadItems: (_, _) async => [1, 2, 3],
+                    itemsLoader: (_, _) async => [1, 2, 3],
                     idOf: (i) => i,
                     labelOf: (i) => 'Item $i',
                     searchTermsOf: (i) => ['Item $i'],
@@ -374,7 +374,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2, 3],
+              itemsLoader: (_, _) async => [1, 2, 3],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -421,7 +421,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [2, 4],
+              itemsLoader: (_, _) async => [2, 4],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -467,7 +467,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [2, 4],
+              itemsLoader: (_, _) async => [2, 4],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -514,7 +514,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [2, 4],
+              itemsLoader: (_, _) async => [2, 4],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -565,7 +565,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [2, 4],
+              itemsLoader: (_, _) async => [2, 4],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -616,7 +616,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2, 3],
+              itemsLoader: (_, _) async => [1, 2, 3],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -669,7 +669,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2, 3],
+              itemsLoader: (_, _) async => [1, 2, 3],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -722,7 +722,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2, 3],
+              itemsLoader: (_, _) async => [1, 2, 3],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],

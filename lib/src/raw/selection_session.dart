@@ -29,7 +29,7 @@ export 'package:search_anchor_picker/src/raw/picker_selection.dart'
 /// `removed`. A later reseed updates checkboxes only; it does not create
 /// intent and does not drop recorded intent. `onChange` does not consume this
 /// intent, so close still reports the same net. Close deltas come only from
-/// those explicit toggles, not from comparing pending IDs to `loadItems` or
+/// those explicit toggles, not from comparing pending IDs to `itemsLoader` or
 /// to the current `initialSelectedIds`.
 class PickerSelectionSession<K> {
   PickerSelectionSession(Iterable<K> initialIds)

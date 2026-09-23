@@ -193,7 +193,7 @@ PickerConfig<Person>(
         ? PickerAuxiliaryMembership.member
         : PickerAuxiliaryMembership.notMember,
   ),
-  // loadItems, idOf, labelOf, searchTermsOf...
+  // itemsLoader, idOf, labelOf, searchTermsOf...
 );
 ''',
         seed: {1, 4},
@@ -253,7 +253,7 @@ SearchAnchorPicker<Person>(
         title: 'Bulk: select / clear all loaded(not just filtered)',
         persistLabel: 'onChange',
         difference:
-            'Select loaded / Clear loaded ignore the search box and act on the whole loadItems page. Search for Linus, then Select loaded: Ada … Radia all check, not just Linus. One delta.',
+            'Select loaded / Clear loaded ignore the search box and act on the whole itemsLoader page. Search for Linus, then Select loaded: Ada … Radia all check, not just Linus. One delta.',
         source: r'''
 headerBuilder: (context, controller, items) => [
   TextButton(
@@ -552,12 +552,12 @@ SearchAnchorPicker<Person>(
         persistLabel: 'onClose',
         difference:
             'The field chips are the selection. The popup must keep showing those people so you can uncheck them, even when they are not in the searchable catalog.\n\n'
-            'This catalog is Ada … Knuth. The field starts with Ada (in catalog), Linus, and Radia (outside it). Open: Linus and Radia are in the list because loadItems unions the current chips. Uncheck Radia: she stays in this open overlay — the loaded snapshot does not drop her mid-session. Close: her chip is gone. Open again: she is neither selected nor in the catalog, so she disappears. Linus still appears because he still has a chip.\n\n'
+            'This catalog is Ada … Knuth. The field starts with Ada (in catalog), Linus, and Radia (outside it). Open: Linus and Radia are in the list because itemsLoader unions the current chips. Uncheck Radia: she stays in this open overlay — the loaded snapshot does not drop her mid-session. Close: her chip is gone. Open again: she is neither selected nor in the catalog, so she disappears. Linus still appears because he still has a chip.\n\n'
             'Compare with Hidden selected ID, which keeps a missing ID selected without putting a row in the list at all.',
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(
-    loadItems: (_, _) async {
+    itemsLoader: (_, _) async {
       final catalog = people.where((p) => p.id <= 6).toList();
       final extra = people.where(
         (p) => selected.contains(p.id) && p.id > 6,
@@ -585,7 +585,7 @@ SearchAnchorPicker<Person>(
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(
-    loadItems: (_, _) async =>
+    itemsLoader: (_, _) async =>
         people.where((p) => sublistUnion.contains(p.id)).toList(),
     reloadKey: {...sublistUnion},
   ),
@@ -636,7 +636,7 @@ onChange: (delta) {
         source: r'''
 SubPickerTile<Person>(
   config: peopleConfig(
-    loadItems: (_, _) async => people
+    itemsLoader: (_, _) async => people
         .where((p) =>
             catalog.contains(p.id) && parent.pendingIds.contains(p.id))
         .toList(),
@@ -986,7 +986,7 @@ SearchAnchorPicker<Person>(
   GallerySection(
     title: 'Fail handling, partial load, and server search',
     caption:
-        'Thrown saves and incomplete loadItems pages. searchMode defaults to local: load once, filter the snapshot. remote reloads with query and trusts the page. hybrid does both. Missing rows stay selected.',
+        'Thrown saves and incomplete itemsLoader pages. searchMode defaults to local: load once, filter the snapshot. remote reloads with query and trusts the page. hybrid does both. Missing rows stay selected.',
     cards: [
       const SimpleCard(
         title: 'API fail close',
@@ -1042,12 +1042,12 @@ SearchAnchorPicker<Person>(
       ),
       const SimpleCard(
         title: 'API fail search',
-        persistLabel: 'loadItems throw',
+        persistLabel: 'itemsLoader throw',
         difference:
-            'Turn on “API fail search”. Open the popup: loadItems waits 0.5s then throws, so the list shows the load error (retry). Selected chips stay — a failed search page is not an empty selection. Turn the checkbox off and retry.',
+            'Turn on “API fail search”. Open the popup: itemsLoader waits 0.5s then throws, so the list shows the load error (retry). Selected chips stay — a failed search page is not an empty selection. Turn the checkbox off and retry.',
         source: r'''
 PickerConfig<Person>(
-  loadItems: (_, query) async {
+  itemsLoader: (_, query) async {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (failSearch) throw StateError('simulated search API failure');
     return api.searchPeople(query);
@@ -1083,12 +1083,12 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'searchMode is local (the default): loadItems returns the first four people once. Typing filters that snapshot — Linus will not appear. Radia stays selected even though she is not on the loaded page. Compare with Server search (remote), which reloads loadItems and trusts the returned page.\n\n'
+            'searchMode is local (the default): itemsLoader returns the first four people once. Typing filters that snapshot — Linus will not appear. Radia stays selected even though she is not on the loaded page. Compare with Server search (remote), which reloads itemsLoader and trusts the returned page.\n\n'
             'Leave “Show warning on hidden chip” on and tap Radia’s chip X: she is not on this page, so a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
         source: r'''
 PickerConfig<Person>(
   searchMode: PickerSearchMode.local, // default
-  loadItems: (_, _) async => people.take(4).toList(),
+  itemsLoader: (_, _) async => people.take(4).toList(),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,
   searchTermsOf: (person) => [person.name],
@@ -1104,7 +1104,7 @@ onDeleted: (id) async {
 }
 ''',
         seed: const {1, 12},
-        loadItems: (_, _) async => people.take(4).toList(),
+        itemsLoader: (_, _) async => people.take(4).toList(),
         warnHiddenChip: true,
         visibleCatalogIds: {for (final person in people.take(4)) person.id},
       ),

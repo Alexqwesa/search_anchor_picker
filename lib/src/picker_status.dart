@@ -50,7 +50,7 @@ class PickerRelatedListItemStatus {
   /// `false` renders the default row disabled, ignores taps on it, and leaves
   /// the item out of bulk commands in both directions, so a rule the user
   /// cannot satisfy reads as an inactive row instead of a checkbox that moves
-  /// and springs back. An item absent from the current `loadItems` result has
+  /// and springs back. An item absent from the current `itemsLoader` result has
   /// no status and is not filtered.
   ///
   /// Use [unselectPolicy] instead when the row stays usable and only removal

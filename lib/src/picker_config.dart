@@ -8,7 +8,7 @@ export 'package:search_anchor_picker/src/raw/picker_config.dart'
     show
         CloseQueryBehavior,
         GenericRawPickerController,
-        LoadItems,
+        ItemsLoader,
         PickerDelta,
         PickerSearchMode,
         PickerUnselectPolicy,
@@ -25,10 +25,10 @@ T? _copyOrKeep<T>(Object? value, T? current) {
 ///
 /// Adds related-list membership and unselect policy on top of
 /// [GenericRawPickerConfig]. Visual rebuilds from
-/// [relatedListItemStatusListenable] do not reload [loadItems].
+/// [relatedListItemStatusListenable] do not reload [itemsLoader].
 class GenericPickerConfig<T, K> extends GenericRawPickerConfig<T, K> {
   GenericPickerConfig({
-    required super.loadItems,
+    required super.itemsLoader,
     required super.idOf,
     required super.labelOf,
     super.searchTermsOf,
@@ -62,12 +62,12 @@ class GenericPickerConfig<T, K> extends GenericRawPickerConfig<T, K> {
   ///
   /// Notify when related-list membership or usage changes. Unlike [listenable]
   /// and [reloadKey], this only repaints related-list status and
-  /// does not call [loadItems]. The listener is attached only while open.
+  /// does not call [itemsLoader]. The listener is attached only while open.
   final Listenable? relatedListItemStatusListenable;
 
   @override
   GenericPickerConfig<T, K> copyWith({
-    LoadItems<T>? loadItems,
+    ItemsLoader<T>? itemsLoader,
     K Function(T)? idOf,
     String Function(T)? labelOf,
     Object? searchTermsOf = _copyUnset,
@@ -87,7 +87,7 @@ class GenericPickerConfig<T, K> extends GenericRawPickerConfig<T, K> {
     Object? relatedListItemStatusListenable = _copyUnset,
   }) {
     return GenericPickerConfig<T, K>(
-      loadItems: loadItems ?? this.loadItems,
+      itemsLoader: itemsLoader ?? this.itemsLoader,
       idOf: idOf ?? this.idOf,
       labelOf: labelOf ?? this.labelOf,
       searchTermsOf: _copyOrKeep(searchTermsOf, this.searchTermsOf),
@@ -125,7 +125,7 @@ class GenericPickerConfig<T, K> extends GenericRawPickerConfig<T, K> {
 
 class PickerConfig<T> extends GenericPickerConfig<T, int> {
   PickerConfig({
-    required super.loadItems,
+    required super.itemsLoader,
     required super.idOf,
     required super.labelOf,
     super.searchTermsOf,
@@ -146,7 +146,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
 
   @override
   PickerConfig<T> copyWith({
-    LoadItems<T>? loadItems,
+    ItemsLoader<T>? itemsLoader,
     int Function(T)? idOf,
     String Function(T)? labelOf,
     Object? searchTermsOf = _copyUnset,
@@ -166,7 +166,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
     Object? relatedListItemStatusListenable = _copyUnset,
   }) {
     final copied = super.copyWith(
-      loadItems: loadItems,
+      itemsLoader: itemsLoader,
       idOf: idOf,
       labelOf: labelOf,
       searchTermsOf: searchTermsOf,
@@ -186,7 +186,7 @@ class PickerConfig<T> extends GenericPickerConfig<T, int> {
       relatedListItemStatusListenable: relatedListItemStatusListenable,
     );
     return PickerConfig<T>(
-      loadItems: copied.loadItems,
+      itemsLoader: copied.itemsLoader,
       idOf: copied.idOf,
       labelOf: copied.labelOf,
       searchTermsOf: copied.searchTermsOf,

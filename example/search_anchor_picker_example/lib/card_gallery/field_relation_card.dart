@@ -91,7 +91,7 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: widget.title,
-          loadItems: switch (widget.parentRows) {
+          itemsLoader: switch (widget.parentRows) {
             ParentRowSet.allPeople => null,
             ParentRowSet.mainCatalog => (_, _) async => mainCatalogPeople(),
             ParentRowSet.shortMain =>
@@ -164,7 +164,7 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
       icon: icon,
       config: peopleConfig(
         title: title,
-        loadItems: (_, _) async => peopleIn(catalogIds),
+        itemsLoader: (_, _) async => peopleIn(catalogIds),
         relatedListItemStatusOf: lockToField
             ? (person) => PickerRelatedListItemStatus(
                 unselectPolicy: _directoryUnselectPolicy(parent, person.id),

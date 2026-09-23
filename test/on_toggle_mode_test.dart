@@ -16,7 +16,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -55,7 +55,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -96,7 +96,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -139,7 +139,7 @@ void main() {
           home: Scaffold(
             body: SearchAnchorPicker<int>(
               config: PickerConfig(
-                loadItems: (_, _) async => [1, 2, 3],
+                itemsLoader: (_, _) async => [1, 2, 3],
                 idOf: (item) => item,
                 labelOf: (item) => '$item',
                 searchTermsOf: (_) => const [],
@@ -198,7 +198,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],

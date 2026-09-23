@@ -24,7 +24,7 @@ void main() {
             child: GenericSearchAnchorPicker<DemoItem, String>(
               initialSelectedIds: const <String>['2'],
               config: GenericPickerConfig<DemoItem, String>(
-                loadItems: (context, query) async => items,
+                itemsLoader: (context, query) async => items,
                 idOf: (item) => item.id.toString(), // ID is String "1", "2"...
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label],
@@ -91,7 +91,7 @@ void main() {
             child: GenericSearchAnchorPicker<DemoItem, (int, int)>(
               initialSelectedIds: const <(int, int)>[(1, 100), (3, 300)],
               config: GenericPickerConfig<DemoItem, (int, int)>(
-                loadItems: (context, query) async => items,
+                itemsLoader: (context, query) async => items,
                 // ID is a tuple (id, id*100)
                 idOf: (item) => (item.id, item.id * 100),
                 labelOf: (item) => item.label,

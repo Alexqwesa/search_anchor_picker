@@ -120,7 +120,7 @@ class _DemoHomeState extends State<DemoHome> {
   }) {
     return PickerConfig<DemoItem>(
       title: title,
-      loadItems: (_, _) => repo.load(),
+      itemsLoader: (_, _) => repo.load(),
       listenable: repo,
       idOf: (it) => it.id,
       labelOf: (it) => it.label,

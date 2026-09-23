@@ -15,13 +15,15 @@ Breaking vs 0.1.1:
   is set. Opt in with `SubPickerParentSelectionEffect`.
 * `SubPickerTile.onChange` is `(delta, notifyParent)`. Call `notifyParent()`
   after a successful write for immediate parent checkboxes.
-* `loadItems` is `(context, query)`. `PickerSearchMode` chooses what typing
+* `loadItems` / `LoadItems` → `itemsLoader` / `ItemsLoader`.
+  `viewOnChanged` → `onQueryChanged`.
+* `itemsLoader` is `(context, query)`. `PickerSearchMode` chooses what typing
   does: `local` (default) loads once and filters the snapshot;
   `remote` reloads and trusts the page; `hybrid` does both.
   `searchTermsOf` is optional and unused in `remote`. Debounce remote
-  `loadItems` (or the API) with `Debouncer` or an equivalent; the picker
+  `itemsLoader` (or the API) with `Debouncer` or an equivalent; the picker
   does not. The open picker watches `SearchController` text (not cursor
-  moves) and reloads remote/hybrid from that. `viewOnChanged` includes
+  moves) and reloads remote/hybrid from that. `onQueryChanged` includes
   programmatic query changes.
 
 Also:
@@ -121,7 +123,7 @@ Breaking / API:
 
 Behavior / docs:
 
-* Selected IDs missing from the current `loadItems` page are preserved (server-side search safe).
+* Selected IDs missing from the current `itemsLoader` page are preserved (server-side search safe).
 * Documented `OnToggleMode.awaitGate` vs `OnToggleMode.optimistic` for async checkbox UX.
 * Added agent-facing integration guidance for common consumer pitfalls.
 * Example web deploy workflow + online demo link.

@@ -11,7 +11,7 @@ import 'package:search_anchor_picker/src/raw/widgets/sub_picker_tile.dart'
 
 export 'package:search_anchor_picker/src/raw/picker_selection.dart';
 
-typedef LoadItems<T> =
+typedef ItemsLoader<T> =
     Future<List<T>> Function(BuildContext context, String query);
 
 const _copyUnset = Object();
@@ -20,22 +20,22 @@ T? _copyOrKeep<T>(Object? value, T? current) {
   return identical(value, _copyUnset) ? current : value as T?;
 }
 
-/// How the default search field combines `loadItems` and local filtering.
+/// How the default search field combines `itemsLoader` and local filtering.
 enum PickerSearchMode {
   /// Load on open, refresh, `reloadKey`, and `listenable`. Typing filters
   /// the loaded snapshot with `searchTermsOf` (or `labelOf` if omitted).
   local,
 
-  /// Reload `loadItems` with the search-field text and show that page as-is.
+  /// Reload `itemsLoader` with the search-field text and show that page as-is.
   /// `searchTermsOf` is unused.
   remote,
 
-  /// Reload `loadItems` with the search-field text, then filter that page
+  /// Reload `itemsLoader` with the search-field text, then filter that page
   /// locally with `searchTermsOf`.
   hybrid
   ;
 
-  /// Whether the default search field should call `loadItems` on text changes.
+  /// Whether the default search field should call `itemsLoader` on text changes.
   bool get reloadsOnQuery => this != PickerSearchMode.local;
 
   /// Whether the overlay should hide loaded rows that miss `searchTermsOf`.
@@ -71,7 +71,7 @@ enum PickerUnselectPolicy {
 ///   membership changes. External reseeds never create add/remove deltas.
 class GenericRawPickerConfig<T, K> {
   GenericRawPickerConfig({
-    required this.loadItems,
+    required this.itemsLoader,
     required this.idOf,
     required this.labelOf,
     this.searchTermsOf,
@@ -136,10 +136,10 @@ class GenericRawPickerConfig<T, K> {
   ///
   /// PickerConfig(
   ///   searchMode: PickerSearchMode.remote,
-  ///   loadItems: (context, query) => searchPeople(query),
+  ///   itemsLoader: (context, query) => searchPeople(query),
   /// )
   /// ```
-  final LoadItems<T> loadItems;
+  final ItemsLoader<T> itemsLoader;
 
   /// Returns a stable identifier for [T].
   ///
@@ -164,7 +164,7 @@ class GenericRawPickerConfig<T, K> {
   /// any term contains the lowercase query. When null, [labelOf] is used.
   final Iterable<String> Function(T)? searchTermsOf;
 
-  /// Whether typing reloads [loadItems], filters the loaded page, or both.
+  /// Whether typing reloads [itemsLoader], filters the loaded page, or both.
   ///
   /// Defaults to [PickerSearchMode.local].
   final PickerSearchMode searchMode;
@@ -218,11 +218,11 @@ class GenericRawPickerConfig<T, K> {
   ///
   /// Replacing [GenericRawPickerConfig] alone only rebinds its configuration and
   /// does not reload items. While the picker is open, changing this value
-  /// reloads [loadItems]. A closed picker always loads with the latest
+  /// reloads [itemsLoader]. A closed picker always loads with the latest
   /// configuration when it next opens.
   final Object? reloadKey;
 
-  /// Rebuilds the open overlay without calling [loadItems].
+  /// Rebuilds the open overlay without calling [itemsLoader].
   ///
   /// The listener is attached only while the picker is open. Use this for
   /// visual or policy state that is independent of the loaded item list.
@@ -242,7 +242,7 @@ class GenericRawPickerConfig<T, K> {
   /// Omitted nullable fields are kept. Pass `null` to clear them, for example
   /// `copyWith(listenable: null)`.
   GenericRawPickerConfig<T, K> copyWith({
-    LoadItems<T>? loadItems,
+    ItemsLoader<T>? itemsLoader,
     K Function(T)? idOf,
     String Function(T)? labelOf,
     Object? searchTermsOf = _copyUnset,
@@ -260,7 +260,7 @@ class GenericRawPickerConfig<T, K> {
     Object? unselectConfirmationBuilder = _copyUnset,
   }) {
     return GenericRawPickerConfig<T, K>(
-      loadItems: loadItems ?? this.loadItems,
+      itemsLoader: itemsLoader ?? this.itemsLoader,
       idOf: idOf ?? this.idOf,
       labelOf: labelOf ?? this.labelOf,
       searchTermsOf: _copyOrKeep(searchTermsOf, this.searchTermsOf),
@@ -288,7 +288,7 @@ class GenericRawPickerConfig<T, K> {
 
 class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
   RawPickerConfig({
-    required super.loadItems,
+    required super.itemsLoader,
     required super.idOf,
     required super.labelOf,
     super.searchTermsOf,
@@ -308,7 +308,7 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
 
   @override
   RawPickerConfig<T> copyWith({
-    LoadItems<T>? loadItems,
+    ItemsLoader<T>? itemsLoader,
     int Function(T)? idOf,
     String Function(T)? labelOf,
     Object? searchTermsOf = _copyUnset,
@@ -326,7 +326,7 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
     Object? unselectConfirmationBuilder = _copyUnset,
   }) {
     final copied = super.copyWith(
-      loadItems: loadItems,
+      itemsLoader: itemsLoader,
       idOf: idOf,
       labelOf: labelOf,
       searchTermsOf: searchTermsOf,
@@ -344,7 +344,7 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
       unselectConfirmationBuilder: unselectConfirmationBuilder,
     );
     return RawPickerConfig<T>(
-      loadItems: copied.loadItems,
+      itemsLoader: copied.itemsLoader,
       idOf: copied.idOf,
       labelOf: copied.labelOf,
       searchTermsOf: copied.searchTermsOf,

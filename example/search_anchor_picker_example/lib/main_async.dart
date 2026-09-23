@@ -246,7 +246,7 @@ class _DemoHomeState extends ConsumerState<DemoHome> {
   }) {
     return PickerConfig<DemoItem>(
       title: title,
-      loadItems: (ctx, _) async {
+      itemsLoader: (ctx, _) async {
         final val = ref.read(itemsProvider(key));
         if (val.isLoading) return val.asData?.value ?? [];
         return val.asData?.value ?? [];

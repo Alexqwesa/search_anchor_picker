@@ -66,7 +66,7 @@ class SimpleCard extends StatefulWidget {
     this.wide = false,
     this.viewConstraints,
     this.saveDelay,
-    this.loadItems,
+    this.itemsLoader,
     this.includeSelectedInLoad = false,
     this.related = RelatedStatus.none,
     this.emptyText,
@@ -96,7 +96,7 @@ class SimpleCard extends StatefulWidget {
   final bool wide;
   final BoxConstraints? viewConstraints;
   final Duration? saveDelay;
-  final LoadItems<Person>? loadItems;
+  final ItemsLoader<Person>? itemsLoader;
   final bool includeSelectedInLoad;
   final RelatedStatus related;
   final String? emptyText;
@@ -165,11 +165,11 @@ class _SimpleCardState extends State<SimpleCard> {
           SearchAnchorPicker<Person>(
             config: peopleConfig(
               title: widget.title,
-              loadItems:
+              itemsLoader:
                   widget.failLoad ||
                       widget.includeSelectedInLoad ||
                       widget.emptyCatalog ||
-                      widget.loadItems != null
+                      widget.itemsLoader != null
                   ? _load
                   : null,
               selectedFirst: widget.selectedFirst,
@@ -364,9 +364,9 @@ class _SimpleCardState extends State<SimpleCard> {
     }
     if (widget.includeSelectedInLoad) return _selectedPlusCatalog();
     if (widget.emptyCatalog) return const <Person>[];
-    if (widget.loadItems != null) {
+    if (widget.itemsLoader != null) {
       if (!context.mounted) return const <Person>[];
-      return widget.loadItems!(context, query);
+      return widget.itemsLoader!(context, query);
     }
     return people;
   }

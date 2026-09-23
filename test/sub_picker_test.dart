@@ -92,7 +92,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Sub Picker',
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2, 3, 4, 5],
+              itemsLoader: (_, _) async => [1, 2, 3, 4, 5],
               idOf: (i) => i,
               labelOf: (i) => '$i',
               searchTermsOf: (_) => [],
@@ -192,7 +192,7 @@ void main() {
               key: ValueKey(effect),
               title: 'Sub Picker',
               config: PickerConfig<int>(
-                loadItems: (_, _) async => [1, 2, 3, 4],
+                itemsLoader: (_, _) async => [1, 2, 3, 4],
                 idOf: (item) => item,
                 labelOf: (item) => '$item',
                 searchTermsOf: (_) => const [],
@@ -241,7 +241,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Sub Picker',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -287,7 +287,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Sub Picker',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -346,7 +346,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Sub Picker',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => '$item',
               searchTermsOf: (_) => const [],
@@ -387,7 +387,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'I am ignored',
             config: PickerConfig(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (i) => i,
               labelOf: (i) => '$i',
               searchTermsOf: (_) => [],
@@ -420,7 +420,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Sub Picker',
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (i) => i,
               labelOf: (i) => '$i',
               searchTermsOf: (_) => [],
@@ -473,7 +473,7 @@ void main() {
                   isFullScreen: false,
                   menuOffset: menuOffset,
                   config: PickerConfig(
-                    loadItems: (_, _) async => [1, 2],
+                    itemsLoader: (_, _) async => [1, 2],
                     idOf: (i) => i,
                     labelOf: (i) => '$i',
                     searchTermsOf: (_) => [],
@@ -524,7 +524,7 @@ void main() {
             isFullScreen: false,
             menuOffset: const Offset(40, 40),
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (i) => i,
               labelOf: (i) => '$i',
               searchTermsOf: (i) => ['$i'],
@@ -554,7 +554,7 @@ void main() {
             isFullScreen: false,
             menuOffset: const Offset(24, 12),
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -593,7 +593,7 @@ void main() {
             title: 'Sub Picker',
             isFullScreen: false,
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (i) => i,
               labelOf: (i) => 'Item $i',
               searchTermsOf: (i) => ['Item $i'],
@@ -647,7 +647,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (i) => i,
               labelOf: (i) => 'Parent $i',
               searchTermsOf: (i) => ['Parent $i'],
@@ -661,7 +661,7 @@ void main() {
               SubPickerTile<int>(
                 title: 'Open Child',
                 config: PickerConfig(
-                  loadItems: (_, _) async => [10, 20],
+                  itemsLoader: (_, _) async => [10, 20],
                   idOf: (i) => i,
                   labelOf: (i) => 'Child $i',
                   searchTermsOf: (i) => ['Child $i'],
@@ -700,7 +700,7 @@ void main() {
         home: Scaffold(
           body: SearchAnchorPicker<int>(
             config: PickerConfig(
-              loadItems: (_, _) async => [1],
+              itemsLoader: (_, _) async => [1],
               idOf: (item) => item,
               labelOf: (item) => 'Parent $item',
               searchTermsOf: (_) => const [],
@@ -710,7 +710,7 @@ void main() {
               SubPickerTile<int>(
                 title: 'Open Child',
                 config: PickerConfig(
-                  loadItems: (_, _) async => [10],
+                  itemsLoader: (_, _) async => [10],
                   idOf: (item) => item,
                   labelOf: (item) => 'Child $item',
                   searchTermsOf: (_) => const [],
@@ -755,7 +755,7 @@ void main() {
                 minHeight: 240,
               ),
               config: PickerConfig(
-                loadItems: (_, _) async => [1, 2],
+                itemsLoader: (_, _) async => [1, 2],
                 idOf: (i) => i,
                 labelOf: (i) => 'Item $i',
                 searchTermsOf: (i) => ['Item $i'],
@@ -810,7 +810,7 @@ void main() {
                   ),
                   menuOffset: menuOffset,
                   config: PickerConfig(
-                    loadItems: (_, _) async => [1, 2],
+                    itemsLoader: (_, _) async => [1, 2],
                     idOf: (i) => i,
                     labelOf: (i) => '$i',
                     searchTermsOf: (i) => ['$i'],
@@ -893,7 +893,7 @@ void main() {
                 ),
                 menuOffset: menuOffset,
                 config: PickerConfig(
-                  loadItems: (_, _) async => [1, 2],
+                  itemsLoader: (_, _) async => [1, 2],
                   idOf: (i) => i,
                   labelOf: (i) => '$i',
                   searchTermsOf: (i) => ['$i'],
@@ -942,7 +942,7 @@ void main() {
           body: SubPickerTile<int>(
             title: 'Child',
             config: PickerConfig<int>(
-              loadItems: (_, _) async => [1, 2],
+              itemsLoader: (_, _) async => [1, 2],
               idOf: (item) => item,
               labelOf: (item) => 'Item $item',
               searchTermsOf: (item) => ['$item'],

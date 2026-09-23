@@ -64,7 +64,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     this.viewPadding,
     this.shrinkWrap,
     this.textCapitalization,
-    this.viewOnChanged,
+    this.onQueryChanged,
     this.viewOnSubmitted,
     this.viewOnClose,
     this.viewOnOpen,
@@ -88,7 +88,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// checkbox move and then springs it back.
   ///
   /// It is a synchronous rule on a loaded item, so an ID that is selected but
-  /// absent from the current `loadItems` result is not filtered.
+  /// absent from the current `itemsLoader` result is not filtered.
   ///
   /// Leaving this null is the same as always returning `true`.
   final bool Function(T item)? isSelectable;
@@ -96,7 +96,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   /// Immediate save, run on each accepted delta once the checkboxes moved.
   ///
   /// The picker owns the pending IDs and notifies; the application saves.
-  /// Save from IDs: loaded items can be missing from the current `loadItems`
+  /// Save from IDs: loaded items can be missing from the current `itemsLoader`
   /// result. If this returns a [Future] the picker awaits it, so close waits
   /// for in-flight work.
   ///
@@ -211,9 +211,10 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   final EdgeInsetsGeometry? viewPadding;
   final bool? shrinkWrap;
   final TextCapitalization? textCapitalization;
+
   /// Called when the active search query changes, including programmatic
   /// changes to the supplied [SearchController].
-  final ValueChanged<String>? viewOnChanged;
+  final ValueChanged<String>? onQueryChanged;
   final ValueChanged<String>? viewOnSubmitted;
   final VoidCallback? viewOnClose;
   final VoidCallback? viewOnOpen;
@@ -280,7 +281,7 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     super.viewPadding,
     super.shrinkWrap,
     super.textCapitalization,
-    super.viewOnChanged,
+    super.onQueryChanged,
     super.viewOnSubmitted,
     super.viewOnClose,
     super.viewOnOpen,
@@ -596,7 +597,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _reloadScheduled = false;
   }
 
-  /// Calls [GenericRawPickerConfig.loadItems] with the current search-field text.
+  /// Calls [GenericRawPickerConfig.itemsLoader] with the current search-field text.
   void _reload() {
     if (!mounted || !_open) return;
     final generation = ++_loadGeneration;
@@ -607,7 +608,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
 
     unawaited(
       Future<List<T>>.sync(
-        () => widget.config.loadItems(context, _controller.text),
+        () => widget.config.itemsLoader(context, _controller.text),
       ).then(
         (items) {
           if (!mounted || !_open || generation != _loadGeneration) return;
@@ -781,7 +782,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     final query = _controller.text;
     if (query == _observedQuery) return;
     _observedQuery = query;
-    widget.viewOnChanged?.call(query);
+    widget.onQueryChanged?.call(query);
     if (widget.config.searchMode.reloadsOnQuery) {
       _scheduleReload();
     }

@@ -43,7 +43,7 @@ SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
     searchMode: PickerSearchMode.remote,
-    loadItems: (context, query) => searchPeople(query),
+    itemsLoader: (context, query) => searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
   ),
@@ -62,9 +62,9 @@ becomes the seed for the next open.
 
 Follow these invariants:
 
-- `loadItems` is the current display/search result. It may be complete, paged,
+- `itemsLoader` is the current display/search result. It may be complete, paged,
   filtered, stale, empty while loading, or empty after an error.
-- Absence from `loadItems` never means an ID was unselected or deleted.
+- Absence from `itemsLoader` never means an ID was unselected or deleted.
 - `initialSelectedIds` is external selection state, not a loading placeholder.
 - Do not temporarily replace `initialSelectedIds` with an empty list while its
   real value is loading. Keep the previous authoritative value instead.
@@ -75,7 +75,7 @@ Follow these invariants:
 - Persist `added` and `removed` from `onClose`.
 
 `PickerSearchMode` chooses how the default search box works. `local` (default)
-calls `loadItems` on open and filters the snapshot with `searchTermsOf`.
+calls `itemsLoader` on open and filters the snapshot with `searchTermsOf`.
 `remote` reloads with the box text and shows that page as-is (`searchTermsOf`
 is unused). `hybrid` reloads, then filters the returned page locally.
 Debounce a remote search with `Debouncer` (or an equivalent API gate); the
@@ -112,7 +112,7 @@ per ID.
 
 Do not rely on replacing an inline `PickerConfig(...)` to reload data. Parent
 rebuilds rebind the latest configuration but intentionally do not call
-`loadItems`.
+`itemsLoader`.
 
 Use one explicit reload signal:
 
@@ -124,7 +124,7 @@ Use one explicit reload signal:
   reloads once; rebuilding with an equal value does not.
 
 Closed pickers do not reload. Opening always invokes the latest configured
-`loadItems`, and stale request completions cannot overwrite a newer result.
+`itemsLoader`, and stale request completions cannot overwrite a newer result.
 
 ## Header controller
 
@@ -270,7 +270,7 @@ PickerConfig<Person>(
   asks first. Replace the default warning and confirmation UI with
   `unselectWarningBuilder` and `unselectConfirmationBuilder`.
 - `relatedListItemStatusListenable` redraws while open and does not call
-  `loadItems`. It is not subscribed while closed.
+  `itemsLoader`. It is not subscribed while closed.
 
 Desktop submenus may use `menuOffset`. Mobile defaults to a full-screen view;
 set `isFullScreen` explicitly only when the application intentionally differs

@@ -30,7 +30,7 @@ void main() {
           body: Center(
             child: SearchAnchorPicker<_DemoItem>(
               config: PickerConfig<_DemoItem>(
-                loadItems: (_, _) async => items,
+                itemsLoader: (_, _) async => items,
                 idOf: (item) => item.id,
                 labelOf: (item) => item.label,
                 searchTermsOf: (item) => [item.label, item.tooltip],

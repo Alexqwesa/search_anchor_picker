@@ -147,7 +147,7 @@ void applyEffectToSelection(
 
 PickerConfig<Person> peopleConfig({
   String? title,
-  LoadItems<Person>? loadItems,
+  ItemsLoader<Person>? itemsLoader,
   PickerRelatedListItemStatus Function(Person)? relatedListItemStatusOf,
   Listenable? relatedListItemStatusListenable,
   Listenable? listenable,
@@ -157,7 +157,7 @@ PickerConfig<Person> peopleConfig({
 }) {
   return PickerConfig<Person>(
     title: title,
-    loadItems: loadItems ?? (_, _) async => people,
+    itemsLoader: itemsLoader ?? (_, _) async => people,
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
     searchTermsOf: (person) => [person.name, person.team, '${person.id}'],

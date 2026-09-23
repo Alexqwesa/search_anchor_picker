@@ -13,7 +13,7 @@ Widget _hiddenCard() {
           difference: '',
           source: '',
           seed: const {1, 12},
-          loadItems: (_, _) async => people.take(4).toList(),
+          itemsLoader: (_, _) async => people.take(4).toList(),
           warnHiddenChip: true,
           visibleCatalogIds: {for (final person in people.take(4)) person.id},
         ),

@@ -14,7 +14,7 @@ single selection, and optional nested menus.
 - Optional selected-first ordering, frozen at open so toggles do not reshuffle
   the list. Default is on (`selectedFirst: true`).
 - Explicit search modes: `local` (default) loads once and filters the snapshot;
-  `remote` reloads `loadItems(query)` and trusts that page; `hybrid` does both.
+  `remote` reloads `itemsLoader(query)` and trusts that page; `hybrid` does both.
   Missing loaded items are never interpreted as deleted selections.
 - The picker notifies; it does not persist. Save from `onChange` (each accepted
   toggle) or `onClose` (whole delta of session).
@@ -39,7 +39,7 @@ SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
     searchMode: PickerSearchMode.remote,
-    loadItems: (context, query) => searchPeople(query),
+    itemsLoader: (context, query) => searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
   ),
@@ -71,7 +71,7 @@ identity as a data revision.
 Reload deliberately through one of these paths:
 
 - Type or clear the default search field when `searchMode` is `remote` or
-  `hybrid` (`loadItems` is called with `query`).
+  `hybrid` (`itemsLoader` is called with `query`).
 - Call `controller.refresh()` from custom popup UI.
 - Provide `config.listenable`; notifications reload only while the popup is open.
 - Change `config.reloadKey` for declarative revision-based reloads.
@@ -81,14 +81,14 @@ PickerConfig<Person>(
   searchMode: PickerSearchMode.remote,
   reloadKey: resultsRevision,
   listenable: repository.changes,
-  loadItems: (context, query) => repository.search(query),
+  itemsLoader: (context, query) => repository.search(query),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,
 );
 ```
 
 A closed picker never subscribes or reloads. Its next open always calls the
-latest `loadItems` once.
+latest `itemsLoader` once.
 
 ## SearchAnchor styling
 
@@ -227,7 +227,7 @@ membership or in-use check, do it there from the IDs, then update the
 directory source so `relatedListItemStatusListenable` redraws.
 
 `relatedListItemStatusListenable` redraws this status while the popup is open
-and does not call `loadItems`. Parent checkbox coupling is a separate
+and does not call `itemsLoader`. Parent checkbox coupling is a separate
 `SubPickerParentSelectionEffect` on `SubPickerTile`.
 
 ```dart
@@ -243,7 +243,7 @@ PickerConfig<Person>(
         ? PickerUnselectPolicy.blocked
         : PickerUnselectPolicy.allow,
   ),
-  // loadItems, idOf, labelOf, and searchTermsOf...
+  // itemsLoader, idOf, labelOf, and searchTermsOf...
 ),
 ```
 
@@ -327,14 +327,19 @@ Future<List<Person>> searchPeople(String query) {
   return debounce.run(() => api.searchPeople(query));
 }
 
-PickerConfig(
-  searchMode: PickerSearchMode.remote, // reload(query), show that page
-  loadItems: (context, query) => searchPeople(query),
-  // idOf, labelOf...
+SearchAnchorPicker(
+  config: PickerConfig(
+    searchMode: PickerSearchMode.remote, // reload(query), show that page
+    itemsLoader: (context, query) => searchPeople(query),
+    // idOf, labelOf...
+  ),
+  onQueryChanged: (query) {
+    // Active query, including programmatic SearchController changes.
+  },
 )
 ```
 
-The picker does not debounce. Wrap a remote `loadItems` (or the API behind it)
+The picker does not debounce. Wrap a remote `itemsLoader` (or the API behind it)
 with `Debouncer` or the same idea in the repository so typing does not start
 one request per keystroke. Skip the wait when `query` is empty so open is not
 delayed. Stale completions are already ignored.
@@ -342,7 +347,7 @@ delayed. Stale completions are already ignored.
 ```dart
 PickerConfig(
   // searchMode: local (default): load once, filter with searchTermsOf
-  loadItems: (context, query) => catalog,
+  itemsLoader: (context, query) => catalog,
   searchTermsOf: (person) => [person.name, person.email],
 )
 ```

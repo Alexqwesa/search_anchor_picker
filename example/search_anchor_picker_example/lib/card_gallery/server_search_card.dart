@@ -4,7 +4,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 import 'example_card.dart';
 import 'people.dart';
 
-/// Default search field reloads [PickerConfig.loadItems] with `query`.
+/// Default search field reloads [PickerConfig.itemsLoader] with `query`.
 class ServerSearchCard extends StatefulWidget {
   const ServerSearchCard({super.key});
 
@@ -24,7 +24,7 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
       title: 'Server search, default search field',
       persist: 'onClose',
       difference:
-          'searchMode: remote. loadItems is the search callback: the picker passes the box text as query and shows that page as-is. No second local filter, so a fuzzy or extra-field server hit is not hidden by searchTermsOf.\n\n'
+          'searchMode: remote. itemsLoader is the search callback: the picker passes the box text as query and shows that page as-is. No second local filter, so a fuzzy or extra-field server hit is not hidden by searchTermsOf.\n\n'
           'Open: GET /people?page=1 → Ada … Katherine. Type lin:\n\n'
           'GET /people?q=lin\n'
           '→ Linus Torvalds\n\n'
@@ -39,7 +39,7 @@ Future<List<Person>> searchPeople(String query) {
 
 PickerConfig(
   searchMode: PickerSearchMode.remote,
-  loadItems: (context, query) => searchPeople(query),
+  itemsLoader: (context, query) => searchPeople(query),
 );
 ''',
       footer: Text(
@@ -51,7 +51,7 @@ PickerConfig(
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: 'Server search, default search field',
-          loadItems: _loadPage,
+          itemsLoader: _loadPage,
           searchMode: PickerSearchMode.remote,
         ),
         initialSelectedIds: _selected.toList(),
@@ -70,7 +70,7 @@ PickerConfig(
     );
   }
 
-  /// Fake GET /people. Invoked by the picker as [PickerConfig.loadItems]
+  /// Fake GET /people. Invoked by the picker as [PickerConfig.itemsLoader]
   /// on open and whenever the default search field text changes.
   Future<List<Person>> _loadPage(BuildContext context, String query) async {
     final trimmed = query.trim();
