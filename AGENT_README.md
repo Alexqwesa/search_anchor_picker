@@ -155,9 +155,10 @@ for in-flight `onChange` and `onClose` work.
 enable coupling. Opt-in effects (`selectAdded`, `deselectRemoved`, `mirror`)
 copy the matching side of a successful child `onClose` into the open
 parent's pending checkboxes, including bulk child commands. If `onClose`
-is omitted, the effect applies after each accepted `onChange`. Call
-`notifyParent()` from `onChange` only for immediate parent updates when
-`onClose` is also set; it is not applied again on close. They call `syncPending`,
+is omitted, the effect applies after each accepted `onChange`. When
+`onClose` is also set, call `notifyParent()` after every successful
+`onChange` for immediate parent sync, or never in that session. They call
+`syncPending`,
 which lands on the next frame, so ignore that update if the parent session
 has closed or been replaced. The parent search field shows progress while
 the child write is in flight; close already waits for in-flight `onChange`.

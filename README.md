@@ -281,14 +281,16 @@ Choose `selectAdded` to check added items, `deselectRemoved` to uncheck removed
 items, or `mirror` for both. `none` is the default.
 These effects **update the open parent's checkboxes after a successful
 `onClose`**. That is the usual path. If `onClose` is omitted, the effect
-applies after each accepted `onChange`. Call `notifyParent()` from the
-child `onChange` only when `onClose` is also set and the parent should
-update immediately; that delta is not applied again on close. They do not
-run while the write is in flight, and Close without saving leaves the
-parent unchanged. They do not save parent selection, update the parent's
-`initialSelectedIds`, or include those changes in the parent's `onChange`
-/ `onClose` deltas. The parent search field shows a small spinner while
-that write is in flight; close already waits for in-flight `onChange` work.
+applies after each accepted `onChange`. When `onClose` is also set, call
+`notifyParent()` after every successfully handled `onChange` if the parent
+should update immediately. Do not call it selectively within one open
+session. If it is never called, the parent effect runs once after a
+successful `onClose`. They do not run while the write is in flight, and
+Close without saving leaves the parent unchanged. They do not save parent
+selection, update the parent's `initialSelectedIds`, or include those
+changes in the parent's `onChange` / `onClose` deltas. The parent search
+field shows a small spinner while that write is in flight; close already
+waits for in-flight `onChange` work.
 If your backend stores parent selection separately from sub-list membership,
 the child's `onChange` or `onClose` callback must also call the appropriate
 parent API and update the authoritative parent IDs for the next open. Parent
@@ -303,10 +305,10 @@ successful child writes, including bulk header commands. `SubPickerTile`
 onChange: (delta, notifyParent) async {
   await directoryApi.add(delta.added);
   await directoryApi.remove(delta.removed);
-  notifyParent(); // optional: parent checkboxes now, not on close
+  notifyParent(); // every successful onChange, or never in this session
 },
 onClose: (result) {
-  // Optional: whole delta of the session.
+  // If notifyParent was never called, parent sync happens here.
 },
 ```
 

@@ -9,9 +9,12 @@ import 'package:search_anchor_picker/src/related_list_item.dart';
 /// Child `onChange` for [GenericSubPickerTile].
 ///
 /// [notifyParent] applies [SubPickerParentSelectionEffect] to the open parent.
-/// Call it after a successful write when the parent should update before the
-/// child closes. If you never call it, the parent updates on `onClose`, or
-/// after this callback returns when `onClose` is omitted.
+/// When `onClose` is also set, call this after every successfully handled
+/// `onChange` if parent synchronization should happen immediately.
+///
+/// Do not call it selectively within one open session. If it is never called,
+/// the parent effect is applied once after a successful `onClose`. If
+/// `onClose` is omitted, the effect also runs after this callback returns.
 typedef SubPickerOnChange<K> =
     FutureOr<void> Function(PickerDelta<K> delta, void Function() notifyParent);
 
@@ -20,13 +23,12 @@ typedef SubPickerOnChange<K> =
 /// Auxiliary-list membership and parent selection are independent by default.
 /// The usual path updates the open parent's pending checkboxes after a
 /// successful `onClose`. If `onClose` is omitted, the effect applies after
-/// each accepted `onChange`. Call `notifyParent()` from `onChange` only when
-/// `onClose` is also set and the parent should update immediately. That delta
-/// is not applied again on close. `onChange` is not a persist signal when
-/// `onClose` is present. They do not run while the write is in flight. A
-/// thrown persist or Close without saving leaves the parent unchanged. A save
-/// that completes after disposal is ignored. They do not persist parent
-/// selection or create parent `onChange` / `onClose` deltas.
+/// each accepted `onChange`. See [SubPickerOnChange] for when to call
+/// `notifyParent()`. `onChange` is not a persist signal when `onClose` is
+/// present. They do not run while the write is in flight. A thrown persist or
+/// Close without saving leaves the parent unchanged. A save that completes
+/// after disposal is ignored. They do not persist parent selection or create
+/// parent `onChange` / `onClose` deltas.
 enum SubPickerParentSelectionEffect {
   /// Do not modify the parent picker's pending selection.
   none,

@@ -18,7 +18,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 | --- | --- |
 | Save the whole session delta when the popup closes | `onClose` |
 | Save each accepted delta as it happens | `onChange` |
-| Nested sublist membership | `SubPickerTile` + `onClose` (or `onChange` if `onClose` is omitted; call `notifyParent` from `onChange` for immediate parent sync) |
+| Nested sublist membership | `SubPickerTile` + `onClose`; call `notifyParent()` after every successful `onChange` for immediate parent sync, or never in that session |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
 
@@ -200,9 +200,11 @@ SubPickerTile<Person>(
 )
 ```
 
-Usual parent sync is that successful `onClose`. For immediate parent
-checkboxes while the child is still open, persist from `onChange` and call
-`notifyParent()` after the write:
+Usual parent sync is that successful `onClose`. When `onClose` is also set,
+call `notifyParent()` after every successfully handled `onChange` if the
+parent should update immediately. Do not call it selectively within one
+open session. If it is never called, the parent effect runs once after a
+successful `onClose`.
 
 ```dart
 onChange: (delta, notifyParent) async {
@@ -214,10 +216,8 @@ onChange: (delta, notifyParent) async {
 
 Choose `selectAdded` to check additions, `deselectRemoved` to uncheck removals,
 or `mirror` to do both. `none` is the default. These effects change the open
-parent's pending checkboxes after a successful `onClose`. If `onClose` is
-omitted, the effect applies after each accepted `onChange`. Call
-`notifyParent()` from `onChange` only when `onClose` is also set and the
-parent should update immediately; it is not applied again on close. They do
+parent's pending checkboxes after a successful `onClose`, or after each
+accepted `onChange` when `onClose` is omitted. They do
 not persist parent selection, change the parent's `initialSelectedIds`, or
 create a parent `onChange` / `onClose` delta. If parent selection and
 sub-list membership are separate backend records, the child's `onChange` or

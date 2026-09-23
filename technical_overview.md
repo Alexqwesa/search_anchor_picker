@@ -109,9 +109,9 @@ options. Parent selection and sub-list membership are independent by default.
 `deselectRemoved`, and `mirror` values apply either or
 both sides of a successful child persist into the open parent's pending set.
 They follow a successful `onClose` by default. If `onClose` is omitted,
-the effect applies after each accepted `onChange`. Call `notifyParent()`
-from `onChange` only for immediate parent updates when `onClose` is also
-set; it is not applied again on close. `syncPending` applies
+the effect applies after each accepted `onChange`. When `onClose` is also
+set, call `notifyParent()` after every successful `onChange` for immediate
+parent sync, or never in that session. `syncPending` applies
 the update on the next frame. A failed write or Close without saving leaves
 the parent unchanged. The parent search field shows a spinner while the
 child write is in flight; close already waits for in-flight `onChange`.
