@@ -194,7 +194,7 @@ class _NestedCardState extends State<NestedCard> {
         triggerBuilder: (context, open, _) => peopleFieldTrigger(
           open,
           _fieldChipIds,
-          onDeleted: (id) => setState(() => _deleteChip(id)),
+          onDeleted: _deleteChip,
         ),
       ),
     );
@@ -260,15 +260,35 @@ class _NestedCardState extends State<NestedCard> {
     }
   }
 
-  void _deleteChip(int id) {
-    _selected.remove(id);
-    if (widget.relation == NestedRelation.direct ||
-        widget.relation == NestedRelation.unrelatedField) {
-      final delta = PickerDelta<int>(added: const {}, removed: {id});
-      for (final ids in [_directory, _watchlist, _team]) {
-        if (ids.contains(id)) _persistSublist(ids, delta);
-      }
+  Future<void> _deleteChip(int id) async {
+    final person = people.where((item) => item.id == id).firstOrNull;
+    final removesFromSublist =
+        widget.relation == NestedRelation.direct ||
+        widget.relation == NestedRelation.unrelatedField;
+    final inRelatedList =
+        _directory.contains(id) ||
+        _watchlist.contains(id) ||
+        _team.contains(id);
+    final needsConfirm =
+        (person?.inUse ?? false) || (removesFromSublist && inRelatedList);
+    if (needsConfirm && person != null) {
+      final allowed = await applyRelatedListUnselectPolicy(
+        context,
+        peopleConfig(),
+        person,
+        PickerUnselectPolicy.confirm,
+      );
+      if (!allowed || !mounted) return;
     }
+    setState(() {
+      _selected.remove(id);
+      if (removesFromSublist) {
+        final delta = PickerDelta<int>(added: const {}, removed: {id});
+        for (final ids in [_directory, _watchlist, _team]) {
+          if (ids.contains(id)) _persistSublist(ids, delta);
+        }
+      }
+    });
   }
 
   void _persistSublist(Set<int> ids, PickerDelta<int> delta) {

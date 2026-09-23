@@ -200,27 +200,10 @@ PickerConfig<Person>(
         related: RelatedStatus.knownDirectory,
       ),
       const SimpleCard(
-        title: 'In-use blocked',
-        persistLabel: 'onClose',
-        difference:
-            'Alan and Margaret are in use. Unselect is blocked and shows the in-use warning. The unselect policy runs before the checkbox moves; a blocked row never reaches onChange.',
-        source: r'''
-PickerConfig<Person>(
-  relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
-    unselectPolicy: person.inUse
-        ? PickerUnselectPolicy.blocked
-        : PickerUnselectPolicy.allow,
-  ),
-);
-''',
-        seed: {1, 2, 5},
-        related: RelatedStatus.blockedInUse,
-      ),
-      const SimpleCard(
         title: 'In-use confirm',
         persistLabel: 'onClose',
         difference:
-            'Unchecking a directory member asks for confirmation. Cancel leaves the checkbox selected.',
+            'Unchecking a directory member in the list or from a field chip asks for confirmation. Cancel leaves them selected. Katherine is not in the directory and can leave without a prompt.',
         source: r'''
 PickerConfig<Person>(
   relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(

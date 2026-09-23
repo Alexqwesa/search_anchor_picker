@@ -36,18 +36,10 @@ PickerRelatedListItemStatus? relatedStatus(
             ? PickerAuxiliaryMembership.member
             : PickerAuxiliaryMembership.unknown,
       );
-    case RelatedStatus.blockedInUse:
-      return PickerRelatedListItemStatus(
-        auxiliaryMembership: knownDirectoryIds.contains(person.id)
-            ? PickerAuxiliaryMembership.member
-            : PickerAuxiliaryMembership.notMember,
-        unselectPolicy: person.inUse
-            ? PickerUnselectPolicy.blocked
-            : PickerUnselectPolicy.allow,
-      );
     case RelatedStatus.lockedInactive:
       return PickerRelatedListItemStatus(selectable: !person.locked);
-    case RelatedStatus.confirmMember:
+    case RelatedStatus.blockedInUse :
+    case RelatedStatus.confirmMember :
       return PickerRelatedListItemStatus(
         auxiliaryMembership: knownDirectoryIds.contains(person.id)
             ? PickerAuxiliaryMembership.member
@@ -206,14 +198,39 @@ class _SimpleCardState extends State<SimpleCard> {
             triggerBuilder: (context, open, _) => peopleFieldTrigger(
               open,
               _selected,
-              onDeleted: (id) => setState(() => _selected.remove(id)),
+              onDeleted: _deleteChip,
               selectionMode: widget.mode,
               showChips: widget.showChips,
             ),
           ),
+          if (widget.related == RelatedStatus.confirmMember) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Require confirmation: ${namesOf(knownDirectoryIds)}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _deleteChip(int id) async {
+    final person = people.where((item) => item.id == id).firstOrNull;
+    if (person != null && widget.related != RelatedStatus.none) {
+      final status = relatedStatus(widget.related, person)!;
+      final allowed = await applyRelatedListUnselectPolicy(
+        context,
+        peopleConfig(
+          relatedListItemStatusOf: (item) =>
+              relatedStatus(widget.related, item)!,
+        ),
+        person,
+        status.unselectPolicy,
+      );
+      if (!allowed || !mounted) return;
+    }
+    setState(() => _selected.remove(id));
   }
 
   List<Widget> _bulkButtons(GenericPickerController<Person, int> controller) {
