@@ -1083,7 +1083,8 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'loadItems returns only the first four people (it ignores query). Radia stays selected even though she is not on the loaded page. Typing still filters that page locally — Linus will not appear until loadItems uses query. Compare with Server search, default search field.',
+            'loadItems returns only the first four people (it ignores query). Radia stays selected even though she is not on the loaded page. Typing still filters that page locally — Linus will not appear until loadItems uses query. Compare with Server search, default search field.\n\n'
+            'Leave “Show warning on hidden chip” on and tap Radia’s chip X: she is not on this page, so a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
         source: r'''
 PickerConfig<Person>(
   loadItems: (_, _) async => people.take(4).toList(),
@@ -1091,9 +1092,20 @@ PickerConfig<Person>(
   labelOf: (person) => person.name,
   searchTermsOf: (person) => [person.name],
 );
+
+// Chip X is outside the picker session.
+onDeleted: (id) async {
+  if (!loadedPage.contains(id)) {
+    final ok = await confirmHiddenChip(id);
+    if (!ok) return;
+  }
+  selected.remove(id);
+}
 ''',
         seed: const {1, 12},
         loadItems: (_, _) async => people.take(4).toList(),
+        warnHiddenChip: true,
+        visibleCatalogIds: {for (final person in people.take(4)) person.id},
       ),
       const ServerSearchCard(),
       const NestedCard(

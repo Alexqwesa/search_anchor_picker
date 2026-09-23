@@ -31,8 +31,8 @@ PickerRelatedListItemStatus? relatedStatus(
       );
     case RelatedStatus.lockedInactive:
       return PickerRelatedListItemStatus(selectable: !person.locked);
-    case RelatedStatus.blockedInUse :
-    case RelatedStatus.confirmMember :
+    case RelatedStatus.blockedInUse:
+    case RelatedStatus.confirmMember:
       return PickerRelatedListItemStatus(
         auxiliaryMembership: knownDirectoryIds.contains(person.id)
             ? PickerAuxiliaryMembership.member
@@ -73,6 +73,8 @@ class SimpleCard extends StatefulWidget {
     this.noResultsText,
     this.showChips = true,
     this.emptyCatalog = false,
+    this.warnHiddenChip = false,
+    this.visibleCatalogIds,
   });
 
   final String title;
@@ -101,6 +103,8 @@ class SimpleCard extends StatefulWidget {
   final String? noResultsText;
   final bool showChips;
   final bool emptyCatalog;
+  final bool warnHiddenChip;
+  final Set<int>? visibleCatalogIds;
 
   @override
   State<SimpleCard> createState() => _SimpleCardState();
@@ -109,6 +113,7 @@ class SimpleCard extends StatefulWidget {
 class _SimpleCardState extends State<SimpleCard> {
   late final Set<int> _selected;
   bool _fail = true;
+  bool _warnHiddenChip = true;
 
   @override
   void initState() {
@@ -139,6 +144,21 @@ class _SimpleCardState extends State<SimpleCard> {
                         setState(() => _fail = value ?? false),
                   ),
                   Text(_failLabel),
+                ],
+              ),
+            ),
+          if (widget.warnHiddenChip)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Checkbox(
+                    value: _warnHiddenChip,
+                    onChanged: (value) =>
+                        setState(() => _warnHiddenChip = value ?? false),
+                  ),
+                  const Text('Show warning on hidden chip'),
                 ],
               ),
             ),
@@ -223,7 +243,44 @@ class _SimpleCardState extends State<SimpleCard> {
       );
       if (!allowed || !mounted) return;
     }
+    if (widget.warnHiddenChip && _warnHiddenChip && _isHiddenChip(id)) {
+      final allowed = await _confirmHiddenChip(id);
+      if (!allowed || !mounted) return;
+    }
     setState(() => _selected.remove(id));
+  }
+
+  bool _isHiddenChip(int id) {
+    final visible = widget.visibleCatalogIds;
+    if (visible == null) return false;
+    return !visible.contains(id);
+  }
+
+  Future<bool> _confirmHiddenChip(int id) async {
+    final name = personName(id);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Hidden selection'),
+          content: Text(
+            '$name is selected but not on this page. '
+            'Remove the chip? You cannot pick $name again from this list.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
   }
 
   List<Widget> _bulkButtons(GenericPickerController<Person, int> controller) {
