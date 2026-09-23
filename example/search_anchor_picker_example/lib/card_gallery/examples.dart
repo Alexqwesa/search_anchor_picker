@@ -1096,22 +1096,41 @@ PickerConfig<Person>(
         loadItems: (_, _) async => people.take(4).toList(),
       ),
       const ServerSearchCard(),
-      const SimpleCard(
-        title: 'Related-list unknown',
-        persistLabel: 'onClose',
+      const NestedCard(
+        title: 'Related-list + unknown',
+        persistLabel: 'child onClose, parent onClose',
         difference:
-            'Directory page is partial. Absence is unknown, not notMember. Unselect is still allowed.',
+            'The main list does not have a full directory. A filled person icon means the Directory sublist has already seen that person (Ada, Margaret). Everyone else is unknown (search icon) — not “not a member”. Unselect is still allowed.\n\n'
+            'The main list does not have a full directory. A filled person icon means Directory already contains that person (Ada, Margaret). Everyone else is unknown (search icon), not “not a member”. Those people can appear as rows; membership is not a parent checkbox.\n\n'
+            'Close Directory writes only IDs you added in that session onto the field and parent checks. An empty close does not select Margaret or put Ada back. Add Alan in Directory, then close: he is checked and becomes a known member.',
         source: r'''
-PickerConfig<Person>(
-  relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
-    auxiliaryMembership: pagedDirectory.contains(person.id)
-        ? PickerAuxiliaryMembership.member
-        : PickerAuxiliaryMembership.unknown,
+SearchAnchorPicker<Person>(
+  config: peopleConfig(
+    relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
+      auxiliaryMembership: directory.contains(person.id)
+          ? PickerAuxiliaryMembership.member
+          : PickerAuxiliaryMembership.unknown,
+    ),
   ),
+  headerBuilder: (context, controller, items) => [
+    SubPickerTile<Person>(
+      title: 'Directory',
+      initialSelectedIds: directory.toList(),
+      onClose: (result) {
+        writeDirectory(result);
+        selected.addAll(result.added);
+        controller.syncPending(added: result.added);
+      },
+    ),
+  ],
 );
 ''',
-        seed: {1, 4},
-        related: RelatedStatus.pagedDirectory,
+        relatedOnParent: true,
+        relatedUnknown: true,
+        addChildSelectionToParent: true,
+        childPersist: Persist.close,
+        directorySeed: pagedDirectoryIds,
+        sublists: 1,
       ),
     ],
   ),

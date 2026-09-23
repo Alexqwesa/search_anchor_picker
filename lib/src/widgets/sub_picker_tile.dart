@@ -156,6 +156,7 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
       final user = _onChange;
       return super.createPicker(
         onChange: user == null ? null : (delta) => user(delta, () {}),
+        onClose: this.onClose,
       );
     }
     return _ParentEffectHost<T, K>(

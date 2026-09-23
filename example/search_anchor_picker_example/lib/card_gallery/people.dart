@@ -111,6 +111,19 @@ void applyDelta(Set<int> ids, PickerDelta<int> delta) {
     ..removeAll(delta.removed);
 }
 
+/// Persist only explicit child-session adds onto the parent field.
+///
+/// An empty close does not write. Directory membership is not a selection.
+void persistExplicitChildAdds(
+  Set<int> selected,
+  PickerDelta<int> delta, {
+  void Function(Iterable<int> added)? syncParent,
+}) {
+  if (delta.added.isEmpty) return;
+  selected.addAll(delta.added);
+  syncParent?.call(delta.added);
+}
+
 /// Writes field chips for a nested parent-selection effect.
 ///
 /// `syncPending` only moves parent checkboxes. It does not create a parent

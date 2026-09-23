@@ -11,7 +11,6 @@ enum BulkCommands { none, filtered, loaded, all }
 enum RelatedStatus {
   none,
   knownDirectory,
-  pagedDirectory,
   blockedInUse,
   confirmMember,
   lockedInactive,
@@ -29,12 +28,6 @@ PickerRelatedListItemStatus? relatedStatus(
         auxiliaryMembership: knownDirectoryIds.contains(person.id)
             ? PickerAuxiliaryMembership.member
             : PickerAuxiliaryMembership.notMember,
-      );
-    case RelatedStatus.pagedDirectory:
-      return PickerRelatedListItemStatus(
-        auxiliaryMembership: pagedDirectoryIds.contains(person.id)
-            ? PickerAuxiliaryMembership.member
-            : PickerAuxiliaryMembership.unknown,
       );
     case RelatedStatus.lockedInactive:
       return PickerRelatedListItemStatus(selectable: !person.locked);

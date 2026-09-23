@@ -41,6 +41,9 @@ class NestedCard extends StatefulWidget {
     this.sublists = 2,
     this.deep = false,
     this.relatedOnParent = false,
+    this.relatedUnknown = false,
+    this.addChildSelectionToParent = false,
+    this.directorySeed,
     this.childMode = SelectionMode.multi,
     this.childBulk = false,
     this.childLockedInactive = false,
@@ -64,6 +67,16 @@ class NestedCard extends StatefulWidget {
   final int sublists;
   final bool deep;
   final bool relatedOnParent;
+
+  /// When [relatedOnParent] is set, absence is [PickerAuxiliaryMembership.unknown]
+  /// instead of [PickerAuxiliaryMembership.notMember].
+  final bool relatedUnknown;
+
+  /// After a child persist, copy that sublist's selected IDs onto the parent.
+  final bool addChildSelectionToParent;
+
+  /// Initial Directory membership. Defaults to [knownDirectoryIds].
+  final Set<int>? directorySeed;
   final SelectionMode childMode;
   final bool childBulk;
   final bool childLockedInactive;
@@ -81,20 +94,28 @@ class NestedCard extends StatefulWidget {
 
 class _NestedCardState extends State<NestedCard> {
   final Set<int> _selected = {1, 4};
-  final Set<int> _directory = {...knownDirectoryIds};
+  late final Set<int> _directory;
   final Set<int> _watchlist = {...knownWatchlistIds};
   final Set<int> _team = {...knownTeamIds};
   final Set<int> _favorites = {1};
-  Set<int>? _directStayOpenSeed;
+  Set<int>? _parentOpenSeed;
+  final ValueNotifier<int> _relatedTick = ValueNotifier(0);
 
   @override
   void initState() {
     super.initState();
+    _directory = {...widget.directorySeed ?? knownDirectoryIds};
     if (widget.relation == NestedRelation.direct) {
       _selected
         ..clear()
         ..addAll(_sublistUnion);
     }
+  }
+
+  @override
+  void dispose() {
+    _relatedTick.dispose();
+    super.dispose();
   }
 
   bool get _hasWatchlist => widget.sublists >= 2;
@@ -137,8 +158,13 @@ class _NestedCardState extends State<NestedCard> {
               ? (person) => PickerRelatedListItemStatus(
                   auxiliaryMembership: _directory.contains(person.id)
                       ? PickerAuxiliaryMembership.member
+                      : widget.relatedUnknown
+                      ? PickerAuxiliaryMembership.unknown
                       : PickerAuxiliaryMembership.notMember,
                 )
+              : null,
+          relatedListItemStatusListenable: widget.relatedOnParent
+              ? _relatedTick
               : null,
         ),
         initialSelectedIds: _parentOpenIds.toList(),
@@ -148,14 +174,14 @@ class _NestedCardState extends State<NestedCard> {
         onChange: widget.parentPersist == Persist.change
             ? (delta) => setState(() {
                 applyDelta(_selected, delta);
-                _directStayOpenSeed = null;
+                _parentOpenSeed = null;
               })
             : null,
         onClose: widget.parentPersist == Persist.close
             ? (result) {
                 setState(() {
                   applyDelta(_selected, result);
-                  _directStayOpenSeed = null;
+                  _parentOpenSeed = null;
                 });
               }
             : null,
@@ -213,6 +239,9 @@ class _NestedCardState extends State<NestedCard> {
       case NestedRelation.unrelatedField:
       case NestedRelation.reverseAppear:
       case NestedRelation.reverseAvailable:
+        if (widget.addChildSelectionToParent) {
+          return {...shortMainIds, ..._directory, ..._selected};
+        }
         return widget.shortMainList
             ? shortMainIds
             : {for (final p in people) p.id};
@@ -232,13 +261,13 @@ class _NestedCardState extends State<NestedCard> {
     }
   }
 
-  /// Seed at open. Direct-stay freezes the field so child writes cannot
-  /// reseed live parent checkboxes.
+  /// Seed at open. Frozen so child writes cannot reseed live checkboxes.
   Set<int> get _parentOpenIds {
-    if (widget.relation != NestedRelation.directStay) {
+    if (widget.relation != NestedRelation.directStay &&
+        !widget.addChildSelectionToParent) {
       return _parentCheckedIds;
     }
-    return _directStayOpenSeed ??= {..._selected};
+    return _parentOpenSeed ??= {..._selected};
   }
 
   /// Chips on the field. Direct follows sublists; unrelated extras are a union.
@@ -325,7 +354,15 @@ class _NestedCardState extends State<NestedCard> {
       case NestedRelation.reverseAvailable:
         _persistSublist(ids, delta);
         applyEffectToSelection(_selected, _effect, delta);
+        if (widget.addChildSelectionToParent) {
+          persistExplicitChildAdds(
+            _selected,
+            delta,
+            syncParent: (added) => parent.syncPending(added: added),
+          );
+        }
     }
+    if (widget.relatedOnParent) _relatedTick.value++;
   }
 
   Object? get _parentReloadKey {
@@ -338,6 +375,9 @@ class _NestedCardState extends State<NestedCard> {
       case NestedRelation.unrelatedField:
       case NestedRelation.reverseAppear:
       case NestedRelation.reverseAvailable:
+        if (widget.addChildSelectionToParent) {
+          return {...shortMainIds, ..._directory, ..._selected};
+        }
         return widget.shortMainList ? shortMainIds : null;
     }
   }

@@ -931,4 +931,35 @@ void main() {
       moreOrLessEquals(expectedBaseRect.top + menuOffset.dy, epsilon: 1),
     );
   });
+
+  testWidgets('onClose still runs when parentSelectionEffect is none', (
+    tester,
+  ) async {
+    final closes = <PickerDelta<int>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Child',
+            config: PickerConfig<int>(
+              loadItems: (_, _) async => [1, 2],
+              idOf: (item) => item,
+              labelOf: (item) => 'Item $item',
+              searchTermsOf: (item) => ['$item'],
+            ),
+            initialSelectedIds: const [1],
+            onClose: closes.add,
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Child'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(closes, hasLength(1));
+    expect(closes.single.added, {2});
+  });
 }
