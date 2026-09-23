@@ -78,22 +78,16 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
 
   @override
   Widget build(BuildContext context) {
-    final parts = <String>['Directory: ${namesOf(_directory)}'];
-    if (widget.sublists >= 2) {
-      parts.add('Watchlist: ${namesOf(_watchlist)}');
-    }
-    if (widget.sublists >= 3) {
-      parts.add('Team: ${namesOf(_team)}');
-    }
     return ExampleCard(
       title: widget.title,
       persist: widget.persistLabel,
       difference: widget.difference,
       source: widget.source,
-      footer: Text(
-        parts.join(' · '),
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
+      footer: namedSetFooter(context, [
+        ('Directory', _directory),
+        if (widget.sublists >= 2) ('Watchlist', _watchlist),
+        if (widget.sublists >= 3) ('Team', _team),
+      ]),
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: widget.title,

@@ -127,9 +127,7 @@ class _NestedCardState extends State<NestedCard> {
       persist: widget.persistLabel,
       difference: widget.difference,
       source: widget.source,
-      footer: _showFooter
-          ? Text(_footer, style: Theme.of(context).textTheme.bodySmall)
-          : null,
+      footer: _showFooter ? _footer(context) : null,
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(
           title: widget.title,
@@ -225,9 +223,7 @@ class _NestedCardState extends State<NestedCard> {
   Set<int> get _parentCheckedIds {
     switch (widget.relation) {
       case NestedRelation.direct:
-        return {..._selected};
       case NestedRelation.directStay:
-        return {..._selected, ..._sublistUnion};
       case NestedRelation.unrelated:
       case NestedRelation.unrelatedField:
       case NestedRelation.reverseAppear:
@@ -236,13 +232,13 @@ class _NestedCardState extends State<NestedCard> {
     }
   }
 
-  /// Seed at open. Direct-stay freezes it so child writes cannot reseed
-  /// live parent checkboxes back to field ∪ union.
+  /// Seed at open. Direct-stay freezes the field so child writes cannot
+  /// reseed live parent checkboxes.
   Set<int> get _parentOpenIds {
     if (widget.relation != NestedRelation.directStay) {
       return _parentCheckedIds;
     }
-    return _directStayOpenSeed ??= {..._selected, ..._sublistUnion};
+    return _directStayOpenSeed ??= {..._selected};
   }
 
   /// Chips on the field. Direct follows sublists; unrelated extras are a union.
@@ -348,12 +344,13 @@ class _NestedCardState extends State<NestedCard> {
 
   bool get _showFooter => widget.relation != NestedRelation.unrelatedField;
 
-  String get _footer {
-    final parts = <String>['Directory: ${namesOf(_directory)}'];
-    if (_hasWatchlist) parts.add('Watchlist: ${namesOf(_watchlist)}');
-    if (_hasTeam) parts.add('Team: ${namesOf(_team)}');
-    if (widget.deep) parts.add('Favorites: ${namesOf(_favorites)}');
-    return parts.join(' · ');
+  Widget _footer(BuildContext context) {
+    return namedSetFooter(context, [
+      ('Directory', _directory),
+      if (_hasWatchlist) ('Watchlist', _watchlist),
+      if (_hasTeam) ('Team', _team),
+      if (widget.deep) ('Favorites', _favorites),
+    ]);
   }
 
   Widget _sublistTile({

@@ -84,6 +84,27 @@ String namesOf(Set<int> ids) {
   return (ids.toList()..sort()).map(personName).join(', ');
 }
 
+/// Footer like **Directory:** Ada, Alan · **Watchlist:** Grace.
+Widget namedSetFooter(
+  BuildContext context,
+  List<(String, Set<int>)> parts,
+) {
+  final style = Theme.of(context).textTheme.bodySmall;
+  final labelStyle = style?.copyWith(fontWeight: FontWeight.bold);
+  return Text.rich(
+    TextSpan(
+      style: style,
+      children: [
+        for (var i = 0; i < parts.length; i++) ...[
+          if (i > 0) const TextSpan(text: ' · '),
+          TextSpan(text: '${parts[i].$1}: ', style: labelStyle),
+          TextSpan(text: namesOf(parts[i].$2)),
+        ],
+      ],
+    ),
+  );
+}
+
 void applyDelta(Set<int> ids, PickerDelta<int> delta) {
   ids
     ..addAll(delta.added)
