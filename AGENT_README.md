@@ -37,6 +37,8 @@ Preserve these properties across every change:
   status, membership icons, and unselect policy on top of core overlay
   behavior.
 - `lib/src/picker_config.dart`: public configuration and picker controller API.
+- `lib/src/debouncer.dart`: general `Debouncer` for any chatty API. Use it (or
+  an equivalent) around remote `loadItems`; the picker does not debounce.
 - `lib/src/picker_status.dart`: `PickerRelatedListItemStatus` and related
   membership/unselect types.
 - `lib/src/widgets/sub_picker_tile.dart`: nested `SubPickerTile` and

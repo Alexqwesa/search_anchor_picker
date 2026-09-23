@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
+import 'package:search_anchor_picker/src/debouncer.dart';
 import 'package:search_anchor_picker/src/raw/picker_builders.dart';
 import 'package:search_anchor_picker/src/raw/search_anchor_picker.dart'
     show GenericRawSearchAnchorPicker, RawSearchAnchorPicker;
@@ -121,6 +122,23 @@ class GenericRawPickerConfig<T, K> {
   /// filters the snapshot. A custom
   /// [GenericRawSearchAnchorPicker.searchFieldBuilder] must call
   /// [GenericRawPickerController.refresh] itself if typing should reload.
+  ///
+  /// Remote search should debounce that callback (or the API behind it). The
+  /// picker does not. Use [Debouncer] or an equivalent gate:
+  ///
+  /// ```dart
+  /// final debounce = Debouncer();
+  ///
+  /// Future<List<Person>> searchPeople(String query) {
+  ///   if (query.isEmpty) return api.searchPeople(query);
+  ///   return debounce.run(() => api.searchPeople(query));
+  /// }
+  ///
+  /// PickerConfig(
+  ///   searchMode: PickerSearchMode.remote,
+  ///   loadItems: (context, query) => searchPeople(query),
+  /// )
+  /// ```
   final LoadItems<T> loadItems;
 
   /// Returns a stable identifier for [T].

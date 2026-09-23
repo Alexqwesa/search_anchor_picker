@@ -30,12 +30,16 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
           '→ Linus Torvalds\n\n'
           'Ada’s chip stays while she is missing from that page. The footer is the last request and the people the fake server returned.',
       source: r'''
+final debounce = Debouncer();
+
+Future<List<Person>> searchPeople(String query) {
+  if (query.isEmpty) return api.searchPeople(query);
+  return debounce.run(() => api.searchPeople(query));
+}
+
 PickerConfig(
   searchMode: PickerSearchMode.remote,
-  loadItems: (context, query) {
-    // Called on open (query == '') and on each search-box change.
-    return api.searchPeople(query);
-  },
+  loadItems: (context, query) => searchPeople(query),
 );
 ''',
       footer: Text(

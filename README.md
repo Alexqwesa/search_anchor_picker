@@ -38,8 +38,8 @@ final selectedIds = <int>{};
 SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
-    loadItems: (context, query) => api.searchPeople(query),
     searchMode: PickerSearchMode.remote,
+    loadItems: (context, query) => searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
   ),
@@ -318,12 +318,26 @@ Closing waits for in-flight `onChange` work to settle.
 required.
 
 ```dart
+final debounce = Debouncer();
+
+Future<List<Person>> searchPeople(String query) {
+  if (query.isEmpty) return api.searchPeople(query);
+  return debounce.run(() => api.searchPeople(query));
+}
+
 PickerConfig(
   searchMode: PickerSearchMode.remote, // reload(query), show that page
-  loadItems: (context, query) => api.searchPeople(query),
+  loadItems: (context, query) => searchPeople(query),
   // idOf, labelOf...
 )
+```
 
+The picker does not debounce. Wrap a remote `loadItems` (or the API behind it)
+with `Debouncer` or the same idea in the repository so typing does not start
+one request per keystroke. Skip the wait when `query` is empty so open is not
+delayed. Stale completions are already ignored.
+
+```dart
 PickerConfig(
   // searchMode: local (default): load once, filter with searchTermsOf
   loadItems: (context, query) => catalog,

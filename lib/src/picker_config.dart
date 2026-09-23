@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:search_anchor_picker/src/picker_status.dart';
 import 'package:search_anchor_picker/src/raw/picker_config.dart';
 
+export 'package:search_anchor_picker/src/debouncer.dart';
+
 export 'package:search_anchor_picker/src/raw/picker_config.dart'
     show
         CloseQueryBehavior,

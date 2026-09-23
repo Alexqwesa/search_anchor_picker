@@ -18,7 +18,9 @@ Breaking vs 0.1.1:
 * `loadItems` is `(context, query)`. `PickerSearchMode` chooses what typing
   does: `local` (default) loads once and filters the snapshot;
   `remote` reloads and trusts the page; `hybrid` does both.
-  `searchTermsOf` is optional and unused in `remote`.
+  `searchTermsOf` is optional and unused in `remote`. Debounce remote
+  `loadItems` (or the API) with exist `Debouncer` or your equivalent; the picker
+  does not.
 
 Also:
 

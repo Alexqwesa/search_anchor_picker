@@ -32,11 +32,18 @@ do not write). A later `initialSelectedIds` change reseeds checkboxes only.
 ## Basic integration
 
 ```dart
+final debounce = Debouncer();
+
+Future<List<Person>> searchPeople(String query) {
+  if (query.isEmpty) return api.searchPeople(query);
+  return debounce.run(() => api.searchPeople(query));
+}
+
 SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
-    loadItems: (context, query) => api.searchPeople(query),
     searchMode: PickerSearchMode.remote,
+    loadItems: (context, query) => searchPeople(query),
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
   ),
@@ -71,6 +78,8 @@ Follow these invariants:
 calls `loadItems` on open and filters the snapshot with `searchTermsOf`.
 `remote` reloads with the box text and shows that page as-is (`searchTermsOf`
 is unused). `hybrid` reloads, then filters the returned page locally.
+Debounce a remote search with `Debouncer` (or an equivalent API gate); the
+picker does not. Skip the wait when `query` is empty.
 
 ## Observables
 
