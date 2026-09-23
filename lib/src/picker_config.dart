@@ -26,8 +26,9 @@ T? _copyOrKeep<T>(Object? value, T? current) {
 /// Adds related-list membership and unselect policy on top of
 /// [GenericRawPickerConfig]. Visual rebuilds from
 /// [relatedListItemStatusListenable] do not reload [itemsLoader]. One
-/// instance binds to one picker; [GenericRawPickerConfig.copyWith] returns
-/// an unbound copy.
+/// instance binds to one picker ([GenericRawPickerConfig.isAttached],
+/// [GenericRawPickerConfig.isOpen]); [GenericRawPickerConfig.copyWith]
+/// returns an unbound copy.
 class GenericPickerConfig<T, K> extends GenericRawPickerConfig<T, K> {
   GenericPickerConfig({
     required super.itemsLoader,

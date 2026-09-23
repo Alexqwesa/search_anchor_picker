@@ -100,7 +100,8 @@ single-selection modes, bulk controller commands, and nested picker synchronizat
 Keep reload invalidation explicit. Inline `PickerConfig(...)` objects are normal
 Flutter usage and may be recreated on every parent build. Such replacement must
 not cause I/O or loops. One config instance binds to one picker; `copyWith()`
-is the unbound copy for a second widget. `reloadKey` changes may be coalesced within one frame;
+is the unbound copy for a second widget. `queryController` is query text.
+`PickerConfig.open` / `close` / `isAttached` / `isOpen` control the overlay. `reloadKey` changes may be coalesced within one frame;
 all reload paths must retain stale-request suppression and closed-picker lazy
 subscription behavior.
 

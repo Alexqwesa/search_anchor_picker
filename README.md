@@ -133,8 +133,11 @@ outside area, so its default search field always provides a localized back
 button. Supplying `viewLeading` replaces that button, and a custom
 `searchFieldBuilder` replaces the whole field; custom versions must expose the
 provided `close` callback when users otherwise have no visible way to leave.
-Wire the given `SearchController` into the field — the picker watches its text
-while open, including programmatic changes.
+Pass a `TextEditingController` as `queryController` and wire it into a custom
+field — the picker watches `.text` while open, including programmatic
+writes. Open and close with `config.open()` / `config.close()`.
+`config.isAttached` is whether a picker is bound; `config.isOpen` is
+whether that overlay is showing.
 
 ## Optional default widgets
 
@@ -341,7 +344,7 @@ SearchAnchorPicker(
     // idOf, labelOf...
   ),
   onQueryChanged: (query) {
-    // Active query, including programmatic SearchController changes.
+    // Active query, including programmatic queryController.text writes.
   },
 )
 ```
@@ -414,6 +417,10 @@ Persist `added` and `removed`, applied to the seed you already hold. A load
 error or empty search is not a deletion.
 `initialSelectedIds` is only the seed for the next open, from your selected
 IDs.
+
+## Todo:
+
+Maybe rename open() -> openView(), close([reason]) -> closeView(selectedText) as in SearchAnchor?
 
 ## License
 

@@ -163,7 +163,7 @@ class DefaultPickerSearchField extends StatelessWidget {
     this.smartQuotesType,
   });
 
-  final SearchController controller;
+  final TextEditingController controller;
   final FocusNode? focusNode;
   final VoidCallback? clearQuery;
   final VoidCallback close;

@@ -30,7 +30,7 @@ class OverlayBody<T, K> extends StatefulWidget {
 
   final List<Widget> header;
   final List<T> stableOrder;
-  final SearchController ctrl;
+  final TextEditingController ctrl;
   final ValueNotifier<Set<K>> pendingN;
   final SelectionMode selectionMode;
   final GenericRawPickerConfig<T, K> config;

@@ -62,9 +62,11 @@ enum PickerUnselectPolicy {
 /// - how to identify an item
 /// - how to render / search an item
 ///
-/// One picker widget may bind this instance. [open] and [close] then control
-/// that widget. Binding a second picker throws. [copyWith] returns an unbound
-/// copy so two widgets can share loaders without sharing the bind.
+/// One picker widget may bind this instance. [open] / [close] / [isOpen] then
+/// control that widget, like `SearchController` for a SearchAnchor.
+/// [isAttached] is whether a picker is bound. Binding a second picker throws.
+/// [copyWith] returns an unbound copy so two widgets can share loaders
+/// without sharing the bind.
 ///
 /// In-overlay selection lives in an internal [ValueNotifier] while the popup is open.
 ///
@@ -95,14 +97,16 @@ class GenericRawPickerConfig<T, K> {
 
   VoidCallback? _onOpen;
   void Function([String? reason])? _onClose;
+  bool Function()? _isOpen;
 
-  /// Binds [open] / [close] to one picker.
+  /// Binds [open] / [close] / [isOpen] to one picker.
   ///
   /// Called by [GenericRawSearchAnchorPicker]. A second bind from another
   /// picker throws; use [copyWith] for an unbound copy.
   void bindPicker({
     required VoidCallback onOpen,
     required void Function([String? reason]) onClose,
+    required bool Function() isOpen,
   }) {
     if ((_onOpen != null && !identical(_onOpen, onOpen)) ||
         (_onClose != null && !identical(_onClose, onClose))) {
@@ -113,31 +117,48 @@ class GenericRawPickerConfig<T, K> {
     }
     _onOpen = onOpen;
     _onClose = onClose;
+    _isOpen = isOpen;
   }
 
-  /// Clears [open] / [close] if [onOpen] / [onClose] are the bound callbacks.
+  /// Clears control callbacks if they belong to this picker.
   void unbindPicker({
     required VoidCallback onOpen,
     required void Function([String? reason]) onClose,
   }) {
-    if (identical(_onOpen, onOpen)) _onOpen = null;
+    if (identical(_onOpen, onOpen)) {
+      _onOpen = null;
+      _isOpen = null;
+    }
     if (identical(_onClose, onClose)) _onClose = null;
+  }
+
+  /// Whether a picker widget is currently bound to this config.
+  bool get isAttached => _onOpen != null && _onClose != null;
+
+  /// Whether the bound picker overlay is open.
+  ///
+  /// Requires [isAttached].
+  bool get isOpen {
+    assert(isAttached);
+    return _isOpen!();
   }
 
   /// Programmatically open the bound picker.
   ///
-  /// No-op if this config is not bound. A config binds to at most one
+  /// Requires [isAttached]. A config binds to at most one
   /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
   void open() {
-    _onOpen?.call();
+    assert(isAttached);
+    _onOpen!();
   }
 
   /// Programmatically close the bound picker.
   ///
-  /// No-op if this config is not bound. A config binds to at most one
+  /// Requires [isAttached]. A config binds to at most one
   /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
   void close([String? reason]) {
-    _onClose?.call(reason);
+    assert(isAttached);
+    _onClose!(reason);
   }
 
   /// Search/display loader.
@@ -148,7 +169,8 @@ class GenericRawPickerConfig<T, K> {
   /// the box text (including clear). [PickerSearchMode.local] loads once and
   /// filters the snapshot. A custom
   /// [GenericRawSearchAnchorPicker.searchFieldBuilder] only needs to use the
-  /// given `SearchController`; the picker watches its text while open.
+  /// given controller as query text; the picker watches that text while open.
+  /// Open and close the overlay with [open] / [close].
   ///
   /// Remote search should debounce that callback (or the API behind it). The
   /// picker does not. Use [Debouncer] or an equivalent gate:

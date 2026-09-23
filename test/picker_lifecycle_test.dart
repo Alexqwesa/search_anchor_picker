@@ -712,17 +712,17 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('external SearchController is never disposed by picker', (
+  testWidgets('external query controller is never disposed by picker', (
     tester,
   ) async {
-    final controller = SearchController();
+    final controller = TextEditingController();
     addTearDown(controller.dispose);
     await tester.pumpWidget(
       MaterialApp(
         home: SearchAnchorPicker<int>(
           config: _config(() async => [1]),
           initialSelectedIds: const [],
-          searchController: controller,
+          queryController: controller,
         ),
       ),
     );

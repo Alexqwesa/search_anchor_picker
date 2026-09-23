@@ -24,7 +24,7 @@ PickerConfig<int> _configFrom(Future<List<int>> Function() load) {
 
 void main() {
   testWidgets('default clear action restores search focus', (tester) async {
-    final controller = SearchController();
+    final controller = TextEditingController();
     addTearDown(controller.dispose);
 
     await tester.pumpWidget(
@@ -33,7 +33,7 @@ void main() {
         home: SearchAnchorPicker<int>(
           config: _config(),
           initialSelectedIds: const [],
-          searchController: controller,
+          queryController: controller,
         ),
       ),
     );
@@ -335,7 +335,7 @@ void main() {
     expect(find.byType(SearchBar), findsOneWidget);
   });
 
-  testWidgets('custom search field reloads from SearchController text', (
+  testWidgets('custom search field reloads from query controller text', (
     tester,
   ) async {
     final queries = <String>[];
@@ -374,17 +374,17 @@ void main() {
   });
 
   testWidgets(
-    'programmatic SearchController text reloads; selection does not',
+    'programmatic query text reloads; selection does not',
     (tester) async {
       final queries = <String>[];
       final changed = <String>[];
-      final controller = SearchController();
+      final controller = TextEditingController();
       addTearDown(controller.dispose);
 
       await tester.pumpWidget(
         MaterialApp(
           home: SearchAnchorPicker<int>(
-            searchController: controller,
+            queryController: controller,
             config: PickerConfig<int>(
               searchMode: PickerSearchMode.remote,
               itemsLoader: (_, query) async {

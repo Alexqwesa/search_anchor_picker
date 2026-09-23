@@ -23,7 +23,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     this.onClose,
     this.closeSavingBuilder,
     this.closeSaveFailedBuilder,
-    this.searchController,
+    this.queryController,
     this.triggerBuilder,
     this.triggerChild,
     this.iconWhenEmpty,
@@ -145,7 +145,14 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   ///
   /// When null, a localized dialog offers keep-editing or close-without-saving.
   final PickerCloseSaveFailedBuilder? closeSaveFailedBuilder;
-  final SearchController? searchController;
+
+  /// Query text for the open search field.
+  ///
+  /// The picker listens to [TextEditingController.text] while open (not
+  /// selection or cursor). Pass this into a custom [searchFieldBuilder]
+  /// [TextField]. Open and close the overlay with
+  /// [GenericRawPickerConfig.open] / [GenericRawPickerConfig.close].
+  final TextEditingController? queryController;
   final Widget Function(BuildContext, VoidCallback, int)? triggerBuilder;
   final Widget? triggerChild;
   final Widget? iconWhenEmpty;
@@ -213,7 +220,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   final TextCapitalization? textCapitalization;
 
   /// Called when the active search query changes, including programmatic
-  /// changes to the supplied [SearchController].
+  /// [TextEditingController.text] writes on [queryController].
   final ValueChanged<String>? onQueryChanged;
   final ValueChanged<String>? viewOnSubmitted;
   final VoidCallback? viewOnClose;
@@ -240,7 +247,7 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     super.onClose,
     super.closeSavingBuilder,
     super.closeSaveFailedBuilder,
-    super.searchController,
+    super.queryController,
     super.triggerBuilder,
     super.triggerChild,
     super.iconWhenEmpty,
@@ -311,8 +318,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
     extends State<GenericRawSearchAnchorPicker<T, K>>
     with TickerProviderStateMixin, WidgetsBindingObserver
     implements _PickerBackTarget {
-  SearchController? _ownedController;
-  SearchController? _listeningController;
+  TextEditingController? _ownedController;
+  TextEditingController? _listeningController;
   String? _observedQuery;
   String _retainedQuery = '';
   FocusNode? _searchFocusNode;
@@ -325,10 +332,10 @@ class _GenericRawSearchAnchorPickerState<T, K>
   ValueNotifier<bool>? _savingNotifier;
   _ChildSavingCount? _childSavingNotifier;
 
-  SearchController get _controller {
-    if (widget.searchController case final external?) return external;
+  TextEditingController get _controller {
+    if (widget.queryController case final external?) return external;
     if (_ownedController case final owned?) return owned;
-    final controller = SearchController()..text = _retainedQuery;
+    final controller = TextEditingController()..text = _retainedQuery;
     PickerResourceTracker.register(controller);
     return _ownedController = controller;
   }
@@ -406,7 +413,11 @@ class _GenericRawSearchAnchorPickerState<T, K>
   }
 
   void _bindConfigControl() {
-    widget.config.bindPicker(onOpen: _requestOpen, onClose: _close);
+    widget.config.bindPicker(
+      onOpen: _requestOpen,
+      onClose: _close,
+      isOpen: () => _open,
+    );
   }
 
   void _unbindConfigControl(GenericRawPickerConfig<T, K> config) {
@@ -540,13 +551,13 @@ class _GenericRawSearchAnchorPickerState<T, K>
       _scheduleReload();
     }
     if (_open &&
-        !identical(oldWidget.searchController, widget.searchController)) {
+        !identical(oldWidget.queryController, widget.queryController)) {
       final previous = _observedQuery;
-      _detachSearchController(oldWidget.searchController);
-      _attachSearchController();
+      _detachQueryController(oldWidget.queryController);
+      _attachQueryController();
       if (previous != _controller.text) {
         _observedQuery = null;
-        _handleSearchControllerChanged();
+        _handleQueryControllerChanged();
       }
     }
 
@@ -574,7 +585,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _disposeChildSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
-    _detachSearchController();
+    _detachQueryController();
     _disposeOwnedController();
     super.dispose();
   }
@@ -643,7 +654,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
       ..add(this);
     _attachListenable(widget.config.listenable);
     _attachRebuildListenable(widget.config.rebuildListenable);
-    _attachSearchController();
+    _attachQueryController();
     WidgetsBinding.instance
       ..removeObserver(this)
       ..addObserver(this);
@@ -722,14 +733,14 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _loadGeneration++;
     _cancelScheduledReload();
     final queryAtClose = _controller.text;
-    final externalController = widget.searchController;
+    final externalController = widget.queryController;
 
     FocusManager.instance.primaryFocus?.unfocus();
     _removeOverlay();
     _clearHeaderKeys();
     _detachListenable(widget.config.listenable);
     _detachRebuildListenable(widget.config.rebuildListenable);
-    _detachSearchController();
+    _detachQueryController();
     _itemsSnapshot = null;
     _stableIds = <K>[];
     _disposeSelectionSession();
@@ -759,23 +770,23 @@ class _GenericRawSearchAnchorPickerState<T, K>
     });
   }
 
-  void _attachSearchController() {
+  void _attachQueryController() {
     final controller = _controller;
     if (identical(_listeningController, controller)) return;
-    _detachSearchController();
+    _detachQueryController();
     _observedQuery = controller.text;
-    controller.addListener(_handleSearchControllerChanged);
+    controller.addListener(_handleQueryControllerChanged);
     _listeningController = controller;
   }
 
-  void _detachSearchController([SearchController? extra]) {
-    extra?.removeListener(_handleSearchControllerChanged);
-    _listeningController?.removeListener(_handleSearchControllerChanged);
+  void _detachQueryController([TextEditingController? extra]) {
+    extra?.removeListener(_handleQueryControllerChanged);
+    _listeningController?.removeListener(_handleQueryControllerChanged);
     _listeningController = null;
     _observedQuery = null;
   }
 
-  void _handleSearchControllerChanged() {
+  void _handleQueryControllerChanged() {
     if (!_open) return;
     final query = _controller.text;
     if (query == _observedQuery) return;

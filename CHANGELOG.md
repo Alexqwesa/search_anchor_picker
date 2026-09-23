@@ -23,9 +23,11 @@ Breaking vs 0.1.1:
   `remote` reloads and trusts the page; `hybrid` does both.
   `searchTermsOf` is optional and unused in `remote`. Debounce remote
   `itemsLoader` (or the API) with `Debouncer` or an equivalent; the picker
-  does not. The open picker watches `SearchController` text (not cursor
+  does not. The open picker watches search-field text (not cursor
   moves) and reloads remote/hybrid from that. `onQueryChanged` includes
-  programmatic query changes.
+  programmatic query changes. `searchController` → `queryController`
+  (`TextEditingController`). Overlay control is on `PickerConfig`:
+  `open()` / `close()`, plus `isAttached` / `isOpen`.
 
 Also:
 

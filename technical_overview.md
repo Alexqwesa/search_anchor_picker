@@ -56,7 +56,9 @@ controller refresh, a configured `Listenable` notification, a changed
 once and filters the snapshot with `searchTermsOf`. `remote` shows the
 returned page as-is. `hybrid` reloads, then filters that page locally.
 Same-frame `reloadKey` changes are coalesced, and the
-next open always uses the latest loader.
+next open always uses the latest loader. `queryController` is query
+text (`TextEditingController`). Overlay control is `PickerConfig.open` /
+`close` / `isAttached` / `isOpen`.
 
 Each load receives a generation number. Only the newest generation may publish
 items or errors, so a slow previous request cannot overwrite a newer server page.

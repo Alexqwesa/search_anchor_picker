@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+/// Builds the open search field.
+///
+/// [controller] is query text. Use [close] to dismiss the overlay
+/// (`PickerConfig.close()` from outside).
 typedef PickerSearchFieldBuilder =
     Widget Function(
       BuildContext context,
-      SearchController controller,
+      TextEditingController controller,
       VoidCallback close,
     );
 

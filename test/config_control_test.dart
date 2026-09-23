@@ -117,9 +117,13 @@ void main() {
       idOf: (i) => i,
       labelOf: (i) => '$i',
     );
-    config.bindPicker(onOpen: () {}, onClose: ([_]) {});
+    config.bindPicker(onOpen: () {}, onClose: ([_]) {}, isOpen: () => false);
     expect(
-      () => config.bindPicker(onOpen: () {}, onClose: ([_]) {}),
+      () => config.bindPicker(
+        onOpen: () {},
+        onClose: ([_]) {},
+        isOpen: () => false,
+      ),
       throwsA(isA<StateError>()),
     );
   });
@@ -131,11 +135,49 @@ void main() {
       labelOf: (i) => '$i',
     );
     var opened = 0;
-    config.bindPicker(onOpen: () => opened++, onClose: ([_]) {});
+    config.bindPicker(
+      onOpen: () => opened++,
+      onClose: ([_]) {},
+      isOpen: () => false,
+    );
     final copy = config.copyWith();
-    copy.bindPicker(onOpen: () {}, onClose: ([_]) {});
+    copy.bindPicker(onOpen: () {}, onClose: ([_]) {}, isOpen: () => false);
     config.open();
     expect(opened, 1);
+    expect(config.isAttached, isTrue);
+    expect(copy.isAttached, isTrue);
+    expect(config.copyWith().isAttached, isFalse);
+  });
+
+  testWidgets('PickerConfig isAttached and isOpen follow the bound picker', (
+    tester,
+  ) async {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+    expect(config.isAttached, isFalse);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+    expect(config.isAttached, isTrue);
+    expect(config.isOpen, isFalse);
+
+    config.open();
+    await tester.pumpAndSettle();
+    expect(config.isOpen, isTrue);
+
+    config.close();
+    await tester.pumpAndSettle();
+    expect(config.isAttached, isTrue);
+    expect(config.isOpen, isFalse);
   });
 
   testWidgets('mounted PickerConfig rejects a second bind', (tester) async {
@@ -155,7 +197,11 @@ void main() {
     );
 
     expect(
-      () => config.bindPicker(onOpen: () {}, onClose: ([_]) {}),
+      () => config.bindPicker(
+        onOpen: () {},
+        onClose: ([_]) {},
+        isOpen: () => false,
+      ),
       throwsA(isA<StateError>()),
     );
   });
@@ -209,6 +255,7 @@ void main() {
         ),
       ),
     );
+    expect(config.isAttached, isTrue);
     await tester.pumpWidget(
       MaterialApp(
         home: SearchAnchorPicker<int>(

@@ -282,8 +282,10 @@ Anchored views may close from an outside tap. Full-screen views have no outside
 area and use the default localized back button. If you provide `viewLeading`,
 keep a visible control that closes the picker. If you replace the complete
 search field with `searchFieldBuilder`, wire the builder's `close` callback into
-your custom UI and pass the given `SearchController` to the field. The picker
-watches that controller's text while open.
+your custom UI and pass the given `TextEditingController` to the field.
+The picker watches `.text` while open. Use the builder's `close` or
+`config.close()`. `config.isAttached` / `config.isOpen` report bind and
+overlay state.
 
 ## Visual customization
 
