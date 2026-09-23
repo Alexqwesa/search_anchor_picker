@@ -39,6 +39,8 @@ Also:
   input, optional selected chips, Add (multi) or Change (single), field tap
   opens, chip delete removes without opening.
 * `copyWith` can clear nullable fields (`copyWith(listenable: null)`).
+  The copy is unbound. One `PickerConfig` instance binds to one picker;
+  a second attach throws.
 * Parent effects apply after a successful child `onClose`, or after each
   `onChange` when `onClose` is omitted. When both are set, call
   `notifyParent()` after every successful `onChange` or never in that

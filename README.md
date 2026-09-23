@@ -68,6 +68,11 @@ Creating a new inline `PickerConfig(...)` during a parent rebuild does not
 reload an open picker. Configuration changes are rebound without treating object
 identity as a data revision.
 
+One `PickerConfig` instance binds to one picker. A second widget with the
+same instance throws. `copyWith()` is an unbound copy, so two pickers can
+share loaders via `config.copyWith()`. `open()` / `close()` stay on the
+instance that is bound.
+
 Reload deliberately through one of these paths:
 
 - Type or clear the default search field when `searchMode` is `remote` or

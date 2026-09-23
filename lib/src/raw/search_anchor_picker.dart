@@ -406,13 +406,11 @@ class _GenericRawSearchAnchorPickerState<T, K>
   }
 
   void _bindConfigControl() {
-    widget.config.internalOnOpen = _requestOpen;
-    widget.config.internalOnClose = _close;
+    widget.config.bindPicker(onOpen: _requestOpen, onClose: _close);
   }
 
   void _unbindConfigControl(GenericRawPickerConfig<T, K> config) {
-    if (config.internalOnOpen == _requestOpen) config.internalOnOpen = null;
-    config.internalOnClose = null;
+    config.unbindPicker(onOpen: _requestOpen, onClose: _close);
   }
 
   void _attachListenable(Listenable? listenable) {

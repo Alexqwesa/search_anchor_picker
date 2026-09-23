@@ -111,6 +111,119 @@ void main() {
     expect(find.byIcon(Icons.search), findsOneWidget);
   });
 
+  test('PickerConfig binds to one picker', () {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+    config.bindPicker(onOpen: () {}, onClose: ([_]) {});
+    expect(
+      () => config.bindPicker(onOpen: () {}, onClose: ([_]) {}),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  test('copyWith of a bound PickerConfig is unbound', () {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+    var opened = 0;
+    config.bindPicker(onOpen: () => opened++, onClose: ([_]) {});
+    final copy = config.copyWith();
+    copy.bindPicker(onOpen: () {}, onClose: ([_]) {});
+    config.open();
+    expect(opened, 1);
+  });
+
+  testWidgets('mounted PickerConfig rejects a second bind', (tester) async {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+
+    expect(
+      () => config.bindPicker(onOpen: () {}, onClose: ([_]) {}),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  testWidgets('copyWith lets a second picker bind', (tester) async {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+    final copy = config.copyWith();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Column(
+          children: [
+            SearchAnchorPicker<int>(
+              config: config,
+              initialSelectedIds: const [],
+            ),
+            SearchAnchorPicker<int>(
+              config: copy,
+              initialSelectedIds: const [],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    config.open();
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsOneWidget);
+    copy.open();
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsNWidgets(2));
+  });
+
+  testWidgets('disposing a picker unbinds its PickerConfig', (tester) async {
+    final config = PickerConfig<int>(
+      itemsLoader: (_, _) async => [1],
+      idOf: (i) => i,
+      labelOf: (i) => '$i',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: config,
+          initialSelectedIds: const [],
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    config.open();
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsOneWidget);
+  });
+
   test('copyWith keeps omitted nullable configuration', () {
     final listenable = ChangeNotifier();
     final statusListenable = ChangeNotifier();

@@ -5,6 +5,7 @@ analyzer:
     # Example is its own package (Riverpod, flutter_lints). Analyze it from
     # example/search_anchor_picker_example after that package's pub get.
     - example/**
+    - build/**
 
 linter:
   rules:

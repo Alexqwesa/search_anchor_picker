@@ -62,6 +62,10 @@ enum PickerUnselectPolicy {
 /// - how to identify an item
 /// - how to render / search an item
 ///
+/// One picker widget may bind this instance. [open] and [close] then control
+/// that widget. Binding a second picker throws. [copyWith] returns an unbound
+/// copy so two widgets can share loaders without sharing the bind.
+///
 /// In-overlay selection lives in an internal [ValueNotifier] while the popup is open.
 ///
 /// **External `initialSelectedIds`:**
@@ -89,28 +93,51 @@ class GenericRawPickerConfig<T, K> {
     this.unselectConfirmationBuilder,
   });
 
-  /// internal callback to open the picker. (Set by SearchAnchorPicker).
-  /// Do not set this manually.
-  VoidCallback? internalOnOpen;
+  VoidCallback? _onOpen;
+  void Function([String? reason])? _onClose;
 
-  /// Internal callback to close the picker. (Set by SearchAnchorPicker).
-  /// Do not set this manually.
-  void Function([String? reason])? internalOnClose;
-
-  /// Programmatically open the picker.
+  /// Binds [open] / [close] to one picker.
   ///
-  /// Requires the config to be currently attached to a [RawSearchAnchorPicker]
-  /// (or [RawSubPickerTile]).
-  void open() {
-    internalOnOpen?.call();
+  /// Called by [GenericRawSearchAnchorPicker]. A second bind from another
+  /// picker throws; use [copyWith] for an unbound copy.
+  void bindPicker({
+    required VoidCallback onOpen,
+    required void Function([String? reason]) onClose,
+  }) {
+    if ((_onOpen != null && !identical(_onOpen, onOpen)) ||
+        (_onClose != null && !identical(_onClose, onClose))) {
+      throw StateError(
+        'This PickerConfig is already bound to a picker. '
+        'Use copyWith() for another widget; the copy is unbound.',
+      );
+    }
+    _onOpen = onOpen;
+    _onClose = onClose;
   }
 
-  /// Programmatically close the picker.
+  /// Clears [open] / [close] if [onOpen] / [onClose] are the bound callbacks.
+  void unbindPicker({
+    required VoidCallback onOpen,
+    required void Function([String? reason]) onClose,
+  }) {
+    if (identical(_onOpen, onOpen)) _onOpen = null;
+    if (identical(_onClose, onClose)) _onClose = null;
+  }
+
+  /// Programmatically open the bound picker.
   ///
-  /// Requires the config to be currently attached to a [RawSearchAnchorPicker]
-  /// (or [RawSubPickerTile]).
+  /// No-op if this config is not bound. A config binds to at most one
+  /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
+  void open() {
+    _onOpen?.call();
+  }
+
+  /// Programmatically close the bound picker.
+  ///
+  /// No-op if this config is not bound. A config binds to at most one
+  /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
   void close([String? reason]) {
-    internalOnClose?.call(reason);
+    _onClose?.call(reason);
   }
 
   /// Search/display loader.
@@ -237,10 +264,10 @@ class GenericRawPickerConfig<T, K> {
   /// Owns confirmation UX for [PickerUnselectPolicy.confirm] when provided.
   final GenericUnselectConfirmationBuilder<T>? unselectConfirmationBuilder;
 
-  /// Copies this config.
+  /// Copies this config. The copy is unbound.
   ///
   /// Omitted nullable fields are kept. Pass `null` to clear them, for example
-  /// `copyWith(listenable: null)`.
+  /// `copyWith(listenable: null)`. [open] and [close] stay on this instance.
   GenericRawPickerConfig<T, K> copyWith({
     ItemsLoader<T>? itemsLoader,
     K Function(T)? idOf,

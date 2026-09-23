@@ -371,7 +371,7 @@ void main() {
             headerBuilder: (_, controller, _) => [
               SubPickerTile<int>(
                 title: 'Child',
-                config: config,
+                config: config.copyWith(),
                 initialSelectedIds: const [1],
                 parentController: controller,
                 parentSelectionEffect: SubPickerParentSelectionEffect.mirror,

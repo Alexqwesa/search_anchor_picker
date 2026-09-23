@@ -47,7 +47,8 @@ tests compare theme resolution, constraints, platform behavior, and placement.
 ## Loading and lifecycle
 
 Configuration identity and data revision are intentionally separate. Replacing
-`PickerConfig` rebinds its control callbacks and, when necessary, its open-only
+`PickerConfig` binds to one picker (`copyWith` is unbound). Replacing it
+rebinds its control callbacks and, when necessary, its open-only
 `Listenable` subscription without loading. Loads occur only on open, explicit
 controller refresh, a configured `Listenable` notification, a changed
 `reloadKey` while open, or default search-field text when `searchMode` is

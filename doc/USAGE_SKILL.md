@@ -112,7 +112,9 @@ per ID.
 
 Do not rely on replacing an inline `PickerConfig(...)` to reload data. Parent
 rebuilds rebind the latest configuration but intentionally do not call
-`itemsLoader`.
+`itemsLoader`. One config instance binds to one picker; a second attach
+throws. `copyWith()` returns an unbound copy (`open` / `close` stay on the
+original).
 
 Use one explicit reload signal:
 
