@@ -225,6 +225,7 @@ class _NestedCardState extends State<NestedCard> {
   Set<int> get _parentCheckedIds {
     switch (widget.relation) {
       case NestedRelation.direct:
+        return {..._selected};
       case NestedRelation.directStay:
         return {..._selected, ..._sublistUnion};
       case NestedRelation.unrelated:
