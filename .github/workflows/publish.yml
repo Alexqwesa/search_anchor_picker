@@ -52,6 +52,12 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
+      - name: Fetch example dependencies
+        working-directory: example/search_anchor_picker_example
+        run: flutter pub get
+      - name: Test example
+        working-directory: example/search_anchor_picker_example
+        run: flutter test
 
   # ════════════════════════════════════════════════════════════════════════════
   # 3 · Publish to pub.dev  (semver tag pushes only, after tests pass)
