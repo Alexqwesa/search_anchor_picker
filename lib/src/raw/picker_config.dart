@@ -120,8 +120,8 @@ class GenericRawPickerConfig<T, K> {
   /// [PickerSearchMode.hybrid], the default search field also reloads with
   /// the box text (including clear). [PickerSearchMode.local] loads once and
   /// filters the snapshot. A custom
-  /// [GenericRawSearchAnchorPicker.searchFieldBuilder] must call
-  /// [GenericRawPickerController.refresh] itself if typing should reload.
+  /// [GenericRawSearchAnchorPicker.searchFieldBuilder] only needs to use the
+  /// given `SearchController`; the picker watches its text while open.
   ///
   /// Remote search should debounce that callback (or the API behind it). The
   /// picker does not. Use [Debouncer] or an equivalent gate:

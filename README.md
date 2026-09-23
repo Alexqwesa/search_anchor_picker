@@ -128,6 +128,8 @@ outside area, so its default search field always provides a localized back
 button. Supplying `viewLeading` replaces that button, and a custom
 `searchFieldBuilder` replaces the whole field; custom versions must expose the
 provided `close` callback when users otherwise have no visible way to leave.
+Wire the given `SearchController` into the field — the picker watches its text
+while open, including programmatic changes.
 
 ## Optional default widgets
 

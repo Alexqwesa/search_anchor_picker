@@ -211,6 +211,8 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
   final EdgeInsetsGeometry? viewPadding;
   final bool? shrinkWrap;
   final TextCapitalization? textCapitalization;
+  /// Called when the active search query changes, including programmatic
+  /// changes to the supplied [SearchController].
   final ValueChanged<String>? viewOnChanged;
   final ValueChanged<String>? viewOnSubmitted;
   final VoidCallback? viewOnClose;
@@ -309,6 +311,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
     with TickerProviderStateMixin, WidgetsBindingObserver
     implements _PickerBackTarget {
   SearchController? _ownedController;
+  SearchController? _listeningController;
+  String? _observedQuery;
   String _retainedQuery = '';
   FocusNode? _searchFocusNode;
   AnimationController? _openController;
@@ -536,6 +540,16 @@ class _GenericRawSearchAnchorPickerState<T, K>
     if (_open && oldWidget.config.reloadKey != widget.config.reloadKey) {
       _scheduleReload();
     }
+    if (_open &&
+        !identical(oldWidget.searchController, widget.searchController)) {
+      final previous = _observedQuery;
+      _detachSearchController(oldWidget.searchController);
+      _attachSearchController();
+      if (previous != _controller.text) {
+        _observedQuery = null;
+        _handleSearchControllerChanged();
+      }
+    }
 
     if (!_listEquals(oldWidget.initialSelectedIds, widget.initialSelectedIds)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -561,6 +575,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _disposeChildSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
+    _detachSearchController();
     _disposeOwnedController();
     super.dispose();
   }
@@ -629,6 +644,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
       ..add(this);
     _attachListenable(widget.config.listenable);
     _attachRebuildListenable(widget.config.rebuildListenable);
+    _attachSearchController();
     WidgetsBinding.instance
       ..removeObserver(this)
       ..addObserver(this);
@@ -714,6 +730,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _clearHeaderKeys();
     _detachListenable(widget.config.listenable);
     _detachRebuildListenable(widget.config.rebuildListenable);
+    _detachSearchController();
     _itemsSnapshot = null;
     _stableIds = <K>[];
     _disposeSelectionSession();
@@ -743,12 +760,35 @@ class _GenericRawSearchAnchorPickerState<T, K>
     });
   }
 
-  void _clearQuery() {
-    _controller.clear();
-    widget.viewOnChanged?.call('');
+  void _attachSearchController() {
+    final controller = _controller;
+    if (identical(_listeningController, controller)) return;
+    _detachSearchController();
+    _observedQuery = controller.text;
+    controller.addListener(_handleSearchControllerChanged);
+    _listeningController = controller;
+  }
+
+  void _detachSearchController([SearchController? extra]) {
+    extra?.removeListener(_handleSearchControllerChanged);
+    _listeningController?.removeListener(_handleSearchControllerChanged);
+    _listeningController = null;
+    _observedQuery = null;
+  }
+
+  void _handleSearchControllerChanged() {
+    if (!_open) return;
+    final query = _controller.text;
+    if (query == _observedQuery) return;
+    _observedQuery = query;
+    widget.viewOnChanged?.call(query);
     if (widget.config.searchMode.reloadsOnQuery) {
       _scheduleReload();
     }
+  }
+
+  void _clearQuery() {
+    _controller.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _open) {
         _searchFocusNode?.requestFocus();
@@ -1076,12 +1116,6 @@ class _GenericRawSearchAnchorPickerState<T, K>
           hintText: widget.viewHintText,
           headerHeight: widget.headerHeight,
           textCapitalization: widget.textCapitalization,
-          onChanged: (value) {
-            widget.viewOnChanged?.call(value);
-            if (widget.config.searchMode.reloadsOnQuery) {
-              _scheduleReload();
-            }
-          },
           onSubmitted: widget.viewOnSubmitted,
           textInputAction: widget.textInputAction,
           keyboardType: widget.keyboardType,

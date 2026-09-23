@@ -19,8 +19,10 @@ Breaking vs 0.1.1:
   does: `local` (default) loads once and filters the snapshot;
   `remote` reloads and trusts the page; `hybrid` does both.
   `searchTermsOf` is optional and unused in `remote`. Debounce remote
-  `loadItems` (or the API) with exist `Debouncer` or your equivalent; the picker
-  does not.
+  `loadItems` (or the API) with `Debouncer` or an equivalent; the picker
+  does not. The open picker watches `SearchController` text (not cursor
+  moves) and reloads remote/hybrid from that. `viewOnChanged` includes
+  programmatic query changes.
 
 Also:
 

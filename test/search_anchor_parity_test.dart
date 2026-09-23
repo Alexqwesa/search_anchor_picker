@@ -335,6 +335,94 @@ void main() {
     expect(find.byType(SearchBar), findsOneWidget);
   });
 
+  testWidgets('custom search field reloads from SearchController text', (
+    tester,
+  ) async {
+    final queries = <String>[];
+    final changed = <String>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SearchAnchorPicker<int>(
+          config: PickerConfig<int>(
+            searchMode: PickerSearchMode.remote,
+            loadItems: (_, query) async {
+              queries.add(query);
+              return query.isEmpty ? [1] : [2];
+            },
+            idOf: (item) => item,
+            labelOf: (item) => 'Item $item',
+          ),
+          initialSelectedIds: const [],
+          viewOnChanged: changed.add,
+          searchFieldBuilder: (context, controller, close) {
+            return Material(
+              child: TextField(controller: controller),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.tap(find.byIcon(Icons.search));
+    await tester.pumpAndSettle();
+    expect(queries, ['']);
+
+    await tester.enterText(find.byType(TextField), '2');
+    await tester.pumpAndSettle();
+    expect(changed, ['2']);
+    expect(queries, ['', '2']);
+    expect(find.text('Item 2'), findsOneWidget);
+  });
+
+  testWidgets(
+    'programmatic SearchController text reloads; selection does not',
+    (tester) async {
+      final queries = <String>[];
+      final changed = <String>[];
+      final controller = SearchController();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SearchAnchorPicker<int>(
+            searchController: controller,
+            config: PickerConfig<int>(
+              searchMode: PickerSearchMode.remote,
+              loadItems: (_, query) async {
+                queries.add(query);
+                return query.isEmpty ? [1] : [2];
+              },
+              idOf: (item) => item,
+              labelOf: (item) => 'Item $item',
+            ),
+            initialSelectedIds: const [],
+            viewOnChanged: changed.add,
+          ),
+        ),
+      );
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+      expect(queries, ['']);
+
+      controller.selection = const TextSelection.collapsed(offset: 0);
+      await tester.pump();
+      expect(queries, ['']);
+      expect(changed, isEmpty);
+
+      controller.text = '2';
+      await tester.pumpAndSettle();
+      expect(changed, ['2']);
+      expect(queries, ['', '2']);
+      expect(find.text('Item 2'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+      final afterClose = queries.length;
+      controller.text = 'zzz';
+      await tester.pump();
+      expect(queries, hasLength(afterClose));
+    },
+  );
+
   testWidgets('explicit view properties override SearchViewTheme', (
     tester,
   ) async {
