@@ -418,9 +418,10 @@ error or empty search is not a deletion.
 `initialSelectedIds` is only the seed for the next open, from your selected
 IDs.
 
-## Todo:
+[//]: # (## Todo:)
 
-Maybe rename open() -> openView(), close([reason]) -> closeView(selectedText) as in SearchAnchor?
+[//]: # ()
+[//]: # (Maybe rename open&#40;&#41; -> openView&#40;&#41;, close&#40;[reason]&#41; -> closeView&#40;selectedText&#41; as in SearchAnchor?)
 
 ## License
 

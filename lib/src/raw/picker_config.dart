@@ -139,7 +139,7 @@ class GenericRawPickerConfig<T, K> {
   ///
   /// Requires [isAttached].
   bool get isOpen {
-    assert(isAttached);
+    assert(isAttached, 'PickerConfig.isOpen requires a bound picker.');
     return _isOpen!();
   }
 
@@ -148,7 +148,7 @@ class GenericRawPickerConfig<T, K> {
   /// Requires [isAttached]. A config binds to at most one
   /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
   void open() {
-    assert(isAttached);
+    assert(isAttached, 'PickerConfig.open() requires a bound picker.');
     _onOpen!();
   }
 
@@ -157,7 +157,7 @@ class GenericRawPickerConfig<T, K> {
   /// Requires [isAttached]. A config binds to at most one
   /// [RawSearchAnchorPicker] (or [RawSubPickerTile]).
   void close([String? reason]) {
-    assert(isAttached);
+    assert(isAttached, 'PickerConfig.close() requires a bound picker.');
     _onClose!(reason);
   }
 

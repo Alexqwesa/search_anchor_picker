@@ -140,7 +140,9 @@ class DefaultPickerTrigger extends StatelessWidget {
   }
 }
 
+/// Default search field used when `searchFieldBuilder` is omitted.
 class DefaultPickerSearchField extends StatelessWidget {
+  /// Creates the default search field.
   const DefaultPickerSearchField({
     required this.controller,
     required this.close,
@@ -308,7 +310,9 @@ class RawDefaultPickerItemTile extends StatelessWidget {
   }
 }
 
+/// Default scrollable results list used when `resultsBuilder` is omitted.
 class DefaultPickerResultsList extends StatelessWidget {
+  /// Creates the default results list.
   const DefaultPickerResultsList({
     required this.controller,
     required this.children,
@@ -345,7 +349,9 @@ class DefaultPickerResultsList extends StatelessWidget {
   }
 }
 
+/// Default loading indicator used when `loadingBuilder` is omitted.
 class DefaultPickerLoading extends StatelessWidget {
+  /// Creates the default loading indicator.
   const DefaultPickerLoading({super.key});
 
   @override
@@ -614,9 +620,12 @@ _PickerDefaultMessages _pickerDefaultMessages(BuildContext context) {
 String _withLabel(String message, String label) =>
     message.replaceAll('{label}', label);
 
+/// Default load-error retry button used when `errorBuilder` is omitted.
 class DefaultPickerError extends StatelessWidget {
+  /// Creates the default retry control.
   const DefaultPickerError({required this.retry, super.key});
 
+  /// Reloads items after a failed `itemsLoader` call.
   final VoidCallback retry;
 
   @override
@@ -635,7 +644,9 @@ class DefaultPickerError extends StatelessWidget {
   }
 }
 
+/// Default overlay column: search field, divider, then results.
 class DefaultPickerView extends StatelessWidget {
+  /// Creates the default overlay layout.
   const DefaultPickerView({
     required this.searchField,
     required this.divider,
@@ -661,7 +672,9 @@ class DefaultPickerView extends StatelessWidget {
   );
 }
 
+/// Default Material surface around the open picker view.
 class DefaultPickerViewSurface extends StatelessWidget {
+  /// Creates the default overlay surface.
   const DefaultPickerViewSurface({
     required this.style,
     required this.child,
@@ -682,9 +695,12 @@ class DefaultPickerViewSurface extends StatelessWidget {
   );
 }
 
+/// Default in-use warning shown for [PickerUnselectPolicy.blocked].
 class DefaultPickerUnselectWarning extends StatelessWidget {
+  /// Creates the default in-use warning for [label].
   const DefaultPickerUnselectWarning({required this.label, super.key});
 
+  /// Item label interpolated into the localized in-use message.
   final String label;
 
   @override
@@ -694,6 +710,7 @@ class DefaultPickerUnselectWarning extends StatelessWidget {
   }
 }
 
+/// Default confirmation dialog for [PickerUnselectPolicy.confirm].
 Future<bool> showDefaultPickerUnselectConfirmation(
   BuildContext context, {
   required String label,
@@ -748,8 +765,10 @@ Future<bool> showDefaultPickerUnselectConfirmation(
 
 /// Default wrap shown while `onClose` is saving.
 class DefaultPickerCloseSaving extends StatelessWidget {
+  /// Creates the default saving wrap around the open view [child].
   const DefaultPickerCloseSaving({required this.child, super.key});
 
+  /// The open picker view, shown dimmed under a progress indicator.
   final Widget child;
 
   @override
@@ -783,6 +802,7 @@ class DefaultPickerCloseSaving extends StatelessWidget {
   }
 }
 
+/// Default prompt after `onClose` throws: keep editing or close without saving.
 Future<CloseSaveFailedAction> showDefaultPickerCloseSaveFailed(
   BuildContext context,
 ) async {

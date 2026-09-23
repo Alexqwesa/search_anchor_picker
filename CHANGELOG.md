@@ -1,3 +1,8 @@
+## 0.2.1
+
+* Shortened the pubspec description. Added `example/example.dart` for
+  pub.dev. Asserts on `PickerConfig` bind state include messages.
+
 ## 0.2.0
 
 Breaking vs 0.1.1:

@@ -8,6 +8,7 @@ import 'package:search_anchor_picker/src/raw/widgets/picker_defaults.dart';
 /// Wraps [RawDefaultPickerItemTile] and maps [auxiliaryMembership] to the
 /// default leading icon when [leading] is omitted.
 class DefaultPickerItemTile extends StatelessWidget {
+  /// Creates a default row with related-list membership icon support.
   const DefaultPickerItemTile({
     required this.selected,
     required this.onToggle,
