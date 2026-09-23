@@ -746,7 +746,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
   void _clearQuery() {
     _controller.clear();
     widget.viewOnChanged?.call('');
-    _scheduleReload();
+    if (widget.config.searchMode.reloadsOnQuery) {
+      _scheduleReload();
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _open) {
         _searchFocusNode?.requestFocus();
@@ -883,13 +885,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
   Iterable<K> _filteredLoadedIds() {
     final items = _itemsSnapshot ?? <T>[];
     final query = _controller.text.trim().toLowerCase();
-    if (query.isEmpty) return items.map(widget.config.idOf);
     return items
-        .where(
-          (item) => widget.config
-              .searchTermsOf(item)
-              .any((term) => term.toLowerCase().contains(query)),
-        )
+        .where((item) => widget.config.matchesQuery(item, query))
         .map(widget.config.idOf);
   }
 
@@ -1081,7 +1078,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
           textCapitalization: widget.textCapitalization,
           onChanged: (value) {
             widget.viewOnChanged?.call(value);
-            _scheduleReload();
+            if (widget.config.searchMode.reloadsOnQuery) {
+              _scheduleReload();
+            }
           },
           onSubmitted: widget.viewOnSubmitted,
           textInputAction: widget.textInputAction,

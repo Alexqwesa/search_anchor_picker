@@ -13,9 +13,9 @@ single selection, and optional nested menus.
 - Nested `SubPickerTile` menus with optional animated offsets.
 - Optional selected-first ordering, frozen at open so toggles do not reshuffle
   the list. Default is on (`selectedFirst: true`).
-- Safe client-side and server-side search: `loadItems` receives `query` from
-  the default search field; missing loaded items are never interpreted as
-  deleted selections.
+- Explicit search modes: `local` (default) loads once and filters the snapshot;
+  `remote` reloads `loadItems(query)` and trusts that page; `hybrid` does both.
+  Missing loaded items are never interpreted as deleted selections.
 - The picker notifies; it does not persist. Save from `onChange` (each accepted
   toggle) or `onClose` (whole delta of session).
 - Optional `PickerUnselectPolicy` (allow / blocked / confirm) per row via
@@ -39,9 +39,9 @@ SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
     loadItems: (context, query) => api.searchPeople(query),
+    searchMode: PickerSearchMode.remote,
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
-    searchTermsOf: (person) => [person.name, person.email],
   ),
   initialSelectedIds: selectedIds.toList(),
   onClose: (result) async {
@@ -70,19 +70,20 @@ identity as a data revision.
 
 Reload deliberately through one of these paths:
 
-- Type or clear the default search field (`loadItems` is called with `query`).
+- Type or clear the default search field when `searchMode` is `remote` or
+  `hybrid` (`loadItems` is called with `query`).
 - Call `controller.refresh()` from custom popup UI.
 - Provide `config.listenable`; notifications reload only while the popup is open.
 - Change `config.reloadKey` for declarative revision-based reloads.
 
 ```dart
 PickerConfig<Person>(
+  searchMode: PickerSearchMode.remote,
   reloadKey: resultsRevision,
   listenable: repository.changes,
   loadItems: (context, query) => repository.search(query),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,
-  searchTermsOf: (person) => [person.name],
 );
 ```
 
@@ -313,18 +314,26 @@ Closing waits for in-flight `onChange` work to settle.
 
 ## Server-side search safety
 
-`loadItems` is the search callback. The default search field passes the box
-text as `query` and reloads; no custom view is required.
+`searchMode` chooses how the default search field works. No custom view is
+required.
 
 ```dart
 PickerConfig(
+  searchMode: PickerSearchMode.remote, // reload(query), show that page
   loadItems: (context, query) => api.searchPeople(query),
-  // idOf, labelOf, searchTermsOf...
+  // idOf, labelOf...
+)
+
+PickerConfig(
+  // searchMode: local (default): load once, filter with searchTermsOf
+  loadItems: (context, query) => catalog,
+  searchTermsOf: (person) => [person.name, person.email],
 )
 ```
 
-Ignore `query` to load a full catalog once and let the overlay filter locally.
-A selected ID missing from the current page remains selected.
+`hybrid` reloads on each query and then filters that page locally — only when
+the server page is a superset you still want to narrow. A selected ID missing
+from the current page remains selected.
 
 Header selection helpers record explicit persistence intent:
 

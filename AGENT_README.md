@@ -25,7 +25,7 @@ Preserve these properties across every change:
 - Config identity is not a reload signal. Rebind configuration on replacement,
   but fetch only on open, `controller.refresh()`, a configured `Listenable`
   notification, a changed `reloadKey` while open, or default search-field
-  text (`loadItems(context, query)`).
+  text when `searchMode` is `remote` or `hybrid`.
 - Escape and back close only the topmost picker. Outside taps close anchored
   popups; full-screen views instead retain a visible close/back affordance.
   Close callbacks run at most once per session.

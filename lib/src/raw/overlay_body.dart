@@ -72,10 +72,7 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
   }
 
   bool _matches(T item, String query) {
-    if (query.isEmpty) return true;
-    return widget.config
-        .searchTermsOf(item)
-        .any((term) => term.toLowerCase().contains(query));
+    return widget.config.matchesQuery(item, query);
   }
 
   Future<void> _toggle(T item, K id, bool next) async {

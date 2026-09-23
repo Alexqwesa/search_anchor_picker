@@ -24,15 +24,16 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
       title: 'Server search, default search field',
       persist: 'onClose',
       difference:
-          'loadItems is the search callback: the picker passes the box text as query and reloads. No viewOnChanged, refresh(), or custom search field.\n\n'
+          'searchMode: remote. loadItems is the search callback: the picker passes the box text as query and shows that page as-is. No second local filter, so a fuzzy or extra-field server hit is not hidden by searchTermsOf.\n\n'
           'Open: GET /people?page=1 → Ada … Katherine. Type lin:\n\n'
           'GET /people?q=lin\n'
           '→ Linus Torvalds\n\n'
           'Ada’s chip stays while she is missing from that page. The footer is the last request and the people the fake server returned.',
       source: r'''
 PickerConfig(
+  searchMode: PickerSearchMode.remote,
   loadItems: (context, query) {
-    // Picker calls this on open (query == '') and on each search-box change.
+    // Called on open (query == '') and on each search-box change.
     return api.searchPeople(query);
   },
 );
@@ -47,6 +48,7 @@ PickerConfig(
         config: peopleConfig(
           title: 'Server search, default search field',
           loadItems: _loadPage,
+          searchMode: PickerSearchMode.remote,
         ),
         initialSelectedIds: _selected.toList(),
         isFullScreen: false,

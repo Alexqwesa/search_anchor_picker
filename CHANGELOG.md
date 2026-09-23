@@ -15,8 +15,10 @@ Breaking vs 0.1.1:
   is set. Opt in with `SubPickerParentSelectionEffect`.
 * `SubPickerTile.onChange` is `(delta, notifyParent)`. Call `notifyParent()`
   after a successful write for immediate parent checkboxes.
-* `loadItems` is `(context, query)`. The default search field reloads with
-  the box text; ignore `query` for a client-side catalog.
+* `loadItems` is `(context, query)`. `PickerSearchMode` chooses what typing
+  does: `local` (default) loads once and filters the snapshot;
+  `remote` reloads and trusts the page; `hybrid` does both.
+  `searchTermsOf` is optional and unused in `remote`.
 
 Also:
 

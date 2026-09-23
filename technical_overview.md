@@ -50,7 +50,10 @@ Configuration identity and data revision are intentionally separate. Replacing
 `PickerConfig` rebinds its control callbacks and, when necessary, its open-only
 `Listenable` subscription without loading. Loads occur only on open, explicit
 controller refresh, a configured `Listenable` notification, a changed
-`reloadKey` while open, or default search-field text (`loadItems(context, query)`).
+`reloadKey` while open, or default search-field text when `searchMode` is
+`remote` or `hybrid` (`loadItems(context, query)`). `local` (default) loads
+once and filters the snapshot with `searchTermsOf`. `remote` shows the
+returned page as-is. `hybrid` reloads, then filters that page locally.
 Same-frame `reloadKey` changes are coalesced, and the
 next open always uses the latest loader.
 

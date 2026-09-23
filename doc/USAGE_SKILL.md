@@ -36,9 +36,9 @@ SearchAnchorPicker<Person>(
   config: PickerConfig<Person>(
     title: 'Pick people',
     loadItems: (context, query) => api.searchPeople(query),
+    searchMode: PickerSearchMode.remote,
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
-    searchTermsOf: (person) => [person.name, person.email],
   ),
   initialSelectedIds: selectedIds.toList(),
   onClose: (result) async {
@@ -67,8 +67,10 @@ Follow these invariants:
 - Hidden selected IDs remain selected during server-side search and pagination.
 - Persist `added` and `removed` from `onClose`.
 
-`loadItems` receives the default search-box text as `query` and is called again
-when that text changes. Ignore `query` for a client-side catalog.
+`PickerSearchMode` chooses how the default search box works. `local` (default)
+calls `loadItems` on open and filters the snapshot with `searchTermsOf`.
+`remote` reloads with the box text and shows that page as-is (`searchTermsOf`
+is unused). `hybrid` reloads, then filters the returned page locally.
 
 ## Observables
 
@@ -105,6 +107,7 @@ rebuilds rebind the latest configuration but intentionally do not call
 
 Use one explicit reload signal:
 
+- Default search-field text when `searchMode` is `remote` or `hybrid`.
 - `controller.refresh()` for a command initiated by popup UI.
 - `config.listenable` for repository/notifier-driven invalidation. It is
   subscribed only while the picker is open.

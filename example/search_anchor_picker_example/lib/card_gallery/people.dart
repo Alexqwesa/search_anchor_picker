@@ -153,6 +153,7 @@ PickerConfig<Person> peopleConfig({
   Listenable? listenable,
   bool selectedFirst = true,
   Object? reloadKey,
+  PickerSearchMode searchMode = PickerSearchMode.local,
 }) {
   return PickerConfig<Person>(
     title: title,
@@ -160,6 +161,7 @@ PickerConfig<Person> peopleConfig({
     idOf: (person) => person.id,
     labelOf: (person) => person.name,
     searchTermsOf: (person) => [person.name, person.team, '${person.id}'],
+    searchMode: searchMode,
     comparator: (a, b) => a.name.compareTo(b.name),
     selectedFirst: selectedFirst,
     relatedListItemStatusOf: relatedListItemStatusOf,

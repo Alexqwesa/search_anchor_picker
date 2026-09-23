@@ -986,7 +986,7 @@ SearchAnchorPicker<Person>(
   GallerySection(
     title: 'Fail handling, partial load, and server search',
     caption:
-        'Thrown saves and incomplete loadItems pages. The default search box passes query into loadItems and reloads. Missing rows stay selected. Ignore query to keep a client-side catalog and filter locally.',
+        'Thrown saves and incomplete loadItems pages. searchMode defaults to local: load once, filter the snapshot. remote reloads with query and trusts the page. hybrid does both. Missing rows stay selected.',
     cards: [
       const SimpleCard(
         title: 'API fail close',
@@ -1083,10 +1083,11 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'loadItems returns only the first four people (it ignores query). Radia stays selected even though she is not on the loaded page. Typing still filters that page locally — Linus will not appear until loadItems uses query. Compare with Server search, default search field.\n\n'
+            'searchMode is local (the default): loadItems returns the first four people once. Typing filters that snapshot — Linus will not appear. Radia stays selected even though she is not on the loaded page. Compare with Server search (remote), which reloads loadItems and trusts the returned page.\n\n'
             'Leave “Show warning on hidden chip” on and tap Radia’s chip X: she is not on this page, so a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
         source: r'''
 PickerConfig<Person>(
+  searchMode: PickerSearchMode.local, // default
   loadItems: (_, _) async => people.take(4).toList(),
   idOf: (person) => person.id,
   labelOf: (person) => person.name,

@@ -299,6 +299,7 @@ void main() {
       MaterialApp(
         home: SearchAnchorPicker<int>(
           config: PickerConfig<int>(
+            searchMode: PickerSearchMode.remote,
             loadItems: (_, query) async {
               queries.add(query);
               if (query.isEmpty) return [1, 2];
@@ -310,7 +311,6 @@ void main() {
             },
             idOf: (item) => item,
             labelOf: (item) => 'Item $item',
-            searchTermsOf: (item) => ['Item $item'],
           ),
           initialSelectedIds: const [],
         ),

@@ -19,6 +19,28 @@ T? _copyOrKeep<T>(Object? value, T? current) {
   return identical(value, _copyUnset) ? current : value as T?;
 }
 
+/// How the default search field combines `loadItems` and local filtering.
+enum PickerSearchMode {
+  /// Load on open, refresh, `reloadKey`, and `listenable`. Typing filters
+  /// the loaded snapshot with `searchTermsOf` (or `labelOf` if omitted).
+  local,
+
+  /// Reload `loadItems` with the search-field text and show that page as-is.
+  /// `searchTermsOf` is unused.
+  remote,
+
+  /// Reload `loadItems` with the search-field text, then filter that page
+  /// locally with `searchTermsOf`.
+  hybrid
+  ;
+
+  /// Whether the default search field should call `loadItems` on text changes.
+  bool get reloadsOnQuery => this != PickerSearchMode.local;
+
+  /// Whether the overlay should hide loaded rows that miss `searchTermsOf`.
+  bool get filtersLocally => this != PickerSearchMode.remote;
+}
+
 /// Policy applied when the user tries to unselect an item.
 enum PickerUnselectPolicy {
   /// Allow the item to be unselected immediately.
@@ -51,7 +73,8 @@ class GenericRawPickerConfig<T, K> {
     required this.loadItems,
     required this.idOf,
     required this.labelOf,
-    required this.searchTermsOf,
+    this.searchTermsOf,
+    this.searchMode = PickerSearchMode.local,
     this.tooltipOf,
     this.iconOf,
     this.comparator,
@@ -89,13 +112,13 @@ class GenericRawPickerConfig<T, K> {
     internalOnClose?.call(reason);
   }
 
-  /// Search/display loader. This is the search callback.
+  /// Search/display loader.
   ///
-  /// The picker calls this on open (`query` is `''`), on
-  /// [GenericRawPickerController.refresh], when [reloadKey]/[listenable]
-  /// changes, and when the default search field text changes or is cleared
-  /// (`query` is that text). Ignore `query` to load a full catalog and let the
-  /// overlay filter locally. A custom
+  /// Called on open (`query` is `''`), [GenericRawPickerController.refresh],
+  /// and [reloadKey]/[listenable] changes. In [PickerSearchMode.remote] and
+  /// [PickerSearchMode.hybrid], the default search field also reloads with
+  /// the box text (including clear). [PickerSearchMode.local] loads once and
+  /// filters the snapshot. A custom
   /// [GenericRawSearchAnchorPicker.searchFieldBuilder] must call
   /// [GenericRawPickerController.refresh] itself if typing should reload.
   final LoadItems<T> loadItems;
@@ -117,15 +140,23 @@ class GenericRawPickerConfig<T, K> {
   /// unselect warnings and confirmation dialogs.
   final String Function(T) labelOf;
 
-  /// Returns a set of searchable strings for [T].
+  /// Local search strings for [T]. Unused in [PickerSearchMode.remote].
   ///
-  /// The search box filters items by checking if any term contains the
-  /// lowercase query substring.
+  /// [PickerSearchMode.local] and [PickerSearchMode.hybrid] keep a row when
+  /// any term contains the lowercase query. When null, [labelOf] is used.
+  final Iterable<String> Function(T)? searchTermsOf;
+
+  /// Whether typing reloads [loadItems], filters the loaded page, or both.
   ///
-  /// Tips:
-  /// - include localized names
-  /// - include email / code fields if users search by them
-  final Iterable<String> Function(T) searchTermsOf;
+  /// Defaults to [PickerSearchMode.local].
+  final PickerSearchMode searchMode;
+
+  /// Whether [item] should stay visible for the current lowercase [query].
+  bool matchesQuery(T item, String query) {
+    if (!searchMode.filtersLocally || query.isEmpty) return true;
+    final terms = searchTermsOf?.call(item) ?? [labelOf(item)];
+    return terms.any((term) => term.toLowerCase().contains(query));
+  }
 
   /// Optional tooltip text for [T].
   ///
@@ -196,7 +227,8 @@ class GenericRawPickerConfig<T, K> {
     LoadItems<T>? loadItems,
     K Function(T)? idOf,
     String Function(T)? labelOf,
-    Iterable<String> Function(T)? searchTermsOf,
+    Object? searchTermsOf = _copyUnset,
+    PickerSearchMode? searchMode,
     Object? tooltipOf = _copyUnset,
     Object? iconOf = _copyUnset,
     Object? comparator = _copyUnset,
@@ -213,7 +245,8 @@ class GenericRawPickerConfig<T, K> {
       loadItems: loadItems ?? this.loadItems,
       idOf: idOf ?? this.idOf,
       labelOf: labelOf ?? this.labelOf,
-      searchTermsOf: searchTermsOf ?? this.searchTermsOf,
+      searchTermsOf: _copyOrKeep(searchTermsOf, this.searchTermsOf),
+      searchMode: searchMode ?? this.searchMode,
       tooltipOf: _copyOrKeep(tooltipOf, this.tooltipOf),
       iconOf: _copyOrKeep(iconOf, this.iconOf),
       comparator: _copyOrKeep(comparator, this.comparator),
@@ -240,7 +273,8 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
     required super.loadItems,
     required super.idOf,
     required super.labelOf,
-    required super.searchTermsOf,
+    super.searchTermsOf,
+    super.searchMode,
     super.tooltipOf,
     super.iconOf,
     super.comparator,
@@ -259,7 +293,8 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
     LoadItems<T>? loadItems,
     int Function(T)? idOf,
     String Function(T)? labelOf,
-    Iterable<String> Function(T)? searchTermsOf,
+    Object? searchTermsOf = _copyUnset,
+    PickerSearchMode? searchMode,
     Object? tooltipOf = _copyUnset,
     Object? iconOf = _copyUnset,
     Object? comparator = _copyUnset,
@@ -277,6 +312,7 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
       idOf: idOf,
       labelOf: labelOf,
       searchTermsOf: searchTermsOf,
+      searchMode: searchMode,
       tooltipOf: tooltipOf,
       iconOf: iconOf,
       comparator: comparator,
@@ -294,6 +330,7 @@ class RawPickerConfig<T> extends GenericRawPickerConfig<T, int> {
       idOf: copied.idOf,
       labelOf: copied.labelOf,
       searchTermsOf: copied.searchTermsOf,
+      searchMode: copied.searchMode,
       tooltipOf: copied.tooltipOf,
       iconOf: copied.iconOf,
       comparator: copied.comparator,
