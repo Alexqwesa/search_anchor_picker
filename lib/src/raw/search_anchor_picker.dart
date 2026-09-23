@@ -300,6 +300,10 @@ abstract interface class _PickerBackTarget {
 
 final List<_PickerBackTarget> _openPickerStack = <_PickerBackTarget>[];
 
+final class _ChildSavingCount extends ValueNotifier<int> {
+  _ChildSavingCount() : super(0);
+}
+
 class _GenericRawSearchAnchorPickerState<T, K>
     extends State<GenericRawSearchAnchorPicker<T, K>>
     with TickerProviderStateMixin, WidgetsBindingObserver
@@ -314,6 +318,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
   bool _savingClose = false;
   bool _saveFailedPromptOpen = false;
   ValueNotifier<bool>? _savingNotifier;
+  _ChildSavingCount? _childSavingNotifier;
 
   SearchController get _controller {
     if (widget.searchController case final external?) return external;
@@ -368,6 +373,13 @@ class _GenericRawSearchAnchorPickerState<T, K>
     final notifier = ValueNotifier<bool>(false);
     PickerResourceTracker.register(notifier);
     return _savingNotifier = notifier;
+  }
+
+  _ChildSavingCount get _childSavingN {
+    if (_childSavingNotifier case final notifier?) return notifier;
+    final notifier = _ChildSavingCount();
+    PickerResourceTracker.register(notifier);
+    return _childSavingNotifier = notifier;
   }
 
   Map<Object, GlobalKey>? _headerKeys;
@@ -464,6 +476,14 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _savingNotifier = null;
   }
 
+  void _disposeChildSavingNotifier() {
+    final notifier = _childSavingNotifier;
+    if (notifier == null) return;
+    PickerResourceTracker.unregister(notifier);
+    notifier.dispose();
+    _childSavingNotifier = null;
+  }
+
   void _disposeOpenController() {
     final controller = _openController;
     if (controller == null) return;
@@ -538,6 +558,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _disposeSelectionSession();
     _disposeViewTickNotifier();
     _disposeSavingNotifier();
+    _disposeChildSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
     _disposeOwnedController();
@@ -597,6 +618,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _savingClose = false;
     _saveFailedPromptOpen = false;
     if (_savingNotifier != null) _savingN.value = false;
+    if (_childSavingNotifier != null) _childSavingN.value = 0;
     _stableIds = <K>[];
     _itemsSnapshot = null;
     _loadError = null;
@@ -697,6 +719,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _disposeSelectionSession();
     _disposeViewTickNotifier();
     _disposeSavingNotifier();
+    _disposeChildSavingNotifier();
     _disposeOpenController();
     _disposeSearchFocusNode();
     if (externalController == null) {
@@ -1003,6 +1026,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           ),
           isActive: () =>
               mounted && _open && identical(_selectionSession, session),
+          childSavingN: _childSavingN,
         );
         final header =
             widget.headerBuilder?.call(context, controller, items) ??
@@ -1051,6 +1075,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           isFullScreen: fullScreen,
           leading: widget.viewLeading,
           trailing: widget.viewTrailing,
+          childSavingListenable: _childSavingN,
           hintText: widget.viewHintText,
           headerHeight: widget.headerHeight,
           textCapitalization: widget.textCapitalization,

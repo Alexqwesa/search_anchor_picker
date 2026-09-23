@@ -270,28 +270,37 @@ child changes should update the open parent's checkboxes:
 SubPickerTile<Person>(
   parentController: controller,
   parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  // title, config, initialSelectedIds, and onChange/onClose...
+  // title, config, initialSelectedIds, and onClose...
 )
 ```
 
 Choose `selectAdded` to check added items, `deselectRemoved` to uncheck removed
 items, or `mirror` for both. `none` is the default.
-These effects **only update the open parent's checkboxes**. They do not save
-parent selection, update the parent's `initialSelectedIds`, or include those
-changes in the parent's `onChange` / `onClose` deltas.
+These effects **update the open parent's checkboxes after a successful
+`onClose`**. That is the usual path. If `onClose` is omitted, the effect
+applies after each accepted `onChange`. Call `notifyParent()` from the
+child `onChange` only when `onClose` is also set and the parent should
+update immediately; that delta is not applied again on close. They do not
+run while the write is in flight, and Close without saving leaves the
+parent unchanged. They do not save parent selection, update the parent's
+`initialSelectedIds`, or include those changes in the parent's `onChange`
+/ `onClose` deltas. The parent search field shows a small spinner while
+that write is in flight; close already waits for in-flight `onChange` work.
 If your backend stores parent selection separately from sub-list membership,
 the child's `onChange` or `onClose` callback must also call the appropriate
 parent API and update the authoritative parent IDs for the next open. Parent
 checkbox updates do not require reseeding the whole parent picker.
 
 The picker notifies; it does not persist. Save from `onChange` (each accepted
-toggle) or `onClose` (whole delta of session). Parent checkboxes follow accepted
-child selection changes, including bulk header commands.
+toggle) or `onClose` (whole delta of session). Parent checkboxes follow
+successful child writes, including bulk header commands. `SubPickerTile`
+`onChange` also receives `notifyParent`:
 
 ```dart
-onChange: (delta) async {
+onChange: (delta, notifyParent) async {
   await directoryApi.add(delta.added);
   await directoryApi.remove(delta.removed);
+  notifyParent(); // optional: parent checkboxes now, not on close
 },
 onClose: (result) {
   // Optional: whole delta of the session.

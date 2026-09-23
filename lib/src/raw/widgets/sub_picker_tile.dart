@@ -118,13 +118,14 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
   @protected
   Widget createPicker({
     FutureOr<void> Function(PickerDelta<K> delta)? onChange,
+    FutureOr<void> Function(PickerDelta<K> delta)? onClose,
   }) {
     return GenericRawSearchAnchorPicker<T, K>(
       config: config,
       initialSelectedIds: initialSelectedIds,
       isSelectable: isSelectable,
       onChange: onChange ?? this.onChange,
-      onClose: onClose,
+      onClose: onClose ?? this.onClose,
       closeSavingBuilder: closeSavingBuilder,
       closeSaveFailedBuilder: closeSaveFailedBuilder,
       headerBuilder: headerBuilder,

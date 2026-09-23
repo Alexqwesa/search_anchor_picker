@@ -369,7 +369,7 @@ SearchAnchorPicker<Person>(
         source: r'''
 SubPickerTile<Person>(
   title: 'Directory',
-  onChange: (delta) { /* write the whole delta once */ },
+  onChange: (delta, notifyParent) { /* write the whole delta once */ },
   headerBuilder: (context, controller, items) => [
     TextButton(
       onPressed: controller.selectFiltered,
@@ -689,9 +689,18 @@ SubPickerTile<Person>(
             'Unrelated logic. The short main list (Ada … Margaret) does not follow sublist checks. Directory, Watchlist, and Team are different 3–7 person catalogs; membership only updates the card subtitle. Field chips are the parent selection only.',
         source: r'''
 headerBuilder: (context, controller, items) => [
-  SubPickerTile<Person>(title: 'Directory', onChange: writeDirectory),
-  SubPickerTile<Person>(title: 'Watchlist', onChange: writeWatchlist),
-  SubPickerTile<Person>(title: 'Team', onChange: writeTeam),
+  SubPickerTile<Person>(
+    title: 'Directory',
+    onChange: (delta, notifyParent) { writeDirectory(delta); },
+  ),
+  SubPickerTile<Person>(
+    title: 'Watchlist',
+    onChange: (delta, notifyParent) { writeWatchlist(delta); },
+  ),
+  SubPickerTile<Person>(
+    title: 'Team',
+    onChange: (delta, notifyParent) { writeTeam(delta); },
+  ),
 ];
 ''',
         relation: NestedRelation.unrelated,
@@ -708,7 +717,7 @@ void writeSublist(Set<int> ids, PickerDelta<int> delta) {
 }
 
 SubPickerTile<Person>(
-  onChange: (delta) => writeSublist(watchlist, delta),
+  onChange: (delta, notifyParent) => writeSublist(watchlist, delta),
 );
 // Chip X:
 writeSublist(watchlist, PickerDelta(removed: {id}));
@@ -784,13 +793,13 @@ headerBuilder: (context, controller, items) => [
     title: 'Directory membership',
     config: directoryConfig,
     initialSelectedIds: directory.toList(),
-    onChange: (delta) { /* write directory */ },
+    onChange: (delta, notifyParent) { /* write directory */ },
   ),
   SubPickerTile<Person>(
     title: 'Watchlist',
     config: watchlistConfig,
     initialSelectedIds: watchlist.toList(),
-    onChange: (delta) { /* write watchlist */ },
+    onChange: (delta, notifyParent) { /* write watchlist */ },
   ),
 ],
 ''',
@@ -806,13 +815,13 @@ SubPickerTile<Person>(
   title: 'Directory membership',
   config: directoryConfig,
   initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta, notifyParent) { /* write directory */ },
   headerBuilder: (context, directoryController, items) => [
     SubPickerTile<Person>(
       title: 'Favorites',
       config: favoritesConfig,
       initialSelectedIds: favorites.toList(),
-      onChange: (delta) { /* write favorites */ },
+      onChange: (delta, notifyParent) { /* write favorites */ },
     ),
   ],
 );
@@ -830,7 +839,7 @@ SubPickerTile<Person>(
   config: directoryConfig,
   initialSelectedIds: directory.toList(),
   selectionMode: SelectionMode.singleOptional,
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta, notifyParent) { /* write directory */ },
 );
 ''',
         childMode: SelectionMode.singleOptional,
@@ -852,7 +861,7 @@ SubPickerTile<Person>(
     relatedListItemStatusListenable: parent.pendingIdsListenable,
   ),
   initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta, notifyParent) { /* write directory */ },
 );
 ''',
         childUnselect: PickerUnselectPolicy.blocked,
@@ -874,7 +883,7 @@ SubPickerTile<Person>(
     relatedListItemStatusListenable: parent.pendingIdsListenable,
   ),
   initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta, notifyParent) { /* write directory */ },
 );
 ''',
         childUnselect: PickerUnselectPolicy.confirm,
@@ -893,7 +902,7 @@ SubPickerTile<Person>(
         PickerRelatedListItemStatus(selectable: !person.locked),
   ),
   initialSelectedIds: directory.toList(),
-  onChange: (delta) { /* write directory */ },
+  onChange: (delta, notifyParent) { /* write directory */ },
 );
 ''',
         childLockedInactive: true,
@@ -917,7 +926,7 @@ SearchAnchorPicker<Person>(
       title: 'Directory membership',
       config: directoryConfig,
       initialSelectedIds: directory.toList(),
-      onChange: (delta) { /* write directory */ },
+      onChange: (delta, notifyParent) { /* write directory */ },
     ),
   ],
 );
@@ -937,7 +946,7 @@ SearchAnchorPicker<Person>(
       title: 'Directory membership',
       config: directoryConfig,
       initialSelectedIds: directory.toList(),
-      onChange: (delta) { /* write directory */ },
+      onChange: (delta, notifyParent) { /* write directory */ },
     ),
   ],
 );
@@ -958,7 +967,7 @@ SearchAnchorPicker<Person>(
       title: 'Directory membership',
       config: directoryConfig,
       initialSelectedIds: directory.toList(),
-      onChange: (delta) { /* write directory */ },
+      onChange: (delta, notifyParent) { /* write directory */ },
     ),
   ],
 );
@@ -977,7 +986,10 @@ SearchAnchorPicker<Person>(
     SubPickerTile<Person>(
       parentController: controller,
       parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
-      onChange: (delta) { /* write directory */ },
+      onChange: (delta, notifyParent) {
+        /* write directory */
+        notifyParent();
+      },
     ),
   ],
 );

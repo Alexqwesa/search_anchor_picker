@@ -341,13 +341,15 @@ class GenericRawPickerController<T, K> {
     required Iterable<K> Function() filteredIds,
     required Future<bool> Function(Set<K> added, Set<K> removed) applyDelta,
     bool Function()? isActive,
+    ValueNotifier<int>? childSavingN,
   }) : _pendingN = pendingN,
        _close = close,
        _refresh = refresh,
        _loadedIds = loadedIds,
        _filteredIds = filteredIds,
        _applyDelta = applyDelta,
-       _isActive = isActive;
+       _isActive = isActive,
+       _childSavingN = childSavingN;
 
   final ValueNotifier<Set<K>> _pendingN;
   final K Function(T) idOf;
@@ -358,7 +360,30 @@ class GenericRawPickerController<T, K> {
   final Iterable<K> Function() _filteredIds;
   final Future<bool> Function(Set<K> added, Set<K> removed) _applyDelta;
   final bool Function()? _isActive;
+  final ValueNotifier<int>? _childSavingN;
   final SelectionMode selectionMode;
+
+  /// Nested persist operations currently in flight for this open session.
+  ValueListenable<int>? get childSavingListenable => _childSavingN;
+
+  /// Starts parent search-field progress for a nested persist.
+  ///
+  /// Does not keep this picker open; close already waits for in-flight child
+  /// `onChange` work.
+  void beginChildSave() {
+    if (_isActive?.call() == false) return;
+    final notifier = _childSavingN;
+    if (notifier == null) return;
+    notifier.value++;
+  }
+
+  /// Ends parent search-field progress started by [beginChildSave].
+  void endChildSave() {
+    if (_isActive?.call() == false) return;
+    final notifier = _childSavingN;
+    if (notifier == null || notifier.value <= 0) return;
+    notifier.value--;
+  }
 
   /// Current in-popup selection. The returned set cannot be mutated.
   Set<K> get pendingIds => Set<K>.unmodifiable(_pendingN.value);

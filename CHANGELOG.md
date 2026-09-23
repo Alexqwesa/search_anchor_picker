@@ -13,6 +13,8 @@ Breaking vs 0.1.1:
   throw from `onChange` to restore a checkbox after a failed write.
 * `SubPickerTile` no longer deselects parent IDs just because `parentController`
   is set. Opt in with `SubPickerParentSelectionEffect`.
+* `SubPickerTile.onChange` is `(delta, notifyParent)`. Call `notifyParent()`
+  after a successful write for immediate parent checkboxes.
 * `loadItems` is `(context, query)`. The default search field reloads with
   the box text; ignore `query` for a client-side catalog.
 
@@ -27,7 +29,12 @@ Also:
 * `DefaultPickerFieldTrigger` is the field-style `triggerBuilder`: outlined
   input, optional selected chips, Add (multi) or Change (single), field tap
   opens, chip delete removes without opening.
-* `copyWith` can clear nullable fields (`copyWith(listenable: null)`). 
+* `copyWith` can clear nullable fields (`copyWith(listenable: null)`).
+* Parent effects apply after a successful child `onClose`, or after each
+  `onChange` when `onClose` is omitted. Call `notifyParent()` from
+  `onChange` only for immediate parent updates; that delta is not applied
+  again on close. The parent search field shows a spinner while that write
+  is in flight. 
 
 ## 0.1.2 (git only)
 

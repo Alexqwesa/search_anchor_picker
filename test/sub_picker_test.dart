@@ -263,7 +263,7 @@ void main() {
     expect(parentPending.value, {1, 2});
   });
 
-  testWidgets('parent effect applies when the child selection changes', (
+  testWidgets('parent effect applies after successful child onClose', (
     tester,
   ) async {
     final parentPending = ValueNotifier<Set<int>>({1});
@@ -306,12 +306,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('1'));
     await tester.pump();
-    expect(parentPending.value, isEmpty);
+    expect(parentPending.value, {1});
 
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pump();
     expect(find.text('Saving…'), findsOneWidget);
-    expect(parentPending.value, isEmpty);
+    expect(parentPending.value, {1});
 
     save.complete();
     await tester.pumpAndSettle();
@@ -319,7 +319,7 @@ void main() {
     expect(find.byType(SearchBar), findsNothing);
   });
 
-  testWidgets('failed child onClose does not roll back parent selection', (
+  testWidgets('failed child onClose does not change parent selection', (
     tester,
   ) async {
     final errors = <FlutterErrorDetails>[];
@@ -367,14 +367,15 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('1'));
     await tester.pump();
+    expect(parentPending.value, {1});
     await tester.tap(find.byIcon(Icons.arrow_back));
     await tester.pumpAndSettle();
 
-    expect(parentPending.value, isEmpty);
+    expect(parentPending.value, {1});
     expect(find.text('Selection not saved'), findsOneWidget);
     await tester.tap(find.text('Close without saving'));
     await tester.pumpAndSettle();
-    expect(parentPending.value, isEmpty);
+    expect(parentPending.value, {1});
     expect(errors, hasLength(1));
     expect(errors.single.exception.toString(), contains('save failed'));
   });

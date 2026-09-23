@@ -69,9 +69,10 @@ effects.
   then confirm the main wrappers still forward the public API.
 - Related-list status, membership icons, unselect policy: edit main wrappers
   and `lib/src/picker_status.dart`. Do not teach raw about auxiliary membership.
-- Parent/child sync (`SubPickerParentSelectionEffect` via composed `onChange`):
-  edit `lib/src/widgets/sub_picker_tile.dart`. Raw tiles must not apply parent
-  effects. Gates and observables `onChange` / `onClose` belong on the raw picker.
+- Parent/child sync (`SubPickerParentSelectionEffect` via `onClose`, or
+  `notifyParent` from `onChange`): edit `lib/src/widgets/sub_picker_tile.dart`. Raw tiles must
+  not apply parent effects. Gates and observables `onChange` / `onClose`
+  belong on the raw picker.
 
 When public behavior changes, update README, `doc/USAGE_SKILL.md`, tests,
 example, and changelog. Update this file only when the raw/main split changes.

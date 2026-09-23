@@ -233,8 +233,7 @@ class _DemoHomeState extends State<DemoHome> {
                             listA.items,
                             subA1.items,
                           ),
-                          // Save each accepted change; parent removal sync follows.
-                          onChange: (delta) {
+                          onChange: (delta, notifyParent) {
                             setState(() {
                               listA.addAll(
                                 delta.added
@@ -246,6 +245,7 @@ class _DemoHomeState extends State<DemoHome> {
                                 (item) => delta.removed.contains(item.id),
                               );
                             });
+                            notifyParent();
                           },
                         ),
                         SubPickerTile<DemoItem>(

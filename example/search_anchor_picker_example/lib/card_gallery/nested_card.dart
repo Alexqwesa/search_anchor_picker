@@ -360,7 +360,10 @@ class _NestedCardState extends State<NestedCard> {
       menuOffset: offset ?? const Offset(30, 30),
       viewConstraints: constraints,
       onChange: widget.childPersist == Persist.change
-          ? (delta) => setState(() => _onChildDelta(parent, ids, delta))
+          ? (delta, notifyParent) {
+              setState(() => _onChildDelta(parent, ids, delta));
+              notifyParent();
+            }
           : null,
       onClose: widget.childPersist == Persist.close
           ? (result) => setState(() => _onChildDelta(parent, ids, result))
@@ -392,7 +395,7 @@ class _NestedCardState extends State<NestedCard> {
         loadItems: (_, _) async => peopleIn(favoritesCatalogIds),
       ),
       initialSelectedIds: _favorites.toList(),
-      onChange: (delta) => setState(() => applyDelta(_favorites, delta)),
+      onChange: (delta, _) => setState(() => applyDelta(_favorites, delta)),
     );
   }
 

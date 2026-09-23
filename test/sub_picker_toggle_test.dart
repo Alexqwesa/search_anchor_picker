@@ -52,9 +52,10 @@ class _Harness {
             parentController: controller,
             parentSelectionEffect: effect,
             selectionMode: selectionMode,
-            onChange: (delta) async {
+            onChange: (delta, notifyParent) async {
               saves.add(delta);
               await onChange?.call(delta);
+              notifyParent();
             },
             onClose: withClose
                 ? (result) {
@@ -174,7 +175,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Row 1').last);
     await tester.pumpAndSettle();
-    expect(parent.pendingIds, isEmpty);
+    expect(parent.pendingIds, {1});
     await tester.tap(find.byTooltip('Back').last);
     await tester.pump();
     expect(find.text('Saving…'), findsOneWidget);
@@ -186,6 +187,105 @@ void main() {
     await tester.pumpAndSettle();
     expect(parent.pendingIds, {1});
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('onChange without notifyParent does not update the parent', (
+    tester,
+  ) async {
+    final parent = ValueNotifier<Set<int>>({1, 9});
+    addTearDown(parent.dispose);
+    final parentController = GenericPickerController<int, int>(
+      pendingN: parent,
+      idOf: (item) => item,
+      close: ([_]) {},
+      selectionMode: SelectionMode.multi,
+      getKey: (_) => GlobalKey(),
+      refresh: () {},
+      loadedIds: () => [1, 2],
+      filteredIds: () => [1, 2],
+      applyDelta: (_, _) =>
+          throw StateError('Parent sync must not create a delta'),
+    );
+    final changes = <PickerDelta<int>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Child',
+            config: PickerConfig<int>(
+              loadItems: (_, _) async => [1, 2],
+              idOf: (item) => item,
+              labelOf: (item) => 'Item $item',
+              searchTermsOf: (item) => ['$item'],
+            ),
+            initialSelectedIds: const [1],
+            parentController: parentController,
+            parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
+            onChange: (delta, _) => changes.add(delta),
+            onClose: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Child'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 2'));
+    await tester.pumpAndSettle();
+    expect(changes, hasLength(1));
+    expect(parent.value, {1, 9});
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(parent.value, {1, 2, 9});
+  });
+
+  testWidgets('without onClose, parent effects apply on each onChange', (
+    tester,
+  ) async {
+    final parent = ValueNotifier<Set<int>>({1, 9});
+    addTearDown(parent.dispose);
+    final parentController = GenericPickerController<int, int>(
+      pendingN: parent,
+      idOf: (item) => item,
+      close: ([_]) {},
+      selectionMode: SelectionMode.multi,
+      getKey: (_) => GlobalKey(),
+      refresh: () {},
+      loadedIds: () => [1, 2],
+      filteredIds: () => [1, 2],
+      applyDelta: (_, _) =>
+          throw StateError('Parent sync must not create a delta'),
+    );
+    var notifications = 0;
+    parent.addListener(() => notifications++);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SubPickerTile<int>(
+            title: 'Child',
+            config: PickerConfig<int>(
+              loadItems: (_, _) async => [1, 2],
+              idOf: (item) => item,
+              labelOf: (item) => 'Item $item',
+              searchTermsOf: (item) => ['$item'],
+            ),
+            initialSelectedIds: const [1],
+            parentController: parentController,
+            parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
+            onChange: (_, _) {},
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Child'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Item 2'));
+    await tester.pumpAndSettle();
+    expect(parent.value, {1, 2, 9});
+    expect(notifications, 1);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(parent.value, {1, 2, 9});
+    expect(notifications, 1);
   });
 
   testWidgets('syncs only after the save succeeds and never replays on close', (
@@ -222,14 +322,15 @@ void main() {
       onChange: (_) async => throw StateError('save failed'),
     );
     await tester.tap(find.text('Item 1'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    FlutterError.onError = previous;
+    expect(errors, hasLength(1));
     expect(h.child.pendingIds, {1});
     expect(h.parent.value, {1, 9});
     await h.close(tester);
     expect(h.finishes.single.$1, isEmpty);
     expect(h.finishes.single.$2, isEmpty);
     expect(h.notifications, 0);
-    expect(errors, hasLength(1));
   });
 
   testWidgets('defers close until the pending save settles', (tester) async {
@@ -248,6 +349,55 @@ void main() {
     expect(h.finishes.single.$1, unorderedEquals([2]));
     expect(h.finishes.single.$2, isEmpty);
   });
+
+  testWidgets(
+    'parent search field shows progress while a child save is in flight',
+    (tester) async {
+      final save = Completer<void>();
+      final config = PickerConfig<int>(
+        loadItems: (_, _) async => [1, 2],
+        idOf: (item) => item,
+        labelOf: (item) => 'Row $item',
+        searchTermsOf: (item) => ['$item'],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.windows),
+          home: SearchAnchorPicker<int>(
+            config: config,
+            initialSelectedIds: const [1],
+            triggerChild: const Text('Parent'),
+            isFullScreen: false,
+            headerBuilder: (_, controller, _) => [
+              SubPickerTile<int>(
+                title: 'Child',
+                config: config,
+                initialSelectedIds: const [1],
+                parentController: controller,
+                parentSelectionEffect: SubPickerParentSelectionEffect.mirror,
+                isFullScreen: false,
+                onChange: (delta, notifyParent) async {
+                  await save.future;
+                  notifyParent();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.text('Parent'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Child'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.tap(find.text('Row 2').last);
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      save.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
+  );
 
   testWidgets('ignores save completion after disposal', (tester) async {
     final h = _Harness();

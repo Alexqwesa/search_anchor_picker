@@ -185,10 +185,13 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
           ? null
           : parent,
       parentSelectionEffect: widget.effect,
-      onChange: (delta) => setState(() {
-        applyDelta(ids, delta);
-        applyEffectToSelection(_selected, widget.effect, delta);
-      }),
+      onChange: (delta, notifyParent) {
+        setState(() {
+          applyDelta(ids, delta);
+          applyEffectToSelection(_selected, widget.effect, delta);
+        });
+        notifyParent();
+      },
     );
   }
 

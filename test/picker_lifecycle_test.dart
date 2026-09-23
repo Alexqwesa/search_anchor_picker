@@ -95,7 +95,7 @@ void main() {
     expect(headerBuildCalls, 1);
     expect(triggerBuildCalls, pickerCount + 1);
     expect(source.hasActiveListeners, isTrue);
-    expect(PickerResourceTracker.createdByType, hasLength(9));
+    expect(PickerResourceTracker.createdByType, hasLength(10));
     expect(PickerResourceTracker.createdByType.values, everyElement(1));
     expect(
       PickerResourceTracker.liveByType,
@@ -119,7 +119,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(source.hasActiveListeners, isFalse);
-    expect(PickerResourceTracker.createdByType, hasLength(9));
+    expect(PickerResourceTracker.createdByType, hasLength(10));
     expect(PickerResourceTracker.createdByType.values, everyElement(1));
     expect(PickerResourceTracker.liveByType, isEmpty);
     expect(openedHeaderKey!.currentContext, isNull);

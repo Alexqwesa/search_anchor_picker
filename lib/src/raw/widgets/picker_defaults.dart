@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:search_anchor_picker/src/raw/picker_builders.dart';
@@ -150,6 +151,7 @@ class DefaultPickerSearchField extends StatelessWidget {
     this.clearQuery,
     this.leading,
     this.trailing,
+    this.childSavingListenable,
     this.hintText,
     this.headerHeight,
     this.textCapitalization,
@@ -169,6 +171,7 @@ class DefaultPickerSearchField extends StatelessWidget {
   final bool isFullScreen;
   final Widget? leading;
   final Iterable<Widget>? trailing;
+  final ValueListenable<int>? childSavingListenable;
   final String? hintText;
   final double? headerHeight;
   final TextCapitalization? textCapitalization;
@@ -190,7 +193,10 @@ class DefaultPickerSearchField extends StatelessWidget {
       top: isFullScreen,
       bottom: false,
       child: ListenableBuilder(
-        listenable: controller,
+        listenable: switch (childSavingListenable) {
+          final saving? => Listenable.merge([controller, saving]),
+          null => controller,
+        },
         builder: (context, _) {
           final defaultTrailing = controller.text.isEmpty
               ? const <Widget>[]
@@ -201,6 +207,20 @@ class DefaultPickerSearchField extends StatelessWidget {
                     onPressed: clearQuery ?? controller.clear,
                   ),
                 ];
+          final trailingWidgets = [
+            if ((childSavingListenable?.value ?? 0) > 0)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 4),
+                child: SizedBox.square(
+                  dimension: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    semanticsLabel: _pickerDefaultMessages(context).saving,
+                  ),
+                ),
+              ),
+            ...trailing ?? defaultTrailing,
+          ];
           return SearchBar(
             controller: controller,
             focusNode: focusNode,
@@ -217,7 +237,7 @@ class DefaultPickerSearchField extends StatelessWidget {
                   icon: const BackButtonIcon(),
                   onPressed: close,
                 ),
-            trailing: trailing ?? defaultTrailing,
+            trailing: trailingWidgets,
             elevation: const WidgetStatePropertyAll(0),
             backgroundColor: const WidgetStatePropertyAll(Colors.transparent),
             overlayColor: const WidgetStatePropertyAll(Colors.transparent),

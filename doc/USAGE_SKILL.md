@@ -18,7 +18,7 @@ import 'package:search_anchor_picker/search_anchor_picker.dart';
 | --- | --- |
 | Save the whole session delta when the popup closes | `onClose` |
 | Save each accepted delta as it happens | `onChange` |
-| Nested sublist membership | `SubPickerTile` + `onChange` / `onClose` |
+| Nested sublist membership | `SubPickerTile` + `onClose` (or `onChange` if `onClose` is omitted; call `notifyParent` from `onChange` for immediate parent sync) |
 | Bulk user intent in a custom header | Picker controller selection methods |
 | Copy an already-persisted change into the open picker's checkboxes | `controller.syncPending(...)` |
 
@@ -181,16 +181,35 @@ update the open parent's checkboxes:
 SubPickerTile<Person>(
   parentController: controller,
   parentSelectionEffect: SubPickerParentSelectionEffect.deselectRemoved,
-  // title, config, initialSelectedIds, and onChange/onClose...
+  onClose: (result) async {
+    await directoryApi.add(result.added);
+    await directoryApi.remove(result.removed);
+  },
 )
 ```
 
+Usual parent sync is that successful `onClose`. For immediate parent
+checkboxes while the child is still open, persist from `onChange` and call
+`notifyParent()` after the write:
+
+```dart
+onChange: (delta, notifyParent) async {
+  await directoryApi.add(delta.added);
+  await directoryApi.remove(delta.removed);
+  notifyParent();
+},
+```
+
 Choose `selectAdded` to check additions, `deselectRemoved` to uncheck removals,
-or `mirror` to do both. `none` is the default. These effects only change the
-open parent's pending checkboxes. They do not persist parent selection, change
-the parent's `initialSelectedIds`, or create a parent `onChange` / `onClose`
-delta. If parent selection and sub-list membership are separate backend
-records, the child's `onChange` or `onClose` callback must save both changes
+or `mirror` to do both. `none` is the default. These effects change the open
+parent's pending checkboxes after a successful `onClose`. If `onClose` is
+omitted, the effect applies after each accepted `onChange`. Call
+`notifyParent()` from `onChange` only when `onClose` is also set and the
+parent should update immediately; it is not applied again on close. They do
+not persist parent selection, change the parent's `initialSelectedIds`, or
+create a parent `onChange` / `onClose` delta. If parent selection and
+sub-list membership are separate backend records, the child's `onChange` or
+`onClose` callback must save both changes
 and update the authoritative parent IDs for the next open. The package updates
 open parent checkboxes without a full reseed after each successful child
 `onChange`, including bulk header commands. Rejected, blocked, cancelled, or

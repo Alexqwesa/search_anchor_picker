@@ -104,11 +104,18 @@ Persist `added` and `removed`. A load error or empty search is not a deletion.
 options. Parent selection and sub-list membership are independent by default.
 `SubPickerParentSelectionEffect` defaults to `none`. Its opt-in `selectAdded`,
 `deselectRemoved`, and `mirror` values apply either or
-both sides of an accepted child delta into the open parent's pending set.
-`syncPending` applies the update on the next frame. These effects do not persist
-parent selection, update the external parent seed, or create a parent
-`onChange` / `onClose` delta. Consumers with separate parent-selection
-persistence must save that change in `onChange` or `onClose` and handle failures.
+both sides of a successful child persist into the open parent's pending set.
+They follow a successful `onClose` by default. If `onClose` is omitted,
+the effect applies after each accepted `onChange`. Call `notifyParent()`
+from `onChange` only for immediate parent updates when `onClose` is also
+set; it is not applied again on close. `syncPending` applies
+the update on the next frame. A failed write or Close without saving leaves
+the parent unchanged. The parent search field shows a spinner while the
+child write is in flight; close already waits for in-flight `onChange`.
+These effects do not persist parent selection, update the external parent
+seed, or create a parent `onChange` / `onClose` delta. Consumers with
+separate parent-selection persistence must save that change in `onChange`
+or `onClose` and handle failures.
 
 `SubPickerTile` forwards `onChange` (`PickerDelta`),
 `onClose`, `closeSavingBuilder`, `closeSaveFailedBuilder`, and `headerBuilder`.
@@ -116,8 +123,8 @@ Accepted deltas share one apply pipeline for rows and bulk commands. The picker
 notifies; the application persists. Unselect policy runs before the checkbox
 moves. A thrown `onChange` restores the checkbox and skips parent sync. A
 blocked or cancelled unselect never applies. Close waits for `onClose`; a thrown
-`onClose` keeps the overlay open
-and asks whether to keep editing. Pending work defers close. Deferred
+`onClose` keeps the overlay open, does not parent-sync, and asks whether to
+keep editing. Pending work defers close. Deferred
 controller updates are session-guarded so late child callbacks cannot mutate a
 closed or reopened parent.
 
