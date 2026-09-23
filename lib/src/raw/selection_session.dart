@@ -40,7 +40,6 @@ class PickerSelectionSession<K> {
   Set<K> _openedIds = <K>{};
   final Set<K> _explicitlyAdded = <K>{};
   final Set<K> _explicitlyRemoved = <K>{};
-  Set<K>? _acceptedIds;
 
   Set<K> get openedIds => _openedIds;
 
@@ -48,7 +47,6 @@ class PickerSelectionSession<K> {
     _openedIds = seed.toSet();
     _explicitlyAdded.clear();
     _explicitlyRemoved.clear();
-    _acceptedIds = null;
     pendingN.value = {..._openedIds};
   }
 
@@ -68,18 +66,10 @@ class PickerSelectionSession<K> {
       ..removeAll(added);
   }
 
-  /// Advances the persistence baseline only for successfully applied toggles.
-  void acceptToggle(Set<K> before, Set<K> after) {
-    (_acceptedIds ??= {..._openedIds})
-      ..addAll(after.difference(before))
-      ..removeAll(before.difference(after));
-  }
-
-  PickerDelta<K> result({bool remainingOnly = false}) {
-    final baseline = remainingOnly ? (_acceptedIds ?? _openedIds) : _openedIds;
+  PickerDelta<K> result() {
     return PickerDelta<K>(
-      added: _explicitlyAdded.difference(baseline),
-      removed: _explicitlyRemoved.intersection(baseline),
+      added: _explicitlyAdded.difference(_openedIds),
+      removed: _explicitlyRemoved.intersection(_openedIds),
     );
   }
 

@@ -16,7 +16,8 @@ from `package:search_anchor_picker/search_anchor_picker.dart` and
   `PickerDelta`
 - default widgets exported by `widgets.dart`
 
-Do not tell application code to import `package:search_anchor_picker/raw.dart`.
+Do not add a `lib/raw.dart` entrypoint. Raw types stay under `lib/src/raw/`
+and are not a published import.
 
 ## Why the split exists
 
@@ -37,9 +38,8 @@ effects.
 
 - `lib/search_anchor_picker.dart` — published product API.
 - `lib/widgets.dart` — published default and convenience widgets.
-- `lib/raw.dart` — unpublished-in-docs maintenance entrypoint for the raw
-  types. Import it only from package code, tests that need internals, or this
-  maintenance workflow.
+- `lib/src/raw/` — raw implementation. Import these files from package
+  code and internal tests only.
 
 ## Source map
 

@@ -1,8 +1,8 @@
 name: search_anchor_picker
 description: >-
   Generic searchable picker (multi / single / singleOptional) with stable in-overlay
-  selection, nested sub-pickers, async toggle gating, and lazy lifecycle-managed
-  controllers and focus nodes.
+  selection, nested sub-pickers, async selection callbacks with rollback, and
+  lazy lifecycle-managed controllers and focus nodes.
 version: 0.2.0
 homepage: https://github.com/Alexqwesa/search_anchor_picker
 repository: https://github.com/Alexqwesa/search_anchor_picker

@@ -33,6 +33,9 @@ Also:
 
 * Persist in `onChange` or `onClose`, not both. Close nets select/deselect
   against the seed at open; change does not.
+* Removed unused `PickerSelectionSession.acceptToggle` /
+  `result(remainingOnly:)`. Removed the `lib/raw.dart` entrypoint; raw
+  types stay under `lib/src/raw/`.
 * Bulk header commands take the same apply path as a row toggle (one delta).
 * Default copy is localized (empty, no-results, retry, in-use warning/confirm,
   saving, close-save failed). `emptyText` / `noResultsText` override the first
