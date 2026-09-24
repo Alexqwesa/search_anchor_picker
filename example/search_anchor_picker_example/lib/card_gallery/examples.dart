@@ -1142,6 +1142,65 @@ List<GallerySection> gallerySections() => [
             'In list: Radia is on the loaded page, and she stays there after you uncheck her. If selected: she is injected only while she is still selected. Section: she is not on the page, and initialSelectedItemCache puts her in a Selected section. No: she is not shown in the list at all. Uncheck her in Section: the row stays until close so you can undo.\n\n'
             'A bookmark icon marks people the app kept who did not come from itemsLoader. Page rows use the person icon.\n\n'
             'Leave “Show warning on hidden chip” on and tap Radia’s chip X while she is not on this page: a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
+        // source:hidden-selected
+// // The app keeps the old initial selection. itemsLoader still returns only
+// // the page. Inject kept people who are not on that page.
+// final page = await itemsLoader(context, query);
+// final pageIds = page.map((person) => person.id).toSet();
+// final hidden = keptInitialItems.where(
+//   (person) => !pageIds.contains(person.id),
+// );
+//
+// List<Person> load() {
+//   /*bold=on*/
+//   switch (mode) {
+//     case HiddenItemsMode.inList:
+//       return [...page, ...hidden];
+//     case HiddenItemsMode.onlyIfSelected:
+//       return [
+//         ...page,
+//         ...hidden.where((person) => selected.contains(person.id)),
+//       ];
+//     case HiddenItemsMode.section:
+//     case HiddenItemsMode.none:
+//       return page;
+//   }
+//   /*bold=off*/
+// }
+//
+// SearchAnchorPicker<Person>(
+//   initialSelectedIds: selected.toList(),
+//   initialSelectedItemCache: /*bold=on*/ mode == HiddenItemsMode.section
+//       ? keptInitialItems
+//       : null, /*bold=off*/
+//   itemBuilder: (context, person, selected, status, source, toggle) {
+//     final fromCache =
+//         source == PickerItemSource.initialSelectedItemCache ||
+//         hidden.any((item) => item.id == person.id);
+//     /*bold=on*/
+//     final keptIcon = fromCache ? Icons.bookmark_outline : Icons.person;
+//     /*bold=off*/
+//     return DefaultPickerItemTile(
+//       selected: selected,
+//       relatedListItemStatus: status,
+//       onToggle: (_) => toggle(),
+//       title: Text(person.name),
+//       subtitle: Text(
+//         fromCache ? '${person.team} · not from itemsLoader' : person.team,
+//       ),
+//       leading: Icon(keptIcon),
+//       selectionMode: SelectionMode.multi,
+//     );
+//   },
+//   onClose: (result) {
+//     selected
+//       ..addAll(result.added)
+//       ..removeAll(result.removed);
+//     // keptInitialItems stays the original list, so In list still injects
+//     // Radia after she is unchecked.
+//   },
+// );
+// source-end:hidden-selected
         sourceTag: 'hidden-selected',
         seed: const {1, 12},
         itemsLoader: (_, _) async => people.take(4).toList(),

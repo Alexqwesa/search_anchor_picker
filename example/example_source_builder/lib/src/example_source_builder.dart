@@ -63,6 +63,12 @@ String _mapLiteral(Map<String, String> values) {
   return buffer.toString();
 }
 
+/// Sample regions are line comments so they are not compiled. Drop that prefix.
+String _uncommentSampleLine(String line) {
+  final commented = RegExp(r'^\s*// ?(.*)$').firstMatch(line);
+  return commented?.group(1) ?? line;
+}
+
 String _rawTriple(String value) {
   if (value.contains("'''")) {
     throw StateError('Example source contains a raw triple quote');
@@ -77,7 +83,7 @@ void _collect(String file, Map<String, List<String>> regions) {
   for (final match in block.allMatches(file)) {
     regions.putIfAbsent(match.group(1)!, () => []).add(match.group(2)!);
   }
-  final lines = file.split('\n');
+  final lines = file.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
   for (var i = 0; i < lines.length; i++) {
     final open = RegExp(r'^\s*// source:(\S+)\s*$').firstMatch(lines[i]);
     if (open == null) continue;
@@ -86,9 +92,7 @@ void _collect(String file, Map<String, List<String>> regions) {
     i++;
     while (i < lines.length &&
         !RegExp('^\\s*// source-end:$tag\\s*\$').hasMatch(lines[i])) {
-      final line = lines[i];
-      final commented = RegExp(r'^\s*// ?(.*)$').firstMatch(line);
-      body.add(commented?.group(1) ?? line);
+      body.add(_uncommentSampleLine(lines[i]));
       i++;
     }
     regions.putIfAbsent(tag, () => []).add(body.join('\n'));

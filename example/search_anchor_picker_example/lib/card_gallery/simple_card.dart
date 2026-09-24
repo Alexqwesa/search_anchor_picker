@@ -235,11 +235,9 @@ class _SimpleCardState extends State<SimpleCard> {
                   : (person) => relatedStatus(widget.related, person)!,
             ),
             initialSelectedIds: _selected.toList(),
-            /*source:hidden-selected*/
-            initialSelectedItemCache: /*bold=on*/ _passSelectedItemCache
+            initialSelectedItemCache: _passSelectedItemCache
                 ? peopleIn(_selected)
-                : null, /*bold=off*/
-            /*source-end:hidden-selected*/
+                : null,
             selectionMode: widget.mode,
             itemBuilder: widget.richItemTile ? _richItemTile : null,
             isFullScreen: widget.fullScreen,
@@ -431,14 +429,10 @@ class _SimpleCardState extends State<SimpleCard> {
     PickerItemSource source,
     VoidCallback toggle,
   ) {
-    /*source:hidden-selected*/
     final fromCache =
         source == PickerItemSource.initialSelectedItemCache ||
         _keptOffPageIds.contains(person.id);
-    /*bold=on*/
     final keptIcon = fromCache ? Icons.bookmark_outline : Icons.person;
-    /*bold=off*/
-    /*source-end:hidden-selected*/
     return DefaultPickerItemTile(
       selected: selected,
       relatedListItemStatus: status,
@@ -585,8 +579,6 @@ class _SimpleCardState extends State<SimpleCard> {
         : people.take(4).toList();
     final pageIds = page.map((person) => person.id).toSet();
     final hidden = _offPageInitialItems(pageIds);
-    /*source:hidden-selected*/
-    /*bold=on*/
     return switch (_hiddenMode) {
       HiddenItemsMode.inList => [...page, ...hidden],
       HiddenItemsMode.onlyIfSelected => [
@@ -596,8 +588,6 @@ class _SimpleCardState extends State<SimpleCard> {
       ],
       HiddenItemsMode.section || HiddenItemsMode.none => page,
     };
-    /*bold=off*/
-    /*source-end:hidden-selected*/
   }
 
   Set<int> get _keptOffPageIds {
