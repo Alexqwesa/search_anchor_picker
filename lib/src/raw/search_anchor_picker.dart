@@ -850,10 +850,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
     PickerResourceTracker.register(entry);
     _overlayEntry = entry;
     overlay.insert(entry);
-    // TickerFuture is @awaitNotRequired on current Flutter; unawaited()
-    // trips unnecessary_unawaited there, and omitting it trips
-    // discarded_futures on older SDKs.
-    _animationController.forward(); // ignore: discarded_futures
+    _animationController.forward();
   }
 
   void _removeOverlay() {
@@ -985,9 +982,9 @@ class _GenericRawSearchAnchorPickerState<T, K>
         // Invert this delta against the live set. Replacing with [before]
         // would wipe a concurrent success; skipping unless the snapshot still
         // matches would leave this failed row selected.
-        final current = {..._pendingN.value};
-        current.removeAll(selectableAdded);
-        current.addAll(selectableRemoved);
+        final current = {..._pendingN.value}
+          ..removeAll(selectableAdded)
+          ..addAll(selectableRemoved);
         _pendingN.value = current;
         return false;
       }

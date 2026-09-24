@@ -1,3 +1,7 @@
+## 0.2.2
+
+* fix analyzer warnings
+
 ## 0.2.1
 
 * Shortened the pubspec description. Added `example/example.dart` for
