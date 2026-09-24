@@ -32,7 +32,8 @@ class NestedCard extends StatefulWidget {
     required this.title,
     required this.persistLabel,
     required this.difference,
-    required this.source,
+    this.source = '',
+    this.sourceTag,
     super.key,
     this.relation = NestedRelation.unrelated,
     this.effect = SubPickerParentSelectionEffect.none,
@@ -60,6 +61,7 @@ class NestedCard extends StatefulWidget {
   final String persistLabel;
   final String difference;
   final String source;
+  final String? sourceTag;
   final NestedRelation relation;
   final SubPickerParentSelectionEffect effect;
   final Persist childPersist;
@@ -148,6 +150,7 @@ class _NestedCardState extends State<NestedCard> {
       persist: widget.persistLabel,
       difference: widget.difference,
       source: widget.source,
+      sourceTag: widget.sourceTag,
       footer: _showFooter ? _footer(context) : null,
       child: SearchAnchorPicker<Person>(
         config: peopleConfig(

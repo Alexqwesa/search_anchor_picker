@@ -34,7 +34,8 @@ class FieldRelationCard extends StatefulWidget {
     required this.title,
     required this.persistLabel,
     required this.difference,
-    required this.source,
+    this.source = '',
+    this.sourceTag,
     super.key,
     this.effect = SubPickerParentSelectionEffect.none,
     this.parentRows = ParentRowSet.shortMain,
@@ -49,6 +50,7 @@ class FieldRelationCard extends StatefulWidget {
   final String persistLabel;
   final String difference;
   final String source;
+  final String? sourceTag;
   final SubPickerParentSelectionEffect effect;
   final ParentRowSet parentRows;
   final SublistFieldUnselect sublistUnselect;
@@ -83,6 +85,7 @@ class _FieldRelationCardState extends State<FieldRelationCard> {
       persist: widget.persistLabel,
       difference: widget.difference,
       source: widget.source,
+      sourceTag: widget.sourceTag,
       footer: namedSetFooter(context, [
         ('Directory', _directory),
         if (widget.sublists >= 2) ('Watchlist', _watchlist),

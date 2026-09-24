@@ -52,7 +52,7 @@ class SimpleCard extends StatefulWidget {
     required this.title,
     required this.persistLabel,
     required this.difference,
-    required this.source,
+    this.source = '',
     super.key,
     this.seed = const {},
     this.mode = SelectionMode.multi,
@@ -81,6 +81,7 @@ class SimpleCard extends StatefulWidget {
     this.visibleCatalogIds,
     this.selectedItemCache = false,
     this.richItemTile = false,
+    this.sourceTag,
   });
 
   final String title;
@@ -117,6 +118,9 @@ class SimpleCard extends StatefulWidget {
   final bool selectedItemCache;
   final bool richItemTile;
 
+  /// `/*source:name*/` region in this file. Replaces [source] in the dialog.
+  final String? sourceTag;
+
   @override
   State<SimpleCard> createState() => _SimpleCardState();
 }
@@ -145,6 +149,7 @@ class _SimpleCardState extends State<SimpleCard> {
       persist: widget.persistLabel,
       difference: widget.difference,
       source: widget.source,
+      sourceTag: widget.sourceTag,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,9 +235,11 @@ class _SimpleCardState extends State<SimpleCard> {
                   : (person) => relatedStatus(widget.related, person)!,
             ),
             initialSelectedIds: _selected.toList(),
-            initialSelectedItemCache: _passSelectedItemCache
+            /*source:hidden-selected*/
+            initialSelectedItemCache: /*bold=on*/ _passSelectedItemCache
                 ? peopleIn(_selected)
-                : null,
+                : null, /*bold=off*/
+            /*source-end:hidden-selected*/
             selectionMode: widget.mode,
             itemBuilder: widget.richItemTile ? _richItemTile : null,
             isFullScreen: widget.fullScreen,
@@ -424,9 +431,14 @@ class _SimpleCardState extends State<SimpleCard> {
     PickerItemSource source,
     VoidCallback toggle,
   ) {
+    /*source:hidden-selected*/
     final fromCache =
         source == PickerItemSource.initialSelectedItemCache ||
         _keptOffPageIds.contains(person.id);
+    /*bold=on*/
+    final keptIcon = fromCache ? Icons.bookmark_outline : Icons.person;
+    /*bold=off*/
+    /*source-end:hidden-selected*/
     return DefaultPickerItemTile(
       selected: selected,
       relatedListItemStatus: status,
@@ -435,7 +447,7 @@ class _SimpleCardState extends State<SimpleCard> {
       subtitle: Text(
         fromCache ? '${person.team} · not from itemsLoader' : person.team,
       ),
-      leading: Icon(fromCache ? Icons.bookmark_outline : Icons.person),
+      leading: Icon(keptIcon),
       tooltip: '${person.name} · ${person.team}',
       selectionMode: widget.mode,
     );
@@ -573,6 +585,8 @@ class _SimpleCardState extends State<SimpleCard> {
         : people.take(4).toList();
     final pageIds = page.map((person) => person.id).toSet();
     final hidden = _offPageInitialItems(pageIds);
+    /*source:hidden-selected*/
+    /*bold=on*/
     return switch (_hiddenMode) {
       HiddenItemsMode.inList => [...page, ...hidden],
       HiddenItemsMode.onlyIfSelected => [
@@ -582,6 +596,8 @@ class _SimpleCardState extends State<SimpleCard> {
       ],
       HiddenItemsMode.section || HiddenItemsMode.none => page,
     };
+    /*bold=off*/
+    /*source-end:hidden-selected*/
   }
 
   Set<int> get _keptOffPageIds {

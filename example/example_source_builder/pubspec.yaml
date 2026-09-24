@@ -1,0 +1,15 @@
+name: example_source_builder
+description: Generates gallery source dialogs from /*source:tag*/ regions.
+publish_to: none
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  build: ^2.4.1
+  code_builder: ^4.10.0
+  dart_style: ^3.0.0
+  glob: ^2.1.2
+
+dev_dependencies:
+  lints: ^6.0.0

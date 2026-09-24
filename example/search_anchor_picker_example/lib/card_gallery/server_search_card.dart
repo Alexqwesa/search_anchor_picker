@@ -29,25 +29,26 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
           'GET /people?q=lin\n'
           '→ Linus Torvalds\n\n'
           'Ada’s chip stays while she is missing from that page. initialSelectedItemCache also keeps her as a Selected row so you can uncheck her without clearing the query. The footer is the last request and the people the fake server returned.',
-      source: r'''
-final debounce = Debouncer();
-
-Future<List<Person>> searchPeople(String query) {
-  if (query.isEmpty) return api.searchPeople(query);
-  return debounce.run(() => api.searchPeople(query));
-}
-
-SearchAnchorPicker<Person>(
-  initialSelectedIds: selected.toList(),
-  initialSelectedItemCache: cachedPeople,
-  onClose: (result) { /* persist result.added / result.removed */ },
-);
-
-PickerConfig(
-  searchMode: PickerSearchMode.remote,
-  itemsLoader: (context, query) => searchPeople(query),
-);
-''',
+      // source:server-search-default-search-field
+// final debounce = Debouncer();
+// 
+// Future<List<Person>> searchPeople(String query) {
+//   if (query.isEmpty) return api.searchPeople(query);
+//   return debounce.run(() => api.searchPeople(query));
+// }
+// 
+// SearchAnchorPicker<Person>(
+//   initialSelectedIds: selected.toList(),
+//   initialSelectedItemCache: cachedPeople,
+//   onClose: (result) { /* persist result.added / result.removed */ },
+// );
+// 
+// PickerConfig(
+//   searchMode: PickerSearchMode.remote,
+//   itemsLoader: (context, query) => searchPeople(query),
+// );
+// source-end:server-search-default-search-field
+        sourceTag: 'server-search-default-search-field',
       footer: Text(
         '$_lastRequest\n→ $_lastResult',
         style: Theme.of(

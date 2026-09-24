@@ -1,0 +1,7 @@
+builders:
+  example_sources:
+    import: "package:example_source_builder/builder.dart"
+    builder_factories: ["exampleSourceBuilder"]
+    build_extensions: { "$lib$": ["card_gallery/example_sources.g.dart"] }
+    auto_apply: dependents
+    build_to: source

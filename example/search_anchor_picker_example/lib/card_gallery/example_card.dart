@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 
+import 'example_source.dart';
+import 'example_sources.g.dart';
+
 class ExampleCard extends StatelessWidget {
   const ExampleCard({
     required this.title,
     required this.persist,
     required this.difference,
-    required this.source,
     required this.child,
     super.key,
+    this.source = '',
+    this.sourceTag,
     this.footer,
   });
 
   final String title;
   final String persist;
   final String difference;
+  /// Fallback when [sourceTag] is null. Prefer a generated [sourceTag].
   final String source;
+
+  /// Key in [exampleSources], produced by example_source_builder.
+  final String? sourceTag;
   final Widget child;
   final Widget? footer;
 
@@ -37,8 +45,11 @@ class ExampleCard extends StatelessWidget {
                 IconButton(
                   tooltip: 'Source',
                   icon: const Icon(Icons.code),
-                  onPressed: () =>
-                      showExampleSource(context, title: title, source: source),
+                  onPressed: () => showExampleSource(
+                    context,
+                    title: title,
+                    source: _resolvedSource(),
+                  ),
                 ),
               ],
             ),
@@ -55,6 +66,16 @@ class ExampleCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _resolvedSource() {
+    final tag = sourceTag;
+    if (tag == null) return source;
+    final generated = exampleSources[tag];
+    if (generated == null) {
+      throw StateError('No generated source for /*source:$tag*/');
+    }
+    return generated;
   }
 }
 
@@ -73,12 +94,22 @@ Future<void> showExampleSource(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 420),
             child: SingleChildScrollView(
-              child: SelectableText(
-                source,
-                style: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  height: 1.4,
+              child: SelectableText.rich(
+                TextSpan(
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  children: [
+                    for (final run in exampleSourceRuns(source))
+                      TextSpan(
+                        text: run.text,
+                        style: run.bold
+                            ? const TextStyle(fontWeight: FontWeight.w700)
+                            : null,
+                      ),
+                  ],
                 ),
               ),
             ),
