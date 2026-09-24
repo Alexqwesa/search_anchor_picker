@@ -69,37 +69,43 @@ jobs:
   # Tag example (must match pubspec version 0.0.15):
   #   git tag v0.0.15 && git push origin v0.0.15
   # ════════════════════════════════════════════════════════════════════════════
-  publish:
-    name: Publish to pub.dev
-    needs: test
-    runs-on: ubuntu-latest
-    # Never publish from main, PRs, or workflow_dispatch — only a pushed tag.
-    if: github.event_name == 'push' && github.ref_type == 'tag'
-    environment: pub.dev
-    permissions:
-      id-token: write
-      contents: read
+publish:
+  name: Publish to pub.dev
+  needs: test
+  runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
+  if: >
+    (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+    github.ref_type == 'tag'
+  environment: pub.dev
+  permissions:
+    id-token: write
+    contents: read
 
-      - name: Verify tag matches pubspec version
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          VERSION=$(grep -E '^version:' pubspec.yaml | head -1 | sed 's/version:[[:space:]]*//')
-          echo "tag=$TAG pubspec=$VERSION"
-          if [ "$TAG" != "$VERSION" ]; then
-            echo "::error::Tag v$TAG does not match pubspec version $VERSION"
-            exit 1
-          fi
+  steps:
+    - uses: actions/checkout@v4
 
-      - name: Dry-run
-        run: flutter pub publish --dry-run
+    # configures pub.dev OIDC authentication.
+    - uses: dart-lang/setup-dart@v1
 
-      - name: Publish
-        run: flutter pub publish --force
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        cache: true
+    - run: flutter pub get
+
+    - name: Verify tag matches pubspec version
+      run: |
+        TAG="${GITHUB_REF_NAME#v}"
+        VERSION=$(grep -E '^version:' pubspec.yaml | head -1 | sed 's/version:[[:space:]]*//')
+        echo "tag=$TAG pubspec=$VERSION"
+        if [ "$TAG" != "$VERSION" ]; then
+          echo "::error::Tag v$TAG does not match pubspec version $VERSION"
+          exit 1
+        fi
+
+    - name: Dry-run
+      run: flutter pub publish --dry-run
+
+    - name: Publish
+      run: flutter pub publish --force
