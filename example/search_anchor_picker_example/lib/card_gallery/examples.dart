@@ -185,19 +185,22 @@ SearchAnchorPicker<Person>(
         title: 'Related-list icons',
         persistLabel: 'onClose',
         difference:
-            'Rows show member / notMember from a fully known directory. That icon is not the parent checkbox.',
+            'DefaultPickerItemTile uses title (name) and subtitle (team). Rows also show member / notMember from a fully known directory. That icon is not the parent checkbox.',
         source: r'''
-PickerConfig<Person>(
-  relatedListItemStatusOf: (person) => PickerRelatedListItemStatus(
-    auxiliaryMembership: directory.contains(person.id)
-        ? PickerAuxiliaryMembership.member
-        : PickerAuxiliaryMembership.notMember,
-  ),
-  // itemsLoader, idOf, labelOf, searchTermsOf...
-);
+itemBuilder: (context, person, selected, status, source, toggle) {
+  return DefaultPickerItemTile(
+    selected: selected,
+    relatedListItemStatus: status,
+    onToggle: (_) => toggle(),
+    title: Text(person.name),
+    subtitle: Text(person.team),
+    selectionMode: SelectionMode.multi,
+  );
+}
 ''',
         seed: {1, 4},
         related: RelatedStatus.knownDirectory,
+        richItemTile: true,
       ),
       const SimpleCard(
         title: 'In-use confirm',
@@ -553,7 +556,7 @@ SearchAnchorPicker<Person>(
         difference:
             'The field chips are the selection. The popup must keep showing those people so you can uncheck them, even when they are not in the searchable catalog.\n\n'
             'This catalog is Ada … Knuth. The field starts with Ada (in catalog), Linus, and Radia (outside it). Open: Linus and Radia are in the list because itemsLoader unions the current chips. Uncheck Radia: she stays in this open overlay — the loaded snapshot does not drop her mid-session. Close: her chip is gone. Open again: she is neither selected nor in the catalog, so she disappears. Linus still appears because he still has a chip.\n\n'
-            'Compare with Hidden selected ID, which keeps a missing ID selected without putting a row in the list at all.',
+            'Compare with Hidden selected ID: without a cache that card used to keep Radia selected with no row. It now passes initialSelectedItemCache so she appears under Selected.',
         source: r'''
 SearchAnchorPicker<Person>(
   config: peopleConfig(
@@ -986,7 +989,7 @@ SearchAnchorPicker<Person>(
   GallerySection(
     title: 'Fail handling, partial load, and server search',
     caption:
-        'Thrown saves and incomplete itemsLoader pages. searchMode defaults to local: load once, filter the snapshot. remote reloads with query and trusts the page. hybrid does both. Missing rows stay selected.',
+        'Thrown saves and incomplete itemsLoader pages. searchMode defaults to local: load once, filter the snapshot. remote reloads with query and trusts the page. hybrid does both. Missing selected IDs stay selected; pass initialSelectedItemCache to give them a Selected row, including when the loader throws.',
     cards: [
       const SimpleCard(
         title: 'API fail close',
@@ -1044,8 +1047,14 @@ SearchAnchorPicker<Person>(
         title: 'API fail search',
         persistLabel: 'itemsLoader throw',
         difference:
-            'Turn on “API fail search”. Open the popup: itemsLoader waits 0.5s then throws, so the list shows the load error (retry). Selected chips stay — a failed search page is not an empty selection. Turn the checkbox off and retry.',
+            'Turn on “API fail search”. Open the popup: itemsLoader waits 0.5s then throws. The retry error stays on top, and Ada and Grace still appear under Selected because initialSelectedItemCache already resolved them. A failed search page is not an empty selection. Turn the checkbox off and retry to load the catalog.',
         source: r'''
+SearchAnchorPicker<Person>(
+  initialSelectedIds: selected.toList(),
+  initialSelectedItemCache: cachedPeople,
+  onClose: (result) { /* persist result.added / result.removed */ },
+);
+
 PickerConfig<Person>(
   itemsLoader: (_, query) async {
     await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -1056,6 +1065,7 @@ PickerConfig<Person>(
 ''',
         seed: {1, 3},
         failLoad: true,
+        selectedItemCache: true,
       ),
       const SimpleCard(
         title: 'API fail close (custom dialog)',
@@ -1083,30 +1093,36 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'searchMode is local (the default): itemsLoader returns the first four people once. Typing filters that snapshot — Linus will not appear. Radia stays selected even though she is not on the loaded page. Compare with Server search (remote), which reloads itemsLoader and trusts the returned page.\n\n'
+            'searchMode is local (the default): itemsLoader returns the first four people once. Typing filters Results only — Linus will not appear. Radia is selected but not on that page, so initialSelectedItemCache puts her in a Selected section. Uncheck her: the row stays until close so you can undo. Search does not hide Selected.\n\n'
+            'Rows use DefaultPickerItemTile with title, subtitle (team), and “not on this page” when source is the cache.\n\n'
             'Leave “Show warning on hidden chip” on and tap Radia’s chip X: she is not on this page, so a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
         source: r'''
-PickerConfig<Person>(
-  searchMode: PickerSearchMode.local, // default
-  itemsLoader: (_, _) async => people.take(4).toList(),
-  idOf: (person) => person.id,
-  labelOf: (person) => person.name,
-  searchTermsOf: (person) => [person.name],
+SearchAnchorPicker<Person>(
+  initialSelectedIds: selected.toList(),
+  initialSelectedItemCache: cachedPeople,
+  itemBuilder: (context, person, selected, status, source, toggle) {
+    return DefaultPickerItemTile(
+      selected: selected,
+      relatedListItemStatus: status,
+      onToggle: (_) => toggle(),
+      title: Text(person.name),
+      subtitle: Text(
+        source == PickerItemSource.initialSelectedItemCache
+            ? '${person.team} · not on this page'
+            : person.team,
+      ),
+      selectionMode: SelectionMode.multi,
+    );
+  },
+  onClose: (result) { /* persist result.added / result.removed */ },
 );
-
-// Chip X is outside the picker session.
-onDeleted: (id) async {
-  if (!loadedPage.contains(id)) {
-    final ok = await confirmHiddenChip(id);
-    if (!ok) return;
-  }
-  selected.remove(id);
-}
 ''',
         seed: const {1, 12},
         itemsLoader: (_, _) async => people.take(4).toList(),
         warnHiddenChip: true,
         visibleCatalogIds: {for (final person in people.take(4)) person.id},
+        selectedItemCache: true,
+        richItemTile: true,
       ),
       const ServerSearchCard(),
       const NestedCard(

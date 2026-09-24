@@ -431,7 +431,14 @@ void main() {
             ),
             initialSelectedIds: const [],
             itemBuilder:
-                (context, item, isSelected, relatedListItemStatus, onToggle) {
+                (
+                  context,
+                  item,
+                  isSelected,
+                  relatedListItemStatus,
+                  source,
+                  onToggle,
+                ) {
                   return ListTile(
                     title: Text(
                       'Custom Item $item '

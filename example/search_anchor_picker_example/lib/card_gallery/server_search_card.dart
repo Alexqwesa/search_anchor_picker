@@ -28,7 +28,7 @@ class _ServerSearchCardState extends State<ServerSearchCard> {
           'Open: GET /people?page=1 → Ada … Katherine. Type lin:\n\n'
           'GET /people?q=lin\n'
           '→ Linus Torvalds\n\n'
-          'Ada’s chip stays while she is missing from that page. The footer is the last request and the people the fake server returned.',
+          'Ada’s chip stays while she is missing from that page. initialSelectedItemCache also keeps her as a Selected row so you can uncheck her without clearing the query. The footer is the last request and the people the fake server returned.',
       source: r'''
 final debounce = Debouncer();
 
@@ -36,6 +36,12 @@ Future<List<Person>> searchPeople(String query) {
   if (query.isEmpty) return api.searchPeople(query);
   return debounce.run(() => api.searchPeople(query));
 }
+
+SearchAnchorPicker<Person>(
+  initialSelectedIds: selected.toList(),
+  initialSelectedItemCache: cachedPeople,
+  onClose: (result) { /* persist result.added / result.removed */ },
+);
 
 PickerConfig(
   searchMode: PickerSearchMode.remote,
@@ -55,6 +61,7 @@ PickerConfig(
           searchMode: PickerSearchMode.remote,
         ),
         initialSelectedIds: _selected.toList(),
+        initialSelectedItemCache: peopleIn(_selected),
         isFullScreen: false,
         viewHintText: 'Search people',
         viewConstraints: popupConstraints,

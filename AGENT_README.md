@@ -90,6 +90,7 @@ example test belongs in the example package, not the root package.
 Before changing selection behavior, test all three state channels separately:
 
 1. `initialSelectedIds`: authoritative external seed.
+   `initialSelectedItemCache` is display-only and must not create selection.
 2. Pending IDs: current popup checkbox state.
 3. Explicit deltas: user intent reported by `onChange` and `onClose`.
 

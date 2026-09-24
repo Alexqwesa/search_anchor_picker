@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:search_anchor_picker/src/picker_config.dart';
 import 'package:search_anchor_picker/src/picker_status.dart';
+import 'package:search_anchor_picker/src/raw/picker_builders.dart';
 import 'package:search_anchor_picker/src/widgets/picker_defaults.dart';
 
 PickerRelatedListItemStatus relatedListStatusOf<T, K>(
@@ -31,8 +32,7 @@ Future<bool> relatedListCanUnselect<T, K>(
   );
 }
 
-Widget Function(BuildContext, T, bool, VoidCallback)
-relatedListRowBuilder<T, K>(
+PickerItemBuilder<T> relatedListRowBuilder<T, K>(
   GenericPickerConfig<T, K> config,
   SelectionMode selectionMode,
   Widget Function(
@@ -40,22 +40,29 @@ relatedListRowBuilder<T, K>(
     T,
     bool,
     PickerRelatedListItemStatus,
+    PickerItemSource,
     VoidCallback,
   )?
   itemBuilder,
 ) {
-  return (context, item, selected, toggle) {
+  return (context, item, selected, source, toggle) {
     final status = relatedListStatusOf(config, item);
-    return itemBuilder?.call(context, item, selected, status, toggle) ??
+    return itemBuilder?.call(
+          context,
+          item,
+          selected,
+          status,
+          source,
+          toggle,
+        ) ??
         DefaultPickerItemTile(
           selected: selected,
           onToggle: (_) => toggle(),
           label: config.labelOf(item),
           tooltip: config.tooltipOf?.call(item),
           leading: config.iconOf?.call(item),
-          auxiliaryMembership: status.auxiliaryMembership,
+          relatedListItemStatus: status,
           selectionMode: selectionMode,
-          enabled: status.selectable,
         );
   };
 }

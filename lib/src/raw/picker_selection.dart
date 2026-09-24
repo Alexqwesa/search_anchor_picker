@@ -1,5 +1,15 @@
 import 'package:flutter/foundation.dart';
 
+/// Where a displayed row's object came from.
+enum PickerItemSource {
+  /// Present in the current `itemsLoader` result.
+  loaded,
+
+  /// Taken from `initialSelectedItemCache` because the ID is selected and
+  /// missing from the loaded page.
+  initialSelectedItemCache,
+}
+
 /// Added and removed IDs.
 ///
 /// `onChange` gets one mutation (a row, `setSelected`, or one bulk command)

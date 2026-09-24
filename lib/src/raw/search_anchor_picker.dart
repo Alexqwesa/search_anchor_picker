@@ -33,6 +33,7 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
     this.headerTiles,
     this.selectedFirst,
     this.closeQueryBehavior = CloseQueryBehavior.keep,
+    this.initialSelectedItemCache,
     this.itemBuilder,
     this.canUnselect,
     this.resultsBuilder,
@@ -77,6 +78,36 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
 
   final GenericRawPickerConfig<T, K> config;
   final List<K> initialSelectedIds;
+
+  /// Optional display cache for items referenced by [initialSelectedIds].
+  ///
+  /// This cache is used only for display. It does not define selection state;
+  /// [initialSelectedIds] remains the authoritative source of selected IDs.
+  ///
+  /// When a selected ID is missing from the current `itemsLoader` result, the
+  /// cached item can still be shown in the Selected section.
+  ///
+  /// The cache may also be used as a display fallback when `itemsLoader` fails.
+  /// The load error is still shown; cached items do not hide or replace the error.
+  ///
+  /// This is useful when `itemsLoader` resolves items through a network request,
+  /// while some selected items have already been resolved elsewhere.
+  ///
+  /// Cache entries whose IDs are not present in [initialSelectedIds] are ignored.
+  /// Debug builds assert when such entries are provided.
+  ///
+  /// `initialSelectedItemCache` is only a fallback for items that are currently
+  /// selected through [initialSelectedIds].
+  ///
+  /// If a cached item is unselected, it may remain visible for the rest of the
+  /// current open session so the user can undo the change. After the picker is
+  /// closed, it is no longer retained by this cache unless its ID is selected
+  /// again.
+  ///
+  /// If you want such items to remain available after closing and reopening the
+  /// picker, include them in the normal item source, for example by merging them
+  /// into the result returned by `itemsLoader`.
+  final Iterable<T>? initialSelectedItemCache;
   final SelectionMode selectionMode;
 
   /// Optional per-item rule that makes a row inert.
@@ -171,14 +202,8 @@ class GenericRawSearchAnchorPicker<T, K> extends StatefulWidget {
 
   /// Replaces the default row.
   ///
-  /// Called as `(context, item, isSelected, toggle)`.
-  final Widget Function(
-    BuildContext context,
-    T item,
-    bool isSelected,
-    VoidCallback toggle,
-  )?
-  itemBuilder;
+  /// Called as `(context, item, isSelected, source, toggle)`.
+  final PickerItemBuilder<T>? itemBuilder;
 
   /// Optional per-item unselect gate. When null, [PickerUnselectPolicy] on
   /// the config is used.
@@ -257,6 +282,7 @@ class RawSearchAnchorPicker<T> extends GenericRawSearchAnchorPicker<T, int> {
     super.headerTiles,
     super.selectedFirst,
     super.closeQueryBehavior,
+    super.initialSelectedItemCache,
     super.itemBuilder,
     super.canUnselect,
     super.resultsBuilder,
@@ -371,6 +397,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
   BuildContext? _triggerContext;
   Rect _openedAnchorRect = Rect.zero;
   bool _open = false;
+  final Set<K> _injectedCacheIds = <K>{};
+  final Map<K, T> _injectedCacheItems = <K, T>{};
   int _tick = 0;
   ValueNotifier<int>? _viewTickNotifier;
   ValueNotifier<int> get _viewTickN {
@@ -566,6 +594,17 @@ class _GenericRawSearchAnchorPickerState<T, K>
         if (mounted && _open) _selection.reseed(widget.initialSelectedIds);
       });
     }
+    if (_open &&
+        (!_listEquals(
+              oldWidget.initialSelectedIds,
+              widget.initialSelectedIds,
+            ) ||
+            !identical(
+              oldWidget.initialSelectedItemCache,
+              widget.initialSelectedItemCache,
+            ))) {
+      _refreshInjectedCache();
+    }
   }
 
   @override
@@ -622,6 +661,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
         (items) {
           if (!mounted || !_open || generation != _loadGeneration) return;
           _itemsSnapshot = items;
+          _refreshInjectedCache();
           _loading = false;
           _viewTickN.value++;
         },
@@ -630,6 +670,7 @@ class _GenericRawSearchAnchorPickerState<T, K>
           _loading = false;
           _loadError = error;
           _loadStackTrace = stackTrace;
+          _refreshInjectedCache(ignoreLoaded: true);
           _viewTickN.value++;
         },
       ),
@@ -638,6 +679,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
 
   void _onOpen() {
     _selection.open(widget.initialSelectedIds);
+    _injectedCacheIds.clear();
+    _injectedCacheItems.clear();
     _pendingToggles = 0;
     _closeAfterToggle = false;
     _savingClose = false;
@@ -741,6 +784,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
     _detachListenable(widget.config.listenable);
     _detachRebuildListenable(widget.config.rebuildListenable);
     _detachQueryController();
+    _injectedCacheIds.clear();
+    _injectedCacheItems.clear();
     _itemsSnapshot = null;
     _stableIds = <K>[];
     _disposeSelectionSession();
@@ -885,6 +930,62 @@ class _GenericRawSearchAnchorPickerState<T, K>
       PickerResourceTracker.register(key);
       return key;
     });
+  }
+
+  Map<K, T> _selectedItemCacheById() {
+    final allowed = widget.initialSelectedIds.toSet();
+    final cache = <K, T>{};
+    for (final item in widget.initialSelectedItemCache ?? <T>[]) {
+      final id = widget.config.idOf(item);
+      assert(
+        allowed.contains(id),
+        'initialSelectedItemCache id $id is not in initialSelectedIds.',
+      );
+      if (!allowed.contains(id)) continue;
+      cache[id] = item;
+    }
+    return cache;
+  }
+
+  bool get _hasSelectedItemCache => widget.initialSelectedItemCache != null;
+
+  void _refreshInjectedCache({bool ignoreLoaded = false}) {
+    if (!_hasSelectedItemCache) {
+      _injectedCacheIds.clear();
+      _injectedCacheItems.clear();
+      return;
+    }
+    final loaded = {
+      if (!ignoreLoaded)
+        for (final item in _itemsSnapshot ?? <T>[]) widget.config.idOf(item),
+    };
+    final cache = _selectedItemCacheById();
+    final selected = _open ? _pendingN.value : widget.initialSelectedIds.toSet();
+    for (final id in selected) {
+      if (cache.containsKey(id) && !loaded.contains(id)) {
+        final item = cache[id];
+        if (item != null) {
+          _injectedCacheIds.add(id);
+          _injectedCacheItems[id] = item;
+        }
+      }
+    }
+    _injectedCacheIds.removeWhere(loaded.contains);
+    _injectedCacheItems.removeWhere((id, _) => !_injectedCacheIds.contains(id));
+    for (final id in _injectedCacheIds) {
+      final item = cache[id];
+      if (item != null) _injectedCacheItems[id] = item;
+    }
+  }
+
+  List<T> _missingSelectedItems({bool ignoreLoaded = false}) {
+    if (!_hasSelectedItemCache) {
+      return const [];
+    }
+    _refreshInjectedCache(ignoreLoaded: ignoreLoaded);
+    return [
+      for (final id in _injectedCacheIds) ?_injectedCacheItems[id],
+    ];
   }
 
   void _computeStableIds(List<T> items) {
@@ -1037,7 +1138,11 @@ class _GenericRawSearchAnchorPickerState<T, K>
           return widget.loadingBuilder?.call(context) ??
               const DefaultPickerLoading();
         }
-        if (_loadError != null) {
+        final loadFailed = _loadError != null;
+        final missingSelected = _missingSelectedItems(
+          ignoreLoaded: loadFailed,
+        );
+        if (loadFailed && missingSelected.isEmpty) {
           return widget.errorBuilder?.call(
                 context,
                 _loadError!,
@@ -1047,11 +1152,13 @@ class _GenericRawSearchAnchorPickerState<T, K>
               DefaultPickerError(retry: _reload);
         }
 
-        final items = _itemsSnapshot ?? <T>[];
-        if (_stableIds.isEmpty) {
-          _computeStableIds(items);
-        } else {
-          _syncStableIds(items);
+        final items = loadFailed ? <T>[] : (_itemsSnapshot ?? <T>[]);
+        if (!loadFailed) {
+          if (_stableIds.isEmpty) {
+            _computeStableIds(items);
+          } else {
+            _syncStableIds(items);
+          }
         }
         final session = _selection;
         final controller = GenericRawPickerController<T, K>(
@@ -1061,8 +1168,8 @@ class _GenericRawSearchAnchorPickerState<T, K>
           selectionMode: widget.selectionMode,
           getKey: _getKey,
           refresh: _reload,
-          loadedIds: () => (_itemsSnapshot ?? <T>[]).map(widget.config.idOf),
-          filteredIds: _filteredLoadedIds,
+          loadedIds: () => items.map(widget.config.idOf),
+          filteredIds: loadFailed ? () => <K>[] : _filteredLoadedIds,
           applyDelta: (added, removed) => _applySelectionDelta(
             context: context,
             added: added,
@@ -1085,7 +1192,19 @@ class _GenericRawSearchAnchorPickerState<T, K>
         ];
         return OverlayBody<T, K>(
           header: header,
-          stableOrder: stableItems.isEmpty ? items : stableItems,
+          loadError: loadFailed
+              ? widget.errorBuilder?.call(
+                      context,
+                      _loadError!,
+                      _loadStackTrace ?? StackTrace.empty,
+                      _reload,
+                    ) ??
+                    DefaultPickerError(retry: _reload, compact: true)
+              : null,
+          stableOrder: loadFailed
+              ? <T>[]
+              : (stableItems.isEmpty ? items : stableItems),
+          missingSelected: missingSelected,
           ctrl: _controller,
           pendingN: _pendingN,
           selectionMode: widget.selectionMode,

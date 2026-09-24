@@ -1,4 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:search_anchor_picker/src/raw/picker_selection.dart';
+
+/// Builds one picker row.
+typedef PickerItemBuilder<T> =
+    Widget Function(
+      BuildContext context,
+      T item,
+      bool isSelected,
+      PickerItemSource source,
+      VoidCallback toggle,
+    );
 
 /// Builds the open search field.
 ///

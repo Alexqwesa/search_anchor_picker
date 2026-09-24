@@ -267,17 +267,24 @@ class RawDefaultPickerItemTile extends StatelessWidget {
   const RawDefaultPickerItemTile({
     required this.selected,
     required this.onToggle,
-    required this.label,
     required this.selectionMode,
     super.key,
+    this.label,
+    this.title,
+    this.subtitle,
     this.leading,
     this.tooltip,
     this.enabled = true,
-  });
+  }) : assert(
+         label != null || title != null,
+         'Provide label or title.',
+       );
 
   final bool selected;
   final ValueChanged<bool> onToggle;
-  final String label;
+  final String? label;
+  final Widget? title;
+  final Widget? subtitle;
   final Widget? leading;
   final SelectionMode selectionMode;
   final String? tooltip;
@@ -287,25 +294,61 @@ class RawDefaultPickerItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelWidget = tooltip == null
-        ? OverflowTooltipText(label)
-        : PassiveTooltip(
-            message: tooltip!,
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-          );
+    final titleWidget =
+        title ??
+        (tooltip == null
+            ? OverflowTooltipText(label!)
+            : PassiveTooltip(
+                message: tooltip!,
+                child: Text(
+                  label!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ));
+    final titled = title != null && tooltip != null
+        ? PassiveTooltip(message: tooltip!, child: titleWidget)
+        : titleWidget;
     return CheckboxListTile(
       checkboxShape: selectionMode == SelectionMode.multi
           ? null
           : const CircleBorder(),
       value: selected,
       onChanged: enabled ? (value) => onToggle(value ?? false) : null,
-      title: Row(
-        children: [
-          leading ?? const Icon(Icons.person),
-          const SizedBox(width: 6),
-          Expanded(child: labelWidget),
-        ],
-      ),
+      secondary: leading ?? const Icon(Icons.person),
+      title: titled,
+      subtitle: subtitle,
+    );
+  }
+}
+
+/// Which default list heading to show above picker rows.
+enum PickerListSection {
+  /// Cached selected rows missing from the loaded page.
+  selected,
+
+  /// Loaded rows matching the current query.
+  results,
+}
+
+/// Heading for the Selected or Results section.
+class DefaultPickerSectionHeader extends StatelessWidget {
+  /// Creates a section heading.
+  const DefaultPickerSectionHeader({required this.section, super.key});
+
+  /// Which section this heading labels.
+  final PickerListSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = _pickerDefaultMessages(context);
+    final label = switch (section) {
+      PickerListSection.selected => messages.selectedSection,
+      PickerListSection.results => messages.resultsSection,
+    };
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Text(label, style: Theme.of(context).textTheme.titleSmall),
     );
   }
 }
@@ -415,6 +458,8 @@ typedef _PickerDefaultMessages = ({
   String closeSaveFailedMessage,
   String updateSelection,
   String closeWithoutSaving,
+  String selectedSection,
+  String resultsSection,
 });
 
 const _PickerDefaultMessages _englishPickerDefaultMessages = (
@@ -430,6 +475,8 @@ const _PickerDefaultMessages _englishPickerDefaultMessages = (
   closeSaveFailedMessage: 'The popup could not be saved because of an error.',
   updateSelection: 'Keep editing',
   closeWithoutSaving: 'Close without saving',
+  selectedSection: 'Selected',
+  resultsSection: 'Results',
 );
 
 const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
@@ -446,6 +493,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     closeSaveFailedMessage: 'تعذر حفظ النافذة المنبثقة بسبب خطأ.',
     updateSelection: 'تحديث التحديد',
     closeWithoutSaving: 'إغلاق بدون حفظ',
+    selectedSection: 'محدد',
+    resultsSection: 'النتائج',
   ),
   'de': (
     empty: 'Keine Einträge',
@@ -461,6 +510,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'Das Popup konnte aufgrund eines Fehlers nicht gespeichert werden.',
     updateSelection: 'Auswahl aktualisieren',
     closeWithoutSaving: 'Schließen ohne Speichern',
+    selectedSection: 'Ausgewählt',
+    resultsSection: 'Ergebnisse',
   ),
   'en': _englishPickerDefaultMessages,
   'es': (
@@ -477,6 +528,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'No se pudo guardar la ventana emergente por un error.',
     updateSelection: 'Actualizar selección',
     closeWithoutSaving: 'Cerrar sin guardar',
+    selectedSection: 'Seleccionados',
+    resultsSection: 'Resultados',
   ),
   'fr': (
     empty: 'Aucun élément',
@@ -492,6 +545,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'La fenêtre n’a pas pu être enregistrée à cause d’une erreur.',
     updateSelection: 'Modifier la sélection',
     closeWithoutSaving: 'Fermer sans enregistrer',
+    selectedSection: 'Sélection',
+    resultsSection: 'Résultats',
   ),
   'it': (
     empty: 'Nessun elemento',
@@ -507,6 +562,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'Impossibile salvare la finestra a causa di un errore.',
     updateSelection: 'Aggiorna selezione',
     closeWithoutSaving: 'Chiudi senza salvare',
+    selectedSection: 'Selezionati',
+    resultsSection: 'Risultati',
   ),
   'ja': (
     empty: '項目がありません',
@@ -521,6 +578,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     closeSaveFailedMessage: 'エラーのためポップアップを保存できませんでした。',
     updateSelection: '選択を更新',
     closeWithoutSaving: '保存せずに閉じる',
+    selectedSection: '選択済み',
+    resultsSection: '結果',
   ),
   'ko': (
     empty: '항목 없음',
@@ -535,6 +594,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     closeSaveFailedMessage: '오류로 인해 팝업을 저장하지 못했습니다.',
     updateSelection: '선택 업데이트',
     closeWithoutSaving: '저장하지 않고 닫기',
+    selectedSection: '선택됨',
+    resultsSection: '결과',
   ),
   'pt': (
     empty: 'Nenhum item',
@@ -550,6 +611,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'Não foi possível salvar o pop-up devido a um erro.',
     updateSelection: 'Atualizar seleção',
     closeWithoutSaving: 'Fechar sem salvar',
+    selectedSection: 'Selecionados',
+    resultsSection: 'Resultados',
   ),
   'ru': (
     empty: 'Нет элементов',
@@ -565,6 +628,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'Не удалось сохранить всплывающее окно из‑за ошибки.',
     updateSelection: 'Изменить выбор',
     closeWithoutSaving: 'Закрыть без сохранения',
+    selectedSection: 'Выбрано',
+    resultsSection: 'Результаты',
   ),
   'uk': (
     empty: 'Немає елементів',
@@ -580,6 +645,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
         'Не вдалося зберегти спливаюче вікно через помилку.',
     updateSelection: 'Оновити вибір',
     closeWithoutSaving: 'Закрити без збереження',
+    selectedSection: 'Вибрано',
+    resultsSection: 'Результати',
   ),
   'vi': (
     empty: 'Không có mục nào',
@@ -594,6 +661,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     closeSaveFailedMessage: 'Không thể lưu cửa sổ bật lên vì có lỗi.',
     updateSelection: 'Cập nhật lựa chọn',
     closeWithoutSaving: 'Đóng mà không lưu',
+    selectedSection: 'Đã chọn',
+    resultsSection: 'Kết quả',
   ),
   'zh': (
     empty: '没有项目',
@@ -608,6 +677,8 @@ const _pickerDefaultMessagesByLanguage = <String, _PickerDefaultMessages>{
     closeSaveFailedMessage: '由于错误，无法保存弹出窗口。',
     updateSelection: '更新选择',
     closeWithoutSaving: '关闭且不保存',
+    selectedSection: '已选',
+    resultsSection: '结果',
   ),
 };
 
@@ -623,22 +694,36 @@ String _withLabel(String message, String label) =>
 /// Default load-error retry button used when `errorBuilder` is omitted.
 class DefaultPickerError extends StatelessWidget {
   /// Creates the default retry control.
-  const DefaultPickerError({required this.retry, super.key});
+  const DefaultPickerError({
+    required this.retry,
+    this.compact = false,
+    super.key,
+  });
 
   /// Reloads items after a failed `itemsLoader` call.
   final VoidCallback retry;
 
+  /// Tighter padding when the error sits above fallback selected rows.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
     final messages = _pickerDefaultMessages(context);
+    final button = FilledButton.tonalIcon(
+      onPressed: retry,
+      icon: const Icon(Icons.refresh),
+      label: Text(messages.retry),
+    );
+    if (compact) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Align(child: button),
+      );
+    }
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: FilledButton.tonalIcon(
-          onPressed: retry,
-          icon: const Icon(Icons.refresh),
-          label: Text(messages.retry),
-        ),
+        child: button,
       ),
     );
   }

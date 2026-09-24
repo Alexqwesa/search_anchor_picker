@@ -73,6 +73,14 @@ Follow these invariants:
   baseline (the seed at open).
 - Hidden selected IDs remain selected during server-side search and pagination.
 - Persist `added` and `removed` from `onClose`.
+- `initialSelectedItemCache` is an optional display cache for selected IDs.
+  Providing it shows those selected IDs when they are missing from loaded
+  items, and as a fallback when `itemsLoader` fails (the load error stays
+  on top). For example, `itemsLoader` may use network calls to resolve IDs
+  to items, while selected items were already resolved elsewhere.
+  Selection truth still comes from `initialSelectedIds`. Search applies
+  only to Results, not the Selected section. The cache does not create
+  selection or change `onClose` deltas.
 
 `PickerSearchMode` chooses how the default search box works. `local` (default)
 calls `itemsLoader` on open and filters the snapshot with `searchTermsOf`.
@@ -315,10 +323,12 @@ triggerBuilder: (context, open, _) => DefaultPickerFieldTrigger<int>(
 ),
 ```
 
-`itemBuilder` receives `(context, item, isSelected, relatedListItemStatus, toggle)`.
-Read `relatedListItemStatus.auxiliaryMembership` and `relatedListItemStatus.unselectPolicy`
-to customize the row; do not call `relatedListItemStatusOf` again. The supplied
-`toggle` retains the core unselect policy.
+`itemBuilder` receives
+`(context, item, isSelected, relatedListItemStatus, source, toggle)`.
+Read `relatedListItemStatus` and `source` (`loaded` vs
+`initialSelectedItemCache`). Prefer wrapping `DefaultPickerItemTile` with
+`title` / `subtitle` instead of replacing the row. The supplied `toggle`
+retains the core unselect policy.
 
 The default empty view uses built-in locale-aware “No items” and “No results”
 messages. Prefer `emptyText` and `noResultsText` for wording-only overrides; use

@@ -31,11 +31,13 @@ class GenericSearchAnchorPicker<T, K>
     super.headerTiles,
     super.selectedFirst,
     super.closeQueryBehavior,
+    super.initialSelectedItemCache,
     Widget Function(
       BuildContext context,
       T item,
       bool isSelected,
       PickerRelatedListItemStatus relatedListItemStatus,
+      PickerItemSource source,
       VoidCallback toggle,
     )?
     itemBuilder,
@@ -108,6 +110,7 @@ class SearchAnchorPicker<T> extends GenericSearchAnchorPicker<T, int> {
     super.headerTiles,
     super.selectedFirst,
     super.closeQueryBehavior,
+    super.initialSelectedItemCache,
     super.itemBuilder,
     super.resultsBuilder,
     super.searchFieldBuilder,

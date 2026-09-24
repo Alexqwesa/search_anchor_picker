@@ -62,6 +62,17 @@ observes only actual user add/remove intent. If `onClose` throws, the popup
 stays open: a localized saving wrap is shown, then a prompt offers update
 selection or close without saving.
 
+`initialSelectedItemCache` is an optional display cache for selected IDs.
+Providing it shows those selected IDs when they are missing from loaded
+items, and as a fallback when `itemsLoader` fails (the load error stays on
+top). For example, `itemsLoader` may use network calls to resolve IDs to
+items, while selected items were already resolved elsewhere. Selection
+truth still comes from `initialSelectedIds`. The cache does not create
+selection. Missing cached rows appear in a **Selected** section; search
+still applies only to **Results**. Unchecking a cached missing row keeps
+it visible until close so the user can undo. Persist `onClose` `added` /
+`removed` only — the cache is display support.
+
 ## Reloading items
 
 Creating a new inline `PickerConfig(...)` during a parent rebuild does not
@@ -180,10 +191,13 @@ picker session, so persist it yourself if you also save from `onChange` or
 `onClose`. Set `showChips: false` to keep the outlined field and button without
 listing selected IDs.
 
-`itemBuilder` receives `(context, item, isSelected, relatedListItemStatus, toggle)`.
-The `relatedListItemStatus` comes from `config.relatedListItemStatusOf`, so custom rows
-can use both `auxiliaryMembership` and `unselectPolicy` without recomputing them.
-Calling `toggle` still uses the picker's unselect policy and selection logic.
+`itemBuilder` receives
+`(context, item, isSelected, relatedListItemStatus, source, toggle)`.
+`source` is `PickerItemSource.loaded` or
+`PickerItemSource.initialSelectedItemCache`. Custom rows can wrap
+`DefaultPickerItemTile` with `title` / `subtitle` /
+`relatedListItemStatus` instead of replacing the checkbox. Calling
+`toggle` still uses the picker's unselect policy and selection logic.
 
 The default empty view localizes “No items” and “No results” for several common
 languages using the app's current locale. Set `emptyText` / `noResultsText` to
@@ -422,7 +436,7 @@ IDs.
 
 [//]: # ()
 [//]: # (Maybe rename open&#40;&#41; -> openView&#40;&#41;, close&#40;[reason]&#41; -> closeView&#40;selectedText&#41; as in SearchAnchor?)
-
+[//]: # (Minor edge case: anchored popup does not track a trigger that physically moves while the popup is open. maybe just close on change geometry, or use CompositedTransformFollower again?)
 ## License
 
 MIT

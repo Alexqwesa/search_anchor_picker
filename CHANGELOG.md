@@ -1,3 +1,12 @@
+## Unreleased
+
+* Widget `initialSelectedItemCache` shows selected IDs missing from the
+  loader page in a Selected section, and keeps those rows visible under
+  a load-error message when `itemsLoader` fails. Search still applies
+  only to Results. `itemBuilder` now receives `PickerItemSource`.
+  `DefaultPickerItemTile` accepts `title`, `subtitle`, and
+  `relatedListItemStatus`.
+
 ## 0.2.2
 
 * fix analyzer warnings

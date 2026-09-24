@@ -27,6 +27,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     this.trailing,
     this.triggerBuilder,
     this.headerBuilder,
+    this.initialSelectedItemCache,
     this.itemBuilder,
     this.canUnselect,
     this.resultsBuilder,
@@ -82,7 +83,8 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
     List<T>,
   )?
   headerBuilder;
-  final Widget Function(BuildContext, T, bool, VoidCallback)? itemBuilder;
+  final Iterable<T>? initialSelectedItemCache;
+  final PickerItemBuilder<T>? itemBuilder;
   final Future<bool> Function(BuildContext context, T item)? canUnselect;
   final PickerResultsBuilder? resultsBuilder;
   final PickerSearchFieldBuilder? searchFieldBuilder;
@@ -130,6 +132,7 @@ class GenericRawSubPickerTile<T, K> extends StatelessWidget {
       closeSaveFailedBuilder: closeSaveFailedBuilder,
       headerBuilder: headerBuilder,
       selectionMode: selectionMode,
+      initialSelectedItemCache: initialSelectedItemCache,
       itemBuilder: itemBuilder,
       canUnselect: canUnselect,
       resultsBuilder: resultsBuilder,

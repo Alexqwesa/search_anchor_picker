@@ -12,6 +12,7 @@ class OverlayBody<T, K> extends StatefulWidget {
   const OverlayBody({
     required this.header,
     required this.stableOrder,
+    required this.missingSelected,
     required this.ctrl,
     required this.pendingN,
     required this.selectionMode,
@@ -20,6 +21,7 @@ class OverlayBody<T, K> extends StatefulWidget {
     required this.close,
     required this.shrinkWrap,
     super.key,
+    this.loadError,
     this.isSelectable,
     this.itemBuilder,
     this.resultsBuilder,
@@ -29,7 +31,9 @@ class OverlayBody<T, K> extends StatefulWidget {
   });
 
   final List<Widget> header;
+  final Widget? loadError;
   final List<T> stableOrder;
+  final List<T> missingSelected;
   final TextEditingController ctrl;
   final ValueNotifier<Set<K>> pendingN;
   final SelectionMode selectionMode;
@@ -45,13 +49,7 @@ class OverlayBody<T, K> extends StatefulWidget {
 
   /// Per-item rule that makes a row inert. Null means every row is selectable.
   final bool Function(T item)? isSelectable;
-  final Widget Function(
-    BuildContext context,
-    T item,
-    bool isSelected,
-    VoidCallback toggle,
-  )?
-  itemBuilder;
+  final PickerItemBuilder<T>? itemBuilder;
   final PickerResultsBuilder? resultsBuilder;
   final PickerEmptyBuilder? emptyBuilder;
   final String? emptyText;
@@ -73,6 +71,22 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
 
   bool _matches(T item, String query) {
     return widget.config.matchesQuery(item, query);
+  }
+
+  Widget _row(T item, Set<K> pending, PickerItemSource source) {
+    final id = widget.config.idOf(item);
+    final selected = pending.contains(id);
+    void toggle() => _toggle(item, id, !selected);
+    return widget.itemBuilder?.call(context, item, selected, source, toggle) ??
+        RawDefaultPickerItemTile(
+          selected: selected,
+          onToggle: (next) => _toggle(item, id, next),
+          label: widget.config.labelOf(item),
+          tooltip: widget.config.tooltipOf?.call(item),
+          leading: widget.config.iconOf?.call(item),
+          selectionMode: widget.selectionMode,
+          enabled: widget.isSelectable?.call(item) ?? true,
+        );
   }
 
   Future<void> _toggle(T item, K id, bool next) async {
@@ -122,8 +136,37 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
         return ValueListenableBuilder<Set<K>>(
           valueListenable: widget.pendingN,
           builder: (context, pending, _) {
-            final children = <Widget>[...widget.header];
-            if (filtered.isEmpty) {
+            final children = <Widget>[
+              if (widget.loadError != null) widget.loadError!,
+              ...widget.header,
+            ];
+            final missing = widget.missingSelected;
+            if (missing.isNotEmpty) {
+              children.add(
+                const DefaultPickerSectionHeader(
+                  section: PickerListSection.selected,
+                ),
+              );
+              for (final item in missing) {
+                children.add(
+                  _row(
+                    item,
+                    pending,
+                    PickerItemSource.initialSelectedItemCache,
+                  ),
+                );
+              }
+              if (widget.loadError == null) {
+                children.add(
+                  const DefaultPickerSectionHeader(
+                    section: PickerListSection.results,
+                  ),
+                );
+              }
+            }
+            if (widget.loadError != null && filtered.isEmpty) {
+              // Keep the load error visible; do not add an empty-results row.
+            } else if (filtered.isEmpty) {
               children.add(
                 widget.emptyBuilder?.call(context, query) ??
                     DefaultPickerEmpty(
@@ -134,20 +177,8 @@ class _OverlayBodyState<T, K> extends State<OverlayBody<T, K>> {
               );
             } else {
               for (final item in filtered) {
-                final id = widget.config.idOf(item);
-                final selected = pending.contains(id);
-                void toggle() => _toggle(item, id, !selected);
                 children.add(
-                  widget.itemBuilder?.call(context, item, selected, toggle) ??
-                      RawDefaultPickerItemTile(
-                        selected: selected,
-                        onToggle: (next) => _toggle(item, id, next),
-                        label: widget.config.labelOf(item),
-                        tooltip: widget.config.tooltipOf?.call(item),
-                        leading: widget.config.iconOf?.call(item),
-                        selectionMode: widget.selectionMode,
-                        enabled: widget.isSelectable?.call(item) ?? true,
-                      ),
+                  _row(item, pending, PickerItemSource.loaded),
                 );
               }
             }

@@ -9,7 +9,9 @@ The package is split between core behavior and optional visual defaults.
 - `PickerSelectionSession<K>` owns the open snapshot, current pending IDs, and
   explicit add/remove intent.
 - `OverlayBody<T, K>` coordinates filtering and row toggles without choosing the
-  surrounding popup surface or list layout.
+  surrounding popup surface or list layout. Missing selected rows from
+  `initialSelectedItemCache` render in a Selected section (including as a
+  fallback under a load error); search applies only to Results.
 - `GenericPickerController<T, K>` exposes pending selection state, explicit-delta
   bulk operations, and
   pending synchronization to header code.

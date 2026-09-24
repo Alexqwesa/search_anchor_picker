@@ -75,6 +75,8 @@ class SimpleCard extends StatefulWidget {
     this.emptyCatalog = false,
     this.warnHiddenChip = false,
     this.visibleCatalogIds,
+    this.selectedItemCache = false,
+    this.richItemTile = false,
   });
 
   final String title;
@@ -105,6 +107,8 @@ class SimpleCard extends StatefulWidget {
   final bool emptyCatalog;
   final bool warnHiddenChip;
   final Set<int>? visibleCatalogIds;
+  final bool selectedItemCache;
+  final bool richItemTile;
 
   @override
   State<SimpleCard> createState() => _SimpleCardState();
@@ -178,7 +182,11 @@ class _SimpleCardState extends State<SimpleCard> {
                   : (person) => relatedStatus(widget.related, person)!,
             ),
             initialSelectedIds: _selected.toList(),
+            initialSelectedItemCache: widget.selectedItemCache
+                ? peopleIn(_selected)
+                : null,
             selectionMode: widget.mode,
+            itemBuilder: widget.richItemTile ? _richItemTile : null,
             isFullScreen: widget.fullScreen,
             viewHintText: 'Search people',
             emptyText: widget.emptyText,
@@ -334,6 +342,28 @@ class _SimpleCardState extends State<SimpleCard> {
         visualDensity: VisualDensity.compact,
       ),
       child: Text(label, textAlign: TextAlign.center),
+    );
+  }
+
+  Widget _richItemTile(
+    BuildContext context,
+    Person person,
+    bool selected,
+    PickerRelatedListItemStatus status,
+    PickerItemSource source,
+    VoidCallback toggle,
+  ) {
+    final cached = source == PickerItemSource.initialSelectedItemCache;
+    return DefaultPickerItemTile(
+      selected: selected,
+      relatedListItemStatus: status,
+      onToggle: (_) => toggle(),
+      title: Text(person.name),
+      subtitle: Text(
+        cached ? '${person.team} · not on this page' : person.team,
+      ),
+      tooltip: '${person.name} · ${person.team}',
+      selectionMode: widget.mode,
     );
   }
 

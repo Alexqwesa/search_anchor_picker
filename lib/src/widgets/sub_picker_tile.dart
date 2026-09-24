@@ -85,11 +85,13 @@ class GenericSubPickerTile<T, K> extends GenericRawSubPickerTile<T, K> {
     super.trailing,
     super.triggerBuilder,
     super.headerBuilder,
+    super.initialSelectedItemCache,
     Widget Function(
       BuildContext,
       T,
       bool,
       PickerRelatedListItemStatus,
+      PickerItemSource,
       VoidCallback,
     )?
     itemBuilder,
@@ -291,6 +293,7 @@ class SubPickerTile<T> extends GenericSubPickerTile<T, int> {
     super.trailing,
     super.triggerBuilder,
     super.headerBuilder,
+    super.initialSelectedItemCache,
     super.itemBuilder,
     super.resultsBuilder,
     super.searchFieldBuilder,
