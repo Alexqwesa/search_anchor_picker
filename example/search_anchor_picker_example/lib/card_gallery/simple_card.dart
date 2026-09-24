@@ -8,6 +8,9 @@ import 'people.dart';
 
 enum BulkCommands { none, filtered, loaded, all }
 
+/// Where off-page people from the kept initial selection appear.
+enum HiddenItemsMode { inList, onlyIfSelected, section, none }
+
 enum RelatedStatus {
   none,
   knownDirectory,
@@ -74,6 +77,7 @@ class SimpleCard extends StatefulWidget {
     this.showChips = true,
     this.emptyCatalog = false,
     this.warnHiddenChip = false,
+    this.hiddenItemsControl = false,
     this.visibleCatalogIds,
     this.selectedItemCache = false,
     this.richItemTile = false,
@@ -106,6 +110,9 @@ class SimpleCard extends StatefulWidget {
   final bool showChips;
   final bool emptyCatalog;
   final bool warnHiddenChip;
+
+  /// Four-way control for off-page people from the kept initial selection.
+  final bool hiddenItemsControl;
   final Set<int>? visibleCatalogIds;
   final bool selectedItemCache;
   final bool richItemTile;
@@ -116,13 +123,19 @@ class SimpleCard extends StatefulWidget {
 
 class _SimpleCardState extends State<SimpleCard> {
   late final Set<int> _selected;
+
+  /// People for the initial selection this app keeps across closes.
+  late List<Person> _keptInitialItems;
   bool _fail = true;
   bool _warnHiddenChip = true;
+
+  HiddenItemsMode _hiddenMode = HiddenItemsMode.section;
 
   @override
   void initState() {
     super.initState();
     _selected = {...widget.seed};
+    _keptInitialItems = peopleIn(_selected);
   }
 
   @override
@@ -151,6 +164,39 @@ class _SimpleCardState extends State<SimpleCard> {
                 ],
               ),
             ),
+          if (widget.hiddenItemsControl)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: SegmentedButton<HiddenItemsMode>(
+                showSelectedIcon: false,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                segments: const [
+                  ButtonSegment(
+                    value: HiddenItemsMode.inList,
+                    label: Text('In list'),
+                  ),
+                  ButtonSegment(
+                    value: HiddenItemsMode.onlyIfSelected,
+                    label: Text('If selected'),
+                  ),
+                  ButtonSegment(
+                    value: HiddenItemsMode.section,
+                    label: Text('Section'),
+                  ),
+                  ButtonSegment(
+                    value: HiddenItemsMode.none,
+                    label: Text('No'),
+                  ),
+                ],
+                selected: {_hiddenMode},
+                onSelectionChanged: (selection) {
+                  setState(() => _hiddenMode = selection.first);
+                },
+              ),
+            ),
           if (widget.warnHiddenChip)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -169,10 +215,12 @@ class _SimpleCardState extends State<SimpleCard> {
           SearchAnchorPicker<Person>(
             config: peopleConfig(
               title: widget.title,
+              reloadKey: widget.hiddenItemsControl ? _hiddenMode : null,
               itemsLoader:
                   widget.failLoad ||
                       widget.includeSelectedInLoad ||
                       widget.emptyCatalog ||
+                      widget.hiddenItemsControl ||
                       widget.itemsLoader != null
                   ? _load
                   : null,
@@ -182,7 +230,7 @@ class _SimpleCardState extends State<SimpleCard> {
                   : (person) => relatedStatus(widget.related, person)!,
             ),
             initialSelectedIds: _selected.toList(),
-            initialSelectedItemCache: widget.selectedItemCache
+            initialSelectedItemCache: _passSelectedItemCache
                 ? peopleIn(_selected)
                 : null,
             selectionMode: widget.mode,
@@ -258,10 +306,33 @@ class _SimpleCardState extends State<SimpleCard> {
     setState(() => _selected.remove(id));
   }
 
+  bool get _passSelectedItemCache {
+    if (widget.hiddenItemsControl) {
+      return _hiddenMode == HiddenItemsMode.section;
+    }
+    return widget.selectedItemCache;
+  }
+
   bool _isHiddenChip(int id) {
-    final visible = widget.visibleCatalogIds;
+    final visible = _visibleCatalogIds;
     if (visible == null) return false;
     return !visible.contains(id);
+  }
+
+  Set<int>? get _visibleCatalogIds {
+    final page = widget.visibleCatalogIds;
+    if (!widget.hiddenItemsControl || page == null) return page;
+    final hiddenIds = {
+      for (final person in _offPageInitialItems(page)) person.id,
+    };
+    return switch (_hiddenMode) {
+      HiddenItemsMode.inList => {...page, ...hiddenIds},
+      HiddenItemsMode.onlyIfSelected => {
+        ...page,
+        ...hiddenIds.where(_selected.contains),
+      },
+      HiddenItemsMode.section || HiddenItemsMode.none => page,
+    };
   }
 
   Future<bool> _confirmHiddenChip(int id) async {
@@ -353,15 +424,18 @@ class _SimpleCardState extends State<SimpleCard> {
     PickerItemSource source,
     VoidCallback toggle,
   ) {
-    final cached = source == PickerItemSource.initialSelectedItemCache;
+    final fromCache =
+        source == PickerItemSource.initialSelectedItemCache ||
+        _keptOffPageIds.contains(person.id);
     return DefaultPickerItemTile(
       selected: selected,
       relatedListItemStatus: status,
       onToggle: (_) => toggle(),
       title: Text(person.name),
       subtitle: Text(
-        cached ? '${person.team} · not on this page' : person.team,
+        fromCache ? '${person.team} · not from itemsLoader' : person.team,
       ),
+      leading: Icon(fromCache ? Icons.bookmark_outline : Icons.person),
       tooltip: '${person.name} · ${person.team}',
       selectionMode: widget.mode,
     );
@@ -394,6 +468,7 @@ class _SimpleCardState extends State<SimpleCard> {
     }
     if (widget.includeSelectedInLoad) return _selectedPlusCatalog();
     if (widget.emptyCatalog) return const <Person>[];
+    if (widget.hiddenItemsControl) return _loadHiddenItems(context, query);
     if (widget.itemsLoader != null) {
       if (!context.mounted) return const <Person>[];
       return widget.itemsLoader!(context, query);
@@ -487,6 +562,42 @@ class _SimpleCardState extends State<SimpleCard> {
     );
     overlay.insert(entry);
     return completer.future;
+  }
+
+  Future<List<Person>> _loadHiddenItems(
+    BuildContext context,
+    String query,
+  ) async {
+    final page = widget.itemsLoader != null
+        ? await widget.itemsLoader!(context, query)
+        : people.take(4).toList();
+    final pageIds = page.map((person) => person.id).toSet();
+    final hidden = _offPageInitialItems(pageIds);
+    return switch (_hiddenMode) {
+      HiddenItemsMode.inList => [...page, ...hidden],
+      HiddenItemsMode.onlyIfSelected => [
+        ...page,
+        for (final person in hidden)
+          if (_selected.contains(person.id)) person,
+      ],
+      HiddenItemsMode.section || HiddenItemsMode.none => page,
+    };
+  }
+
+  Set<int> get _keptOffPageIds {
+    final page = widget.visibleCatalogIds ?? const <int>{};
+    return {
+      for (final person in _keptInitialItems)
+        if (!page.contains(person.id)) person.id,
+    };
+  }
+
+  /// Off-page people from the old initial selection. Unselect does not drop them.
+  List<Person> _offPageInitialItems(Set<int> pageIds) {
+    return [
+      for (final person in _keptInitialItems)
+        if (!pageIds.contains(person.id)) person,
+    ];
   }
 
   List<Person> _selectedPlusCatalog() {

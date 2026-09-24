@@ -1093,32 +1093,62 @@ SearchAnchorPicker<Person>(
         title: 'Hidden selected ID',
         persistLabel: 'onClose',
         difference:
-            'searchMode is local (the default): itemsLoader returns the first four people once. Typing filters Results only — Linus will not appear. Radia is selected but not on that page, so initialSelectedItemCache puts her in a Selected section. Uncheck her: the row stays until close so you can undo. Search does not hide Selected.\n\n'
-            'Rows use DefaultPickerItemTile with title, subtitle (team), and “not on this page” when source is the cache.\n\n'
-            'Leave “Show warning on hidden chip” on and tap Radia’s chip X: she is not on this page, so a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
+            'The loaded page is the first four people (Ada, Alan, Grace, Katherine). The chips are Ada (on that page) and Radia (not on it). Radia stays selected. The app keeps that off-page initial selection itself; this example only shows how to inject it.\n\n'
+            'In list: Radia is on the loaded page, and she stays there after you uncheck her. If selected: she is injected only while she is still selected. Section: she is not on the page, and initialSelectedItemCache puts her in a Selected section. No: she is not shown in the list at all. Uncheck her in Section: the row stays until close so you can undo.\n\n'
+            'A bookmark icon marks people the app kept who did not come from itemsLoader. Page rows use the person icon.\n\n'
+            'Leave “Show warning on hidden chip” on and tap Radia’s chip X while she is not on this page: a warning asks before the field drops her. Ada’s chip has no prompt — she is on the loaded page. Turn the checkbox off to remove a hidden chip immediately.',
         source: r'''
+// The app keeps the old initial selection. itemsLoader still returns only
+// the page. Inject kept people who are not on that page.
+final page = await itemsLoader(context, query);
+final pageIds = page.map((person) => person.id).toSet();
+final hidden = keptInitialItems.where((person) => !pageIds.contains(person.id));
+
+List<Person> load() {
+  switch (mode) {
+    case HiddenItemsMode.inList:
+      return [...page, ...hidden];
+    case HiddenItemsMode.onlyIfSelected:
+      return [
+        ...page,
+        ...hidden.where((person) => selected.contains(person.id)),
+      ];
+    case HiddenItemsMode.section:
+    case HiddenItemsMode.none:
+      return page;
+  }
+}
+
 SearchAnchorPicker<Person>(
   initialSelectedIds: selected.toList(),
-  initialSelectedItemCache: cachedPeople,
+  initialSelectedItemCache: mode == HiddenItemsMode.section
+      ? keptInitialItems
+      : null,
   itemBuilder: (context, person, selected, status, source, toggle) {
+    final fromCache = source == PickerItemSource.initialSelectedItemCache ||
+        hidden.any((item) => item.id == person.id);
     return DefaultPickerItemTile(
       selected: selected,
       relatedListItemStatus: status,
       onToggle: (_) => toggle(),
       title: Text(person.name),
       subtitle: Text(
-        source == PickerItemSource.initialSelectedItemCache
-            ? '${person.team} · not on this page'
-            : person.team,
+        fromCache ? '${person.team} · not from itemsLoader' : person.team,
       ),
+      leading: Icon(fromCache ? Icons.bookmark_outline : Icons.person),
       selectionMode: SelectionMode.multi,
     );
   },
-  onClose: (result) { /* persist result.added / result.removed */ },
+  onClose: (result) {
+    selected
+      ..addAll(result.added)
+      ..removeAll(result.removed);
+  },
 );
 ''',
         seed: const {1, 12},
         itemsLoader: (_, _) async => people.take(4).toList(),
+        hiddenItemsControl: true,
         warnHiddenChip: true,
         visibleCatalogIds: {for (final person in people.take(4)) person.id},
         selectedItemCache: true,
