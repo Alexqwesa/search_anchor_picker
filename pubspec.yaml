@@ -2,7 +2,7 @@ name: search_anchor_picker
 description: >-
   A searchable Flutter picker with multi or single selection, nested
   sub-pickers, and async save callbacks that roll back on failure.
-version: 0.2.2
+version: 0.2.3
 homepage: https://github.com/Alexqwesa/search_anchor_picker
 repository: https://github.com/Alexqwesa/search_anchor_picker
 issue_tracker: https://github.com/Alexqwesa/search_anchor_picker/issues

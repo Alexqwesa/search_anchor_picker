@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.3
 
 * Widget `initialSelectedItemCache` shows selected IDs missing from the
   loader page in a Selected section, and keeps those rows visible under
