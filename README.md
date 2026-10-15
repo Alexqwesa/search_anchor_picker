@@ -1,9 +1,15 @@
 # Search Anchor Picker
 
 A Flutter Material 3 picker that feels like `SearchAnchor`, with multi-select,
-single selection, and optional nested menus.
+single selection, and optional nested menus. [Open the web example here](https://alexqwesa.github.io/search_anchor_picker/)
 
-[Open the web example](https://alexqwesa.github.io/search_anchor_picker/)
+[![Tests](https://github.com/Alexqwesa/search_anchor_picker/actions/workflows/publish.yml/badge.svg)](https://github.com/Alexqwesa/search_anchor_picker/actions/workflows/publish.yml)
+[![Coverage](https://codecov.io/gh/Alexqwesa/search_anchor_picker/graph/badge.svg)](https://codecov.io/gh/Alexqwesa/search_anchor_picker)
+[![pub package](https://img.shields.io/pub/v/search_anchor_picker.svg)](https://pub.dev/packages/search_anchor_picker)
+[![pub points](https://img.shields.io/pub/points/search_anchor_picker)](https://pub.dev/packages/search_anchor_picker/score)
+[![Live demo](https://img.shields.io/badge/live%20demo-open-blue)](https://alexqwesa.github.io/search_anchor_picker/)
+
+
 
 ## Features
 
