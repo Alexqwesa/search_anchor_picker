@@ -27,7 +27,7 @@ single selection, and optional nested menus.
 
 ```yaml
 dependencies:
-  search_anchor_picker: ^0.2.0
+  search_anchor_picker: ^0.2.3
 ```
 
 ## Basic picker
